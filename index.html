@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OVA: EcoAventuras Digitales - Misión de Rescate Ecológico</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+        .sidebar-link {
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+        .sidebar-link.active, .sidebar-link:hover {
+            background-color: #dcfce7;
+            color: #166534;
+            border-left-color: #22c55e;
+        }
+        .content-pane {
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        .content-pane.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .step-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .step-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .step-card.selected {
+            border-color: #22c55e;
+            background-color: #dcfce7;
+        }
+        .step-card.correct {
+            border-color: #16a34a;
+            background-color: #bbf7d0;
+        }
+        .step-card.incorrect {
+            border-color: #ef4444;
+            background-color: #fef2f2;
+        }
+        .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #e5e7eb;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #22c55e, #16a34a);
+            transition: width 0.3s ease;
+        }
+        .visual-item {
+            transition: all 0.3s ease;
+            cursor: grab;
+        }
+        .visual-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .visual-item.dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+        }
+        .drop-zone {
+            background: #f9fafb;
+            border: 2px dashed #d1d5db;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 150px;
+            margin: 10px 0;
+            transition: all 0.3s;
+        }
+        .drop-zone.drag-over {
+            background: #fef3c7;
+        }
+        .drop-zone.correct {
+            background: #dcfce7;
+            border-color: #22c55e;
+        }
+        .drop-zone.incorrect {
+            background: #fef2f2;
+            border-color: #ef4444;
+        }
+        .image-container {
+            position: relative;
+            cursor: pointer;
+        }
+        .zoom-icon {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .image-container:hover .zoom-icon {
+            opacity: 1;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            animation: fadeIn 0.3s ease;
+        }
+        .modal-content {
+            position: relative;
+            margin: auto;
+            padding: 20px;
+            width: 90%;
+            max-width: 1000px;
+            max-height: 90vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .modal-content img {
+            max-width: 100%;
+            max-height: 90vh;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+        .close-modal {
+            position: absolute;
+            top: -20px;
+            right: -20px;
+            background-color: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50">
+
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white shadow-lg flex-shrink-0 hidden md:flex md:flex-col">
+            <div class="p-4">
+                <div style="width: 150px; height: 150px;" class="p-2 mx-auto flex items-center justify-center bg-white rounded-full shadow-lg border-2 border-yellow-500 transition-shadow duration-300 hover:shadow-yellow-400">
+                    <img src="img/100-1000672_escudo-unicartagena-university-of-cartagena.png" alt="Logo OVA" class="w-5/6 h-5/6 object-contain" loading="lazy">
+                </div>
+            </div>
+            <nav class="mt-6 flex-1">
+                <a href="#" class="sidebar-link active flex items-center py-3 px-6 font-medium text-slate-700" data-target="introduccion"><span class="mr-3 text-xl">🚀</span> Introducción</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="objetivos"><span class="mr-3 text-xl">🎯</span> Objetivos</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="contenido"><span class="mr-3 text-xl">📚</span> Contenido</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="gamificacion"><span class="mr-3 text-xl">🎮</span> Gamificación</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="actividades"><span class="mr-3 text-xl">✍️</span> Actividades</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="evaluacion"><span class="mr-3 text-xl">✔️</span> Evaluación</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="recursos"><span class="mr-3 text-xl">📖</span> Recursos</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="bibliografia"><span class="mr-3 text-xl">📚</span> Bibliografía</a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-4 sm:p-6 md:p-10 bg-gray-50">
+            <!-- Mobile Header -->
+            <div class="md:hidden mb-6 flex flex-col items-center">
+                <div style="width: 100px; height: 100px;" class="p-2 flex items-center justify-center bg-white rounded-full shadow-lg transition-shadow duration-300 hover:shadow-yellow-400 mb-2">
+                    <img src="img/100-1000672_escudo-unicartagena-university-of-cartagena.png" alt="Logo OVA" class="w-5/6 h-5/6 object-contain" loading="lazy">
+                </div>
+                 <select id="mobile-nav" class="w-full mt-2 p-2 border rounded-md bg-white shadow-sm">
+                    <option value="introduccion">🚀 Introducción</option>
+                    <option value="objetivos">🎯 Objetivos</option>
+                    <option value="contenido">📚 Contenido</option>
+                    <option value="gamificacion">🎮 Gamificación</option>
+                    <option value="actividades">✍️ Actividades Prácticas</option>
+                    <option value="evaluacion">✔️ Evaluación</option>
+                    <option value="recursos">📖 Recursos</option>
+                    <option value="bibliografia">📚 Bibliografía</option>
+                </select>
+            </div>
+
+          <!-- Introducción -->
+            <div id="introduccion" class="content-pane active">
+                <h2 class="text-2xl sm:text-3xl font-bold text-green-800 mb-4">🌍 EcoAventuras Digitales: Misión de Rescate Ecológico</h2>
+                <div class="mt-4 mb-6 p-4 bg-white border border-green-300 rounded-lg shadow-sm flex flex-col items-center">
+                    <div class="image-container w-full rounded flex items-center justify-center overflow-hidden" onclick="openModal(this)">
+                        <img src="img/banner (1).png" alt="EcoAventuras Digitales - Misión de Rescate Ecológico" class="w-full object-contain">
+                        <div class="zoom-icon">🔍</div>
+                    </div>
+                </div>
+
+                <!-- Video Introductorio de YouTube -->
+                <div class="mb-6 p-4 bg-white border border-green-300 rounded-lg shadow-sm">
+                    <h3 class="text-lg font-bold text-green-700 mb-3">🎥 Video Introductorio</h3>
+                    <div class="video-container w-full" style="position: relative; padding-bottom: 56.25%; height: 0;">
+                       <iframe src="https://www.youtube.com/embed/XWZwpAJgcKg" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" frameborder="0" allowfullscreen></iframe>
+                    </div>
+                </div>
+
+                <p class="text-lg text-slate-700 leading-relaxed mb-4">
+                    Bienvenidos a <span class="font-bold text-green-700">EcoAventuras Digitales</span>, una experiencia educativa gamificada diseñada para estudiantes de <strong>Grado 5° de Educación Básica Primaria</strong>. 🌱✨
+                </p>
+                <p class="text-lg text-slate-700 leading-relaxed mb-4">
+                    El <strong>"Ecosistema de la Esperanza"</strong> está perdiendo su color y necesita nuestra ayuda. A través de esta misión, los estudiantes se convertirán en investigadores, cazadores de soluciones y guardianes del planeta, acumulando insignias y puntos de concencia mientras aprenden sobre problemáticas ambientales reales en su entorno local.
+                </p>
+                <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg mb-4">
+                    <p class="font-bold text-green-800 mb-2">🎯 Metodología: Gamificación + Aprendizaje Basado en Proyectos (ABPr)</p>
+                    <p class="text-sm text-green-700">3 niveles de misión · Herramientas digitales interactivas · Meta: 300 puntos para certificación</p>
+                </div>
+            <div class="speech-controls mb-4 p-3 bg-green-100 rounded-lg flex items-center flex-wrap gap-2" data-target="introduccion">
+    <button class="play-btn bg-green-600 hover:bg-green-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+        <span class="mr-1">▶️</span> Leer
+    </button>
+    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+        <span class="mr-1">⏸️</span> Pausar
+    </button>
+    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+        <span class="mr-1">⏹️</span> Detener
+    </button>
+    <div class="flex items-center ml-2">
+        <label for="speech-rate-introduccion" class="text-sm text-green-800 mr-2">Velocidad:</label>
+        <input type="range" class="speech-rate" id="speech-rate-introduccion" min="0.5" max="2" step="0.1" value="1" class="w-24">
+    </div>
+</div>
+                <div class="mt-2 p-2 bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+                    <strong>💡 Atajos de teclado:</strong> Presiona <kbd class="bg-white px-2 py-1 rounded border">Espacio</kbd> para reproducir/pausar, <kbd class="bg-white px-2 py-1 rounded border">Tab</kbd> para detener
+                </div>
+            </div>
+
+            <!-- Objetivos -->
+            <div id="objetivos" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-green-800 mb-6">Objetivos de aprendizaje</h2>
+                <div class="speech-controls mb-4 p-3 bg-green-100 rounded-lg flex items-center flex-wrap gap-2" data-target="objetivos">
+                    <button class="play-btn bg-green-600 hover:bg-green-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-objetivos" class="text-sm text-green-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-objetivos" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                <ul class="space-y-4">
+                    <li class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                        <span class="text-green-700 mr-3 text-2xl">🔍</span>
+                        <span>Identificar problemáticas ambientales reales en el entorno local mediante la exploración digital interactiva.</span>
+                    </li>
+                    <li class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                        <span class="text-green-700 mr-3 text-2xl">💡</span>
+                        <span>Co-crear soluciones innovadoras y viables para los problemas ambientales identificados mediante trabajo colaborativo.</span>
+                    </li>
+                    <li class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                        <span class="text-green-700 mr-3 text-2xl">📢</span>
+                        <span>Comunicar y sensibilizar a la comunidad educativa sobre la importancia del cuidado ambiental mediante campañas digitales.</span>
+                    </li>
+                    <li class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                        <span class="text-green-700 mr-3 text-2xl">🎮</span>
+                        <span>Desarrollar competencias digitales utilizando herramientas como Genially, Padlet y Canva de manera creativa.</span>
+                    </li>
+                    <li class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                        <span class="text-green-700 mr-3 text-2xl">🏆</span>
+                        <span>Acumular insignias y puntos de conciencia para alcanzar la certificación de "Héroes del Ecosistema de la Esperanza".</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Contenido -->
+            <div id="contenido" class="content-pane">
+                <div class="speech-controls mb-4 p-3 bg-green-100 rounded-lg flex items-center flex-wrap gap-2" data-target="contenido">
+                    <button class="play-btn bg-green-600 hover:bg-green-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-contenido" class="text-sm text-green-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-contenido" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                
+                <div class="w-full max-w-8xl mx-auto">
+                    <!-- Nivel 1: Investigadores de la Naturaleza -->
+                    <div class="mb-4">
+                        <button type="button" class="w-full flex justify-between items-center p-4 bg-green-100 border border-green-300 rounded-t-lg focus:outline-none font-bold text-green-800 text-lg accordion-btn mb-2" data-target="#panel-nivel1">
+                            🔍 NIVEL 1: Investigadores de la Naturaleza<span class="ml-2">➕</span>
+                        </button>
+                    </div>
+                    <div id="panel-nivel1" class="accordion-panel hidden bg-white border border-t-0 border-green-300 rounded-b-lg p-4 mb-6">
+                        <div class="space-y-6 text-slate-700 leading-relaxed">
+                            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-blue-800 mb-2">🎯 Propósito</h4>
+                                <p class="mb-2">Identificar problemáticas ambientales reales en el entorno local mediante la exploración digital.</p>
+                            </div>
+                            
+                            <div class="bg-orange-50 border-l-4 border-orange-400 p-4 rounded-r-lg mb-4">
+                                <h4 class="font-bold text-orange-800 mb-2">📋 Guía de la Actividad</h4>
+                                <div class="space-y-3">
+                                    <div class="bg-white p-3 rounded border-l-4 border-blue-300">
+                                        <h5 class="font-semibold text-blue-700">1️⃣ Inicio (15 min)</h5>
+                                        <p class="text-sm">El docente presenta el reto inicial: "El Ecosistema de la Esperanza está perdiendo su color. Necesitamos investigadores que encuentren qué está causando este daño".</p>
+                                    </div>
+                                    <div class="bg-white p-3 rounded border-l-4 border-green-300">
+                                        <h5 class="font-semibold text-green-700">2️⃣ Desarrollo (35 min)</h5>
+                                        <p class="text-sm">Los estudiantes ingresan al Genially Interactivo (Mural de Exploración). Deben navegar por las zonas de "Agua", "Aire" y "Suelo". En cada zona encontrarán "Puntos Críticos" (imágenes y videos cortos de contaminación real). Cada equipo debe elegir una problemática y documentarla en su bitácora digital.</p>
+                                    </div>
+                                    <div class="bg-white p-3 rounded border-l-4 border-purple-300">
+                                        <h5 class="font-semibold text-purple-700">3️⃣ Cierre (10 min)</h5>
+                                        <p class="text-sm">Los equipos comparten en plenaria el problema identificado.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-green-800 mb-2">� Video de Apoyo - Nivel 1</h4>
+                                <div class="video-container w-full mb-4" style="position: relative; padding-bottom: 56.25%; height: 0;">
+                                    <iframe src="https://www.youtube.com/embed/lhjMYig0WGY" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" frameborder="0" allowfullscreen></iframe>
+                                </div>
+                            </div>
+
+                            <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-green-800 mb-2">🔍 Imagen de Referencia - Nivel 1</h4>
+                                <div class="image-container w-full rounded flex items-center justify-center overflow-hidden" onclick="openModal(this)">
+                                    <img src="img/mapa.png"Imagen de Referencia Nivel 1" class="w-full object-contain">
+                                    <div class="zoom-icon">🔍</div>
+                                </div>
+                            </div>
+
+                            <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-green-800 mb-2">🌐 Recurso Digital (RED 1)</h4>
+                                <p class="font-semibold text-green-700 mb-2">Herramienta: Gamma.app</p>
+                                <div class="bg-white p-3 rounded">
+                                    <div class="flex justify-center">
+                                        <iframe src="https://gamma.app/embed/ev32f7inwaovq9p" style="width: 700px; max-width: 100%; height: 450px" allow="fullscreen" title="Untitled"></iframe>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-yellow-800 mb-2">🏆 Insignia a Obtener</h4>
+                                <div class="flex items-center gap-3">
+                                    <span class="text-3xl">🔍</span>
+                                    <div>
+                                        <p class="font-bold text-yellow-800">Lupa de Oro</p>
+                                        <p class="text-sm">50 puntos - Identificar 3 amenazas reales</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Nivel 2: Cazadores de Soluciones -->
+                    <div class="mb-4">
+                        <button type="button" class="w-full flex justify-between items-start p-4 bg-green-100 border border-green-300 rounded-t-lg focus:outline-none font-bold text-green-800 text-lg accordion-btn mb-2 text-left" data-target="#panel-nivel2">
+                            💡 NIVEL 2: Cazadores de Soluciones<span class="ml-2">➕</span>
+                        </button>
+                    </div>
+                    <div id="panel-nivel2" class="accordion-panel hidden bg-white border border-t-0 border-green-300 rounded-b-lg p-4 mb-6">
+                        <div class="text-slate-700 leading-relaxed space-y-6">
+                            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-blue-800 mb-2">🎯 Propósito</h4>
+                                <p class="mb-2">Co-crear soluciones innovadoras y viables para los problemas identificados.</p>
+                            </div>
+                            
+                            <div class="bg-orange-50 border-l-4 border-orange-400 p-4 rounded-r-lg mb-4">
+                                <h4 class="font-bold text-orange-800 mb-2">📋 Guía de la Actividad</h4>
+                                <div class="space-y-3">
+                                    <div class="bg-white p-3 rounded border-l-4 border-blue-300">
+                                        <h5 class="font-semibold text-blue-700">1️⃣ Inicio (10 min)</h5>
+                                        <p class="text-sm">"Ahora que sabemos qué daña nuestro ecosistema, es hora de usar nuestra creatividad para sanarlo".</p>
+                                    </div>
+                                    <div class="bg-white p-3 rounded border-l-4 border-green-300">
+                                        <h5 class="font-semibold text-green-700">2️⃣ Desarrollo (40 min)</h5>
+                                        <p class="text-sm">Los equipos acceden al Padlet Colaborativo. Cada equipo crea una "Ficha de Solución" que incluya: Nombre de la solución (Creativo), ¿Cómo funciona? (Descripción breve), ¿Qué necesitamos? (Recursos), ¿Quiénes ayudan? (Actores de la comunidad). Los estudiantes deben comentar al menos una propuesta de otro equipo dando una sugerencia de mejora.</p>
+                                    </div>
+                                    <div class="bg-white p-3 rounded border-l-4 border-purple-300">
+                                        <h5 class="font-semibold text-purple-700">3️⃣ Cierre (10 min)</h5>
+                                        <p class="text-sm">Votación simbólica de las soluciones más innovadoras mediante "corazones" en Padlet.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-green-800 mb-2">🎥 Video de Apoyo - Nivel 2</h4>
+                                <div class="video-container w-full mb-4" style="position: relative; padding-bottom: 56.25%; height: 0;">
+                                    <iframe src="https://www.youtube.com/embed/cJfghK9uWb4" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" frameborder="0" allowfullscreen></iframe>
+                                </div>
+                            </div>
+
+                            <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-green-800 mb-2">🌐 Recurso Digital (RED 2)</h4>
+                                <p class="font-semibold text-green-700 mb-2">Herramienta: Padlet (Muro colaborativo)</p>
+                                <div class="bg-white p-3 rounded">
+                                    <div class="padlet-embed" style="border:1px solid rgba(0,0,0,0.1);border-radius:2px;box-sizing:border-box;overflow:hidden;position:relative;width:100%;background:#F4F4F4">
+                                        <p style="padding:0;margin:0">
+                                            <iframe src="https://padlet.com/embed/e9zl2uynkk6doqc2" frameborder="0" allow="camera;microphone;geolocation;display-capture;clipboard-write" style="width:100%;height:608px;display:block;padding:0;margin:0"></iframe>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-yellow-800 mb-2">🏆 Insignia a Obtener</h4>
+                                <div class="flex items-center gap-3">
+                                    <span class="text-3xl">💡</span>
+                                    <div>
+                                        <p class="font-bold text-yellow-800">Bombilla Creativa</p>
+                                        <p class="text-sm">100 puntos - Solución viable y comentada por pares</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Nivel 3: Guardianes del Planeta -->
+                    <div class="mb-4">
+                        <button type="button" class="w-full flex justify-between items-start p-4 bg-green-100 border border-green-300 rounded-t-lg focus:outline-none font-bold text-green-800 text-lg accordion-btn mb-2 text-left" data-target="#panel-nivel3">
+                            🛡️ NIVEL 3: Guardianes del Planeta<span class="ml-2">➕</span>
+                        </button>
+                    </div>
+                    <div id="panel-nivel3" class="accordion-panel hidden bg-white border border-t-0 border-green-300 rounded-b-lg p-4 mb-6">
+                        <div class="text-slate-700 leading-relaxed space-y-6">
+                            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-blue-800 mb-2">🎯 Propósito</h4>
+                                <p class="mb-2">Comunicar y sensibilizar a la comunidad educativa sobre la importancia del cuidado ambiental.</p>
+                            </div>
+                            
+                            <div class="bg-orange-50 border-l-4 border-orange-400 p-4 rounded-r-lg mb-4">
+                                <h4 class="font-bold text-orange-800 mb-2">📋 Guía de la Actividad</h4>
+                                <div class="space-y-3">
+                                    <div class="bg-white p-3 rounded border-l-4 border-blue-300">
+                                        <h5 class="font-semibold text-blue-700">1️⃣ Inicio (10 min)</h5>
+                                        <p class="text-sm">"Nuestras soluciones son geniales, pero el mundo necesita conocerlas. ¡Es hora de convertirnos en Guardianes!"</p>
+                                    </div>
+                                    <div class="bg-white p-3 rounded border-l-4 border-green-300">
+                                        <h5 class="font-semibold text-green-700">2️⃣ Desarrollo (40 min)</h5>
+                                        <p class="text-sm">Los equipos utilizan la Plantilla de Canva diseñada por el docente. Deben crear un "Póster Digital de Acción" o un video corto de 30 segundos (Reel/TikTok educativo). El diseño debe incluir: Un mensaje potente, una acción concreta para los ciudadanos y un código QR que lleve a su solución en Padlet.</p>
+                                    </div>
+                                    <div class="bg-white p-3 rounded border-l-4 border-purple-300">
+                                        <h5 class="font-semibold text-purple-700">3️⃣ Cierre (10 min)</h5>
+                                        <p class="text-sm">Galería digital de Guardianes. Los trabajos se proyectan en el aula o se comparten en el grupo de WhatsApp de padres.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-green-800 mb-2">🎥 Video de Apoyo - Nivel 3</h4>
+                                <div class="video-container w-full mb-4" style="position: relative; padding-bottom: 56.25%; height: 0;">
+                                    <iframe src="https://www.youtube.com/embed/aWgHk8Mso0s" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" frameborder="0" allowfullscreen></iframe>
+                                </div>
+                            </div>
+
+                            <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-green-800 mb-2">🌐 Recurso Digital (RED 3 - Elaboración Propia)</h4>
+                                <p class="font-semibold text-green-700 mb-2">Herramienta: Canva</p>
+                                <div class="bg-white p-3 rounded">
+                                    <p class="text-sm mb-3"><strong>Plantillas de Pósters sobre Contaminación</strong></p>
+                                    <a href="https://www.canva.com/es_es/plantillas/s/contaminacion/" target="_blank" class="inline-block w-full text-center bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-lg transition-colors">
+                                        🎨 Abrir Plantillas en Canva
+                                    </a>
+                                    <p class="text-xs text-gray-500 mt-2 text-center">Haz clic para abrir en una nueva pestaña</p>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-yellow-800 mb-2">🏆 Insignia a Obtener</h4>
+                                <div class="flex items-center gap-3">
+                                    <span class="text-3xl">🛡️</span>
+                                    <div>
+                                        <p class="font-bold text-yellow-800">Escudo Verde</p>
+                                        <p class="text-sm">150 puntos - Mensaje claro y diseño atractivo</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gamificación -->
+            <div id="gamificacion" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-green-800 mb-6">🎮 Sistema de Gamificación</h2>
+                <div class="speech-controls mb-4 p-3 bg-green-100 rounded-lg flex items-center flex-wrap gap-2" data-target="gamificacion">
+                    <button class="play-btn bg-green-600 hover:bg-green-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-gamificacion" class="text-sm text-green-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-gamificacion" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                
+                <div class="bg-gradient-to-r from-green-50 to-blue-50 border-l-4 border-green-500 p-6 rounded-r-lg mb-6">
+                    <h3 class="text-xl font-bold text-green-800 mb-4">🏆 El Medidor de Conciencia</h3>
+                    <p class="text-slate-700 mb-4">Acumula insignias y puntos mientras completas cada nivel de la misión. ¡Llega a los 300 puntos para obtener tu certificado!</p>
+                    
+                    <div class="mb-6">
+                        <div class="flex justify-between text-sm text-slate-600 mb-2">
+                            <span>Progreso hacia certificación</span>
+                            <span id="gamification-progress-text">0/300 puntos</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="gamification-progress-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <!-- Insignia 1 -->
+                    <div class="bg-white border-2 border-green-300 rounded-lg p-6 text-center shadow-sm hover:shadow-md transition-shadow">
+                        <div class="text-6xl mb-3">🔍</div>
+                        <h4 class="font-bold text-green-800 text-lg mb-2">Lupa de Oro</h4>
+                        <p class="text-sm text-slate-600 mb-2">Nivel 1: Investigadores</p>
+                        <div class="bg-green-100 rounded-full py-2 px-4 inline-block">
+                            <span class="font-bold text-green-800">50 pts</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-3">Identificar 3 amenazas reales</p>
+                    </div>
+
+                    <!-- Insignia 2 -->
+                    <div class="bg-white border-2 border-yellow-300 rounded-lg p-6 text-center shadow-sm hover:shadow-md transition-shadow">
+                        <div class="text-6xl mb-3">💡</div>
+                        <h4 class="font-bold text-yellow-800 text-lg mb-2">Bombilla Creativa</h4>
+                        <p class="text-sm text-slate-600 mb-2">Nivel 2: Cazadores</p>
+                        <div class="bg-yellow-100 rounded-full py-2 px-4 inline-block">
+                            <span class="font-bold text-yellow-800">100 pts</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-3">Solución viable y comentada por pares</p>
+                    </div>
+
+                    <!-- Insignia 3 -->
+                    <div class="bg-white border-2 border-purple-300 rounded-lg p-6 text-center shadow-sm hover:shadow-md transition-shadow">
+                        <div class="text-6xl mb-3">🛡️</div>
+                        <h4 class="font-bold text-purple-800 text-lg mb-2">Escudo Verde</h4>
+                        <p class="text-sm text-slate-600 mb-2">Nivel 3: Guardianes</p>
+                        <div class="bg-purple-100 rounded-full py-2 px-4 inline-block">
+                            <span class="font-bold text-purple-800">150 pts</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-3">Mensaje claro y diseño atractivo</p>
+                    </div>
+                </div>
+
+                <div class="bg-gradient-to-r from-yellow-100 to-orange-100 border-l-4 border-yellow-500 p-6 rounded-r-lg">
+                    <h3 class="text-xl font-bold text-yellow-800 mb-4">🎖️ Meta de Certificación</h3>
+                    <div class="flex items-center gap-4">
+                        <div class="text-5xl">🌟</div>
+                        <div>
+                            <p class="font-bold text-yellow-800 text-lg">Héroes del Ecosistema de la Esperanza</p>
+                            <p class="text-slate-700">Al llegar a los <strong>300 puntos</strong>, el equipo recibe el certificado digital de "Héroes del Ecosistema de la Esperanza".</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actividades Prácticas -->
+            <div id="actividades" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-green-800 mb-6">Actividades prácticas</h2>
+                <div class="speech-controls mb-4 p-3 bg-green-100 rounded-lg flex items-center flex-wrap gap-2" data-target="actividades">
+                    <button class="play-btn bg-green-600 hover:bg-green-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-actividades" class="text-sm text-green-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-actividades" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                
+                <div class="space-y-6">
+                    <div class="bg-white border-l-4 border-green-500 rounded-lg shadow-sm p-6">
+                        <h3 class="text-xl font-bold text-green-700 mb-4">📝 Bitácora Digital de Investigación</h3>
+                        <p class="text-slate-700 mb-4">Durante el Nivel 1, cada equipo debe documentar las problemáticas ambientales que identifiquen en el Genially.</p>
+                        <div class="bg-green-50 p-4 rounded-lg">
+                            <h4 class="font-semibold text-green-800 mb-2">Elementos de la Bitácora:</h4>
+                            <ul class="text-sm space-y-1 text-slate-700">
+                                <li>• Zona explorada (Agua, Aire o Suelo)</li>
+                                <li>• Descripción del problema encontrado</li>
+                                <li>• Evidencia visual (captura del Genially)</li>
+                                <li>• Posibles causas identificadas</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border-l-4 border-blue-500 rounded-lg shadow-sm p-6">
+                        <h3 class="text-xl font-bold text-blue-700 mb-4">💡 Ficha de Solución Colaborativa</h3>
+                        <p class="text-slate-700 mb-4">En el Nivel 2, los equipos crean fichas de solución en Padlet con retroalimentación de compañeros.</p>
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <h4 class="font-semibold text-blue-800 mb-2">Componentes de la Ficha:</h4>
+                            <ul class="text-sm space-y-1 text-slate-700">
+                                <li>• Nombre creativo de la solución</li>
+                                <li>• Descripción de cómo funciona</li>
+                                <li>• Recursos necesarios</li>
+                                <li>• Actores de la comunidad que pueden ayudar</li>
+                                <li>• Comentarios y sugerencias de otros equipos</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border-l-4 border-purple-500 rounded-lg shadow-sm p-6">
+                        <h3 class="text-xl font-bold text-purple-700 mb-4">🎨 Póster Digital de Acción</h3>
+                        <p class="text-slate-700 mb-4">En el Nivel 3, los equipos crean campañas de concientización usando Canva.</p>
+                        <div class="bg-purple-50 p-4 rounded-lg">
+                            <h4 class="font-semibold text-purple-800 mb-2">Elementos del Póster:</h4>
+                            <ul class="text-sm space-y-1 text-slate-700">
+                                <li>• Foto del equipo</li>
+                                <li>• Slogan llamativo sobre cuidado ambiental</li>
+                                <li>• Iconos de acciones verdes (reciclar, ahorrar agua, plantar)</li>
+                                <li>• Compromiso del equipo</li>
+                                <li>• Código QR que lleva a la solución en Padlet</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Evaluación -->
+            <div id="evaluacion" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-green-800 mb-6">Evaluación final</h2>
+                <div class="speech-controls mb-4 p-3 bg-green-100 rounded-lg flex items-center flex-wrap gap-2" data-target="evaluacion">
+                    <button class="play-btn bg-green-600 hover:bg-green-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-evaluacion" class="text-sm text-green-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-evaluacion" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                
+                <div class="bg-white border-l-4 border-green-500 rounded-lg shadow-sm p-6">
+                    <h3 class="text-xl font-bold text-green-700 mb-4">📋 Criterios de Evaluación</h3>
+                    <p class="mb-6 text-slate-700">La evaluación se basa en el cumplimiento de los criterios de logro de cada nivel y la acumulación de puntos de conciencia.</p>
+                    
+                    <div class="space-y-4">
+                        <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                            <p class="font-medium text-green-800 mb-2">Nivel 1: Investigadores de la Naturaleza</p>
+                            <p class="text-sm text-slate-700">Criterio: Identificar 3 amenazas reales en el entorno local mediante el Genially Interactivo.</p>
+                            <p class="text-sm font-semibold text-green-700 mt-2">🏆 Insignia: Lupa de Oro (50 pts)</p>
+                        </div>
+                        
+                        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+                            <p class="font-medium text-yellow-800 mb-2">Nivel 2: Cazadores de Soluciones</p>
+                            <p class="text-sm text-slate-700">Criterio: Crear una solución viable y comentar al menos una propuesta de otro equipo en Padlet.</p>
+                            <p class="text-sm font-semibold text-yellow-700 mt-2">🏆 Insignia: Bombilla Creativa (100 pts)</p>
+                        </div>
+                        
+                        <div class="bg-purple-50 border-l-4 border-purple-400 p-4 rounded-r-lg">
+                            <p class="font-medium text-purple-800 mb-2">Nivel 3: Guardianes del Planeta</p>
+                            <p class="text-sm text-slate-700">Criterio: Crear un póster digital con mensaje claro, diseño atractivo y código QR funcional.</p>
+                            <p class="text-sm font-semibold text-purple-700 mt-2">🏆 Insignia: Escudo Verde (150 pts)</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 bg-gradient-to-r from-orange-50 to-yellow-50 border-l-4 border-orange-500 p-4 rounded-r-lg">
+                        <h4 class="font-bold text-orange-800 mb-2">🎖️ Certificación Final</h4>
+                        <p class="text-slate-700">Al completar los 3 niveles y acumular <strong>300 puntos</strong>, el equipo recibe el certificado digital de "Héroes del Ecosistema de la Esperanza".</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recursos -->
+            <div id="recursos" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-green-800 mb-6">Recursos digitales</h2>
+                <div class="speech-controls mb-4 p-3 bg-green-100 rounded-lg flex items-center flex-wrap gap-2" data-target="recursos">
+                    <button class="play-btn bg-green-600 hover:bg-green-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-recursos" class="text-sm text-green-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-recursos" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white border-l-4 border-blue-500 rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-bold text-blue-700 mb-3">🌐 Herramientas Digitales</h3>
+                        <ul class="space-y-2">
+                            <li class="flex items-start">
+                                <span class="text-blue-500 mr-2">•</span>
+                                <a href="https://view.genially.com/69b9c9ecd3e47f7d3ad97491" target="_blank" class="text-blue-600 hover:underline">Genially - Mural de Exploración</a>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-blue-500 mr-2">•</span>
+                                <a href="https://padlet.com/" target="_blank" class="text-blue-600 hover:underline">Padlet - Muro Colaborativo</a>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-blue-500 mr-2">•</span>
+                                <a href="https://www.canva.com/" target="_blank" class="text-blue-600 hover:underline">Canva - Diseño Gráfico</a>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-white border-l-4 border-green-500 rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-bold text-green-700 mb-3">📚 Recursos Educativos</h3>
+                        <ul class="space-y-2">
+                            <li class="flex items-start">
+                                <span class="text-green-500 mr-2">•</span>
+                                <span class="text-slate-700">Plantillas de Canva para pósters ecológicos</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-green-500 mr-2">•</span>
+                                <span class="text-slate-700">Guía de uso de Genially para educación</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-green-500 mr-2">•</span>
+                                <span class="text-slate-700">Tutorial de Padlet para trabajo colaborativo</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bibliografía -->
+            <div id="bibliografia" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-green-800 mb-6">Bibliografía</h2>
+                <div class="speech-controls mb-4 p-3 bg-green-100 rounded-lg flex items-center flex-wrap gap-2" data-target="bibliografia">
+                    <button class="play-btn bg-green-600 hover:bg-green-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-bibliografia" class="text-sm text-green-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-bibliografia" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                
+                <div class="bg-white border-l-4 border-green-500 rounded-lg shadow-sm p-6">
+                    <ul class="space-y-3">
+                        <li class="text-slate-700">
+                            <strong>Plan de Actividades Desarrollado: EcoAventuras Digitales.</strong> (2024). <em>Misión de Rescate Ecológico</em>. Documento de planificación educativa.
+                        </li>
+                        <li class="text-slate-700">
+                            <strong>Metodología ABPr.</strong> (2024). <em>Aprendizaje Basado en Proyectos</em>. Enfoque pedagógico para educación ambiental.
+                        </li>
+                        <li class="text-slate-700">
+                            <strong>Gamificación Educativa.</strong> (2024). <em>Sistema de insignias y puntos de conciencia</em>. Estrategia de motivación estudiantil.
+                        </li>
+                        <li class="text-slate-700">
+                            <strong>Herramientas Digitales.</strong> (2024). <em>Genially, Padlet, Canva</em>. Plataformas para educación interactiva y colaborativa.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal para imágenes -->
+        <div id="imageModal" class="fixed inset-0 bg-black bg-opacity-75 z-50 hidden flex items-center justify-center p-4">
+            <div class="relative max-w-6xl max-h-full">
+                <button onclick="closeModal()" class="absolute -top-10 right-0 text-white text-4xl hover:text-gray-300">&times;</button>
+                <img id="modalImage" src="" alt="Imagen ampliada" class="max-w-full max-h-full object-contain rounded-lg">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales para síntesis de voz
+        let currentUtterance = null;
+        let currentSpeechTarget = null;
+        let speechQueue = [];
+        let isSpeaking = false;
+
+        // Función para abrir modal de imagen
+        function openModal(imageContainer) {
+            const modal = document.getElementById('imageModal');
+            const modalImage = document.getElementById('modalImage');
+            const img = imageContainer.querySelector('img');
+            
+            if (img) {
+                modalImage.src = img.src;
+                modalImage.alt = img.alt;
+            }
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        // Función para cerrar modal
+        function closeModal() {
+            const modal = document.getElementById('imageModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        // Función para obtener texto de un elemento
+        function getTextContent(element) {
+            const selector = element.dataset.target;
+            const targetElement = document.getElementById(selector);
+            if (!targetElement) return '';
+            
+            // Excluir elementos que no deben ser leídos
+            const excludeSelectors = 'button, .speech-controls, .progress-bar, .drop-zone, .visual-item, .filter-card, .step-card, .quiz-question select';
+            const textElements = targetElement.querySelectorAll('h1, h2, h3, h4, h5, h6, p, li, span:not(.zoom-icon):not(.step-number):not(.filter-number)');
+            
+            let text = '';
+            textElements.forEach(el => {
+                if (!el.closest(excludeSelectors)) {
+                    text += el.textContent + ' ';
+                }
+            });
+            
+            return text.trim();
+        }
+
+        // Función para iniciar síntesis de voz
+        function startSpeech(targetId) {
+            const control = document.querySelector(`[data-target="${targetId}"]`);
+            const playBtn = control.querySelector('.play-btn');
+            const pauseBtn = control.querySelector('.pause-btn');
+            const stopBtn = control.querySelector('.stop-btn');
+            const rateInput = control.querySelector('.speech-rate');
+            
+            if (isSpeaking && currentSpeechTarget === targetId) {
+                // Reanudar si está pausado
+                if (window.speechSynthesis.paused) {
+                    window.speechSynthesis.resume();
+                    playBtn.disabled = true;
+                    pauseBtn.disabled = false;
+                    isSpeaking = true;
+                }
+                return;
+            }
+            
+            // Detener cualquier speech anterior
+            stopAllSpeech();
+            
+            const text = getTextContent(control);
+            if (!text) return;
+            
+            currentUtterance = new SpeechSynthesisUtterance(text);
+            currentUtterance.lang = 'es-ES';
+            currentUtterance.rate = parseFloat(rateInput.value);
+            
+            currentUtterance.onstart = () => {
+                playBtn.disabled = true;
+                pauseBtn.disabled = false;
+                stopBtn.disabled = false;
+                isSpeaking = true;
+                currentSpeechTarget = targetId;
+            };
+            
+            currentUtterance.onend = () => {
+                playBtn.disabled = false;
+                pauseBtn.disabled = true;
+                stopBtn.disabled = true;
+                isSpeaking = false;
+                currentSpeechTarget = null;
+            };
+            
+            currentUtterance.onerror = (event) => {
+                console.error('Error en síntesis de voz:', event);
+                playBtn.disabled = false;
+                pauseBtn.disabled = true;
+                stopBtn.disabled = true;
+                isSpeaking = false;
+                currentSpeechTarget = null;
+            };
+            
+            window.speechSynthesis.speak(currentUtterance);
+        }
+
+        // Función para pausar síntesis de voz
+        function pauseSpeech(targetId) {
+            if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+                window.speechSynthesis.pause();
+                const control = document.querySelector(`[data-target="${targetId}"]`);
+                control.querySelector('.play-btn').disabled = false;
+                control.querySelector('.pause-btn').disabled = true;
+                isSpeaking = false;
+            }
+        }
+
+        // Función para detener síntesis de voz
+        function stopSpeech(targetId) {
+            stopAllSpeech();
+        }
+
+        // Función para detener toda síntesis de voz
+        function stopAllSpeech() {
+            window.speechSynthesis.cancel();
+            document.querySelectorAll('.play-btn').forEach(btn => btn.disabled = false);
+            document.querySelectorAll('.pause-btn').forEach(btn => btn.disabled = true);
+            document.querySelectorAll('.stop-btn').forEach(btn => btn.disabled = true);
+            isSpeaking = false;
+            currentSpeechTarget = null;
+            currentUtterance = null;
+        }
+
+        // Función para actualizar velocidad de voz
+        function updateSpeechRate(targetId) {
+            const control = document.querySelector(`[data-target="${targetId}"]`);
+            const rateInput = control.querySelector('.speech-rate');
+            
+            if (currentUtterance && currentSpeechTarget === targetId && !window.speechSynthesis.paused) {
+                currentUtterance.rate = parseFloat(rateInput.value);
+            }
+        }
+
+        // Navegación por secciones
+        function navigateToSection(sectionId) {
+            // Ocultar todas las secciones
+            document.querySelectorAll('.content-pane').forEach(pane => {
+                pane.classList.remove('active');
+            });
+            
+            // Mostrar sección seleccionada
+            const targetPane = document.getElementById(sectionId);
+            if (targetPane) {
+                targetPane.classList.add('active');
+            }
+            
+            // Actualizar estado activo en sidebar
+            document.querySelectorAll('.sidebar-link').forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('data-target') === sectionId) {
+                    link.classList.add('active');
+                }
+            });
+            
+            // Actualizar selector móvil
+            const mobileNav = document.getElementById('mobile-nav');
+            if (mobileNav) {
+                mobileNav.value = sectionId;
+            }
+        }
+
+        // Funcionalidad de acordeones
+        function initAccordions() {
+            const accordionBtns = document.querySelectorAll('.accordion-btn');
+            
+            accordionBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const targetId = btn.dataset.target;
+                    const panel = document.querySelector(targetId);
+                    const icon = btn.querySelector('span:last-child');
+                    
+                    if (panel.classList.contains('hidden')) {
+                        panel.classList.remove('hidden');
+                        icon.textContent = '➖';
+                    } else {
+                        panel.classList.add('hidden');
+                        icon.textContent = '➕';
+                    }
+                });
+            });
+        }
+
+        // Atajos de teclado
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && e.target.tagName !== 'SELECT' && e.target.tagName !== 'INPUT') {
+                e.preventDefault();
+                const activePane = document.querySelector('.content-pane.active');
+                if (activePane) {
+                    const targetId = activePane.id;
+                    if (isSpeaking && currentSpeechTarget === targetId) {
+                        pauseSpeech(targetId);
+                    } else {
+                        startSpeech(targetId);
+                    }
+                }
+            } else if (e.code === 'Tab' && isSpeaking) {
+                e.preventDefault();
+                stopAllSpeech();
+            }
+        });
+
+        // Prevenir navegación al arrastrar
+        document.addEventListener('dragover', (e) => {
+            e.preventDefault();
+        });
+
+        document.addEventListener('drop', (e) => {
+            e.preventDefault();
+        });
+
+        // Inicialización cuando el DOM está listo
+        document.addEventListener('DOMContentLoaded', () => {
+            initAccordions();
+            
+            // Event listeners para controles de voz
+            document.querySelectorAll('.play-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const targetId = btn.closest('.speech-controls').dataset.target;
+                    startSpeech(targetId);
+                });
+            });
+            
+            document.querySelectorAll('.pause-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const targetId = btn.closest('.speech-controls').dataset.target;
+                    pauseSpeech(targetId);
+                });
+            });
+            
+            document.querySelectorAll('.stop-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const targetId = btn.closest('.speech-controls').dataset.target;
+                    stopSpeech(targetId);
+                });
+            });
+            
+            document.querySelectorAll('.speech-rate').forEach(input => {
+                input.addEventListener('input', () => {
+                    const targetId = input.closest('.speech-controls').dataset.target;
+                    updateSpeechRate(targetId);
+                });
+            });
+            
+            // Navegación por secciones - Sidebar
+            document.querySelectorAll('.sidebar-link').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetId = link.getAttribute('data-target');
+                    navigateToSection(targetId);
+                });
+            });
+            
+            // Navegación por secciones - Mobile
+            const mobileNav = document.getElementById('mobile-nav');
+            if (mobileNav) {
+                mobileNav.addEventListener('change', (e) => {
+                    navigateToSection(e.target.value);
+                });
+            }
+            
+            // Cerrar modal con Escape
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    closeModal();
+                }
+            });
+            
+            // Cerrar modal haciendo clic fuera
+            document.getElementById('imageModal').addEventListener('click', (e) => {
+                if (e.target.id === 'imageModal') {
+                    closeModal();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
