@@ -1124,12 +1124,18 @@
 
         // Inicialización cuando el DOM está listo
         document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM cargado, inicializando...');
             initAccordions();
             
             // Event listeners para controles de voz
-            document.querySelectorAll('.play-btn').forEach(btn => {
+            const playButtons = document.querySelectorAll('.play-btn');
+            console.log('Botones play encontrados:', playButtons.length);
+            
+            playButtons.forEach((btn, index) => {
+                console.log(`Adjuntando listener al botón ${index}`);
                 btn.addEventListener('click', (e) => {
                     e.preventDefault();
+                    e.stopPropagation();
                     const control = btn.closest('.speech-controls');
                     const targetId = control ? control.dataset.target : null;
                     console.log('Click en play-btn, targetId:', targetId);
