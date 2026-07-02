@@ -1123,7 +1123,7 @@
         });
 
         // Inicialización cuando el DOM está listo
-        document.addEventListener('DOMContentLoaded', () => {
+        function initApp() {
             console.log('DOM cargado, inicializando...');
             initAccordions();
             
@@ -1133,6 +1133,8 @@
             
             playButtons.forEach((btn, index) => {
                 console.log(`Adjuntando listener al botón ${index}`);
+                
+                // Soporte para click y touch
                 btn.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -1143,6 +1145,17 @@
                         startSpeech(targetId);
                     } else {
                         console.error('No se encontró data-target en el control');
+                    }
+                });
+                
+                // Fallback para touch events en móviles
+                btn.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    const control = btn.closest('.speech-controls');
+                    const targetId = control ? control.dataset.target : null;
+                    console.log('Touch en play-btn, targetId:', targetId);
+                    if (targetId) {
+                        startSpeech(targetId);
                     }
                 });
             });
@@ -1198,7 +1211,14 @@
                     closeModal();
                 }
             });
-        });
+        }
+        
+        // Inicialización cuando el DOM está listo
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initApp);
+        } else {
+            initApp();
+        }
     </script>
 </body>
 </html>
