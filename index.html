@@ -364,7 +364,7 @@
                             </div>
                             
                             <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
-                                <h4 class="font-bold text-green-800 mb-2">� Video de Apoyo - Nivel 1</h4>
+                                <h4 class="font-bold text-green-800 mb-2">🎥 Video de Apoyo - Nivel 1</h4>
                                 <div class="video-container w-full mb-4" style="position: relative; padding-bottom: 56.25%; height: 0;">
                                     <iframe src="https://www.youtube.com/embed/lhjMYig0WGY" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" frameborder="0" allowfullscreen></iframe>
                                 </div>
@@ -373,7 +373,7 @@
                             <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
                                 <h4 class="font-bold text-green-800 mb-2">🔍 Imagen de Referencia - Nivel 1</h4>
                                 <div class="image-container w-full rounded flex items-center justify-center overflow-hidden" onclick="openModal(this)">
-                                    <img src="img/mapa.png"Imagen de Referencia Nivel 1" class="w-full object-contain">
+                                    <img src="img/mapa.png" alt="Imagen de Referencia Nivel 1" class="w-full object-contain">
                                     <div class="zoom-icon">🔍</div>
                                 </div>
                             </div>
@@ -837,6 +837,24 @@
         let currentSpeechTarget = null;
         let speechQueue = [];
         let isSpeaking = false;
+        let voicesLoaded = false;
+        let availableVoices = [];
+
+        // Cargar voces disponibles
+        function loadVoices() {
+            availableVoices = window.speechSynthesis.getVoices();
+            voicesLoaded = true;
+            console.log('Voces cargadas:', availableVoices.length);
+        }
+
+        // Escuchar cuando las voces estén disponibles
+        if (window.speechSynthesis) {
+            window.speechSynthesis.onvoiceschanged = loadVoices;
+            // Intentar cargar voces inmediatamente (para navegadores que ya las tienen cargadas)
+            loadVoices();
+        } else {
+            console.warn('La API de síntesis de voz no está disponible en este navegador');
+        }
 
         // Función para abrir modal de imagen
         function openModal(imageContainer) {
@@ -881,6 +899,13 @@
 
         // Función para iniciar síntesis de voz
         function startSpeech(targetId) {
+            // Verificar que la API esté disponible
+            if (!window.speechSynthesis) {
+                console.error('La API de síntesis de voz no está disponible');
+                alert('Tu navegador no soporta la funcionalidad de voz. Por favor usa Chrome, Edge o Safari.');
+                return;
+            }
+
             const control = document.querySelector(`[data-target="${targetId}"]`);
             const playBtn = control.querySelector('.play-btn');
             const pauseBtn = control.querySelector('.pause-btn');
@@ -902,11 +927,25 @@
             stopAllSpeech();
             
             const text = getTextContent(control);
-            if (!text) return;
+            if (!text) {
+                console.warn('No hay texto para leer en la sección:', targetId);
+                return;
+            }
             
             currentUtterance = new SpeechSynthesisUtterance(text);
             currentUtterance.lang = 'es-ES';
             currentUtterance.rate = parseFloat(rateInput.value);
+            
+            // Intentar seleccionar una voz en español específica
+            if (voicesLoaded && availableVoices.length > 0) {
+                const spanishVoice = availableVoices.find(voice => 
+                    voice.lang.startsWith('es') || voice.lang.includes('Spanish')
+                );
+                if (spanishVoice) {
+                    currentUtterance.voice = spanishVoice;
+                    console.log('Voz seleccionada:', spanishVoice.name);
+                }
+            }
             
             currentUtterance.onstart = () => {
                 playBtn.disabled = true;
@@ -914,6 +953,7 @@
                 stopBtn.disabled = false;
                 isSpeaking = true;
                 currentSpeechTarget = targetId;
+                console.log('Iniciando síntesis de voz para:', targetId);
             };
             
             currentUtterance.onend = () => {
@@ -922,15 +962,21 @@
                 stopBtn.disabled = true;
                 isSpeaking = false;
                 currentSpeechTarget = null;
+                console.log('Síntesis de voz finalizada');
             };
             
             currentUtterance.onerror = (event) => {
-                console.error('Error en síntesis de voz:', event);
+                console.error('Error en síntesis de voz:', event.error);
                 playBtn.disabled = false;
                 pauseBtn.disabled = true;
                 stopBtn.disabled = true;
                 isSpeaking = false;
                 currentSpeechTarget = null;
+                
+                // Mostrar mensaje amigable al usuario
+                if (event.error === 'not-allowed') {
+                    alert('No se ha otorgado permiso para usar la voz. Por favor verifica los permisos de tu navegador.');
+                }
             };
             
             window.speechSynthesis.speak(currentUtterance);
