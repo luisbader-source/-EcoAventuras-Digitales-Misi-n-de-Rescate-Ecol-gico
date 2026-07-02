@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+6<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OVA: EcoAventuras Digitales - Misión de Rescate Ecológico</title>
+    <title>OVA: EcoAventuras  Digitales - Misión de Rescate Ecológico</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -881,24 +881,34 @@
         function getTextContent(element) {
             const selector = element.dataset.target;
             const targetElement = document.getElementById(selector);
-            if (!targetElement) return '';
+            if (!targetElement) {
+                console.error('No se encontró el elemento con ID:', selector);
+                return '';
+            }
             
             // Excluir elementos que no deben ser leídos
-            const excludeSelectors = 'button, .speech-controls, .progress-bar, .drop-zone, .visual-item, .filter-card, .step-card, .quiz-question select';
-            const textElements = targetElement.querySelectorAll('h1, h2, h3, h4, h5, h6, p, li, span:not(.zoom-icon):not(.step-number):not(.filter-number)');
+            const excludeSelectors = 'button, .speech-controls, .progress-bar, .drop-zone, .visual-item, .filter-card, .step-card, .quiz-question select, script, style, iframe';
+            const textElements = targetElement.querySelectorAll('h1, h2, h3, h4, h5, h6, p, li, span:not(.zoom-icon):not(.step-number):not(.filter-number):not(.mr-1)');
             
             let text = '';
             textElements.forEach(el => {
                 if (!el.closest(excludeSelectors)) {
-                    text += el.textContent + ' ';
+                    const content = el.textContent.trim();
+                    if (content) {
+                        text += content + ' ';
+                    }
                 }
             });
             
-            return text.trim();
+            const result = text.trim();
+            console.log('Texto extraído para', selector, ':', result.substring(0, 100) + '...');
+            return result;
         }
 
         // Función para iniciar síntesis de voz
         function startSpeech(targetId) {
+            console.log('startSpeech llamado con targetId:', targetId);
+            
             // Verificar que la API esté disponible
             if (!window.speechSynthesis) {
                 console.error('La API de síntesis de voz no está disponible');
@@ -907,14 +917,24 @@
             }
 
             const control = document.querySelector(`[data-target="${targetId}"]`);
+            console.log('Control encontrado:', control);
+            
+            if (!control) {
+                console.error('No se encontró el control con data-target:', targetId);
+                return;
+            }
+            
             const playBtn = control.querySelector('.play-btn');
             const pauseBtn = control.querySelector('.pause-btn');
             const stopBtn = control.querySelector('.stop-btn');
             const rateInput = control.querySelector('.speech-rate');
             
+            console.log('Botones encontrados:', { playBtn, pauseBtn, stopBtn, rateInput });
+            
             if (isSpeaking && currentSpeechTarget === targetId) {
                 // Reanudar si está pausado
                 if (window.speechSynthesis.paused) {
+                    console.log('Reanudando voz pausada');
                     window.speechSynthesis.resume();
                     playBtn.disabled = true;
                     pauseBtn.disabled = false;
@@ -927,8 +947,11 @@
             stopAllSpeech();
             
             const text = getTextContent(control);
+            console.log('Texto a leer:', text ? text.substring(0, 50) + '...' : 'vacío');
+            
             if (!text) {
                 console.warn('No hay texto para leer en la sección:', targetId);
+                alert('No hay contenido de texto para leer en esta sección.');
                 return;
             }
             
@@ -948,25 +971,25 @@
             }
             
             currentUtterance.onstart = () => {
+                console.log('onstart: Iniciando síntesis de voz');
                 playBtn.disabled = true;
                 pauseBtn.disabled = false;
                 stopBtn.disabled = false;
                 isSpeaking = true;
                 currentSpeechTarget = targetId;
-                console.log('Iniciando síntesis de voz para:', targetId);
             };
             
             currentUtterance.onend = () => {
+                console.log('onend: Síntesis de voz finalizada');
                 playBtn.disabled = false;
                 pauseBtn.disabled = true;
                 stopBtn.disabled = true;
                 isSpeaking = false;
                 currentSpeechTarget = null;
-                console.log('Síntesis de voz finalizada');
             };
             
             currentUtterance.onerror = (event) => {
-                console.error('Error en síntesis de voz:', event.error);
+                console.error('onerror: Error en síntesis de voz:', event.error);
                 playBtn.disabled = false;
                 pauseBtn.disabled = true;
                 stopBtn.disabled = true;
@@ -976,9 +999,12 @@
                 // Mostrar mensaje amigable al usuario
                 if (event.error === 'not-allowed') {
                     alert('No se ha otorgado permiso para usar la voz. Por favor verifica los permisos de tu navegador.');
+                } else {
+                    alert('Error al reproducir la voz: ' + event.error);
                 }
             };
             
+            console.log('Llamando a window.speechSynthesis.speak()');
             window.speechSynthesis.speak(currentUtterance);
         }
 
@@ -1102,9 +1128,16 @@
             
             // Event listeners para controles de voz
             document.querySelectorAll('.play-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const targetId = btn.closest('.speech-controls').dataset.target;
-                    startSpeech(targetId);
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const control = btn.closest('.speech-controls');
+                    const targetId = control ? control.dataset.target : null;
+                    console.log('Click en play-btn, targetId:', targetId);
+                    if (targetId) {
+                        startSpeech(targetId);
+                    } else {
+                        console.error('No se encontró data-target en el control');
+                    }
                 });
             });
             
