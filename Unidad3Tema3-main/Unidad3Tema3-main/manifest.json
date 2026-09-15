@@ -1,0 +1,53 @@
+{
+  "pageCount": 11,
+  "pages": [
+    {
+      "src": "./images/page-1-86a76bc6.png"
+    },
+    {
+      "src": "./images/page-2-c4b13029.png"
+    },
+    {
+      "src": "./images/page-3-da0978ca.png"
+    },
+    {
+      "src": "./images/page-4-23bd8f28.png"
+    },
+    {
+      "src": "./images/page-5-1cee87e6.png"
+    },
+    {
+      "src": "./images/page-6-9d1edd79.png"
+    },
+    {
+      "src": "./images/page-7-370e9570.png"
+    },
+    {
+      "src": "./images/page-8-971481e1.png"
+    },
+    {
+      "src": "./images/page-9-fd5518b2.png"
+    },
+    {
+      "src": "./images/page-10-d3b84502.png"
+    },
+    {
+      "src": "./images/page-11-dcf5b0df.png"
+    }
+  ],
+  "generatedAt": "2025-11-06T19:12:01.640Z",
+  "source": "Tema 3 - Unidad 3.pdf",
+  "integrity": {
+    "images/page-1-86a76bc6.png": "86a76bc6",
+    "images/page-2-c4b13029.png": "c4b13029",
+    "images/page-3-da0978ca.png": "da0978ca",
+    "images/page-4-23bd8f28.png": "23bd8f28",
+    "images/page-5-1cee87e6.png": "1cee87e6",
+    "images/page-6-9d1edd79.png": "9d1edd79",
+    "images/page-7-370e9570.png": "370e9570",
+    "images/page-8-971481e1.png": "971481e1",
+    "images/page-9-fd5518b2.png": "fd5518b2",
+    "images/page-10-d3b84502.png": "d3b84502",
+    "images/page-11-dcf5b0df.png": "dcf5b0df"
+  }
+}

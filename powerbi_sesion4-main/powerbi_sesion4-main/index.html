@@ -1,0 +1,1708 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OVA: Publicación y Compartición de Informes - Power BI Sesión 4</title>
+    <script src="https://cdn.tailwindcss.com?_ver=3.4.1"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+        .sidebar-link {
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+        .sidebar-link.active, .sidebar-link:hover {
+            background-color: #e6f4ea;
+            color: #166534;
+            border-left-color: #f2c94c;
+        }
+        .content-pane {
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        .content-pane.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .step-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .step-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .step-card.selected {
+            border-color: #f2c94c;
+            background-color: #fefce8;
+        }
+        .step-card.correct {
+            border-color: #22c55e;
+            background-color: #dcfce7;
+        }
+        .step-card.incorrect {
+            border-color: #ef4444;
+            background-color: #fef2f2;
+        }
+        .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #e5e7eb;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #f2c94c, #f59e0b);
+            transition: width 0.3s ease;
+        }
+        .visual-item {
+            transition: all 0.3s ease;
+            cursor: grab;
+        }
+        .visual-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .visual-item.dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+        }
+        .drop-zone {
+            background: #f9fafb;
+            border: 2px dashed #d1d5db;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 150px;
+            margin: 10px 0;
+            transition: all 0.3s;
+        }
+        .drop-zone.drag-over {
+            background: #fef3c7;
+        }
+        .drop-zone.correct {
+            background: #dcfce7;
+            border-color: #22c55e;
+        }
+        .drop-zone.incorrect {
+            background: #fef2f2;
+            border-color: #ef4444;
+        }
+        .image-container {
+            position: relative;
+            cursor: pointer;
+        }
+        .zoom-icon {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .image-container:hover .zoom-icon {
+            opacity: 1;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            animation: fadeIn 0.3s ease;
+        }
+        .modal-content {
+            position: relative;
+            margin: auto;
+            padding: 20px;
+            width: 90%;
+            max-width: 1000px;
+            max-height: 90vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .modal-content img {
+            max-width: 100%;
+            max-height: 90vh;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+        .close-modal {
+            position: absolute;
+            top: -20px;
+            right: -20px;
+            background-color: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50">
+
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white shadow-lg flex-shrink-0 hidden md:flex md:flex-col">
+            <div class="p-4">
+                <div style="width: 150px; height: 150px;" class="p-2 mx-auto flex items-center justify-center bg-white rounded-full shadow-lg border-2 border-yellow-500 transition-shadow duration-300 hover:shadow-yellow-400">
+                    <img src="img/logo.png" alt="Logo OVA" class="w-5/6 h-5/6 object-contain" loading="lazy">
+                </div>
+            </div>
+            <nav class="mt-6 flex-1">
+                <a href="#" class="sidebar-link active flex items-center py-3 px-6 font-medium text-slate-700" data-target="introduccion"><span class="mr-3 text-xl">🚀</span> Introducción</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="objetivos"><span class="mr-3 text-xl">🎯</span> Objetivos</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="contenido"><span class="mr-3 text-xl">📚</span> Contenido</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="actividades"><span class="mr-3 text-xl">✍️</span> Actividades</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="evaluacion"><span class="mr-3 text-xl">✔️</span> Evaluación</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="recursos"><span class="mr-3 text-xl">📖</span> Recursos</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="bibliografia"><span class="mr-3 text-xl">📚</span> Bibliografía</a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-4 sm:p-6 md:p-10 bg-gray-50">
+            <!-- Mobile Header -->
+            <div class="md:hidden mb-6 flex flex-col items-center">
+                <div style="width: 100px; height: 100px;" class="p-2 flex items-center justify-center bg-white rounded-full shadow-lg transition-shadow duration-300 hover:shadow-yellow-400 mb-2">
+                    <img src="img/logo.png" alt="Logo OVA" class="w-5/6 h-5/6 object-contain" loading="lazy">
+                </div>
+                 <select id="mobile-nav" class="w-full mt-2 p-2 border rounded-md bg-white shadow-sm">
+                    <option value="introduccion">🚀 Introducción</option>
+                    <option value="objetivos">🎯 Objetivos</option>
+                    <option value="contenido">📚 Contenido</option>
+                    <option value="actividades">✍️ Actividades Prácticas</option>
+                    <option value="evaluacion">✔️ Evaluación</option>
+                    <option value="recursos">📖 Recursos</option>
+                    <option value="bibliografia">📚 Bibliografía</option>
+                </select>
+            </div>
+
+          <!-- Introducción -->
+            <div id="introduccion" class="content-pane active">
+                <h2 class="text-2xl sm:text-3xl font-bold text-yellow-800 mb-4">Publicación y Compartición de Informes en Power BI</h2>
+                <div class="mt-4 mb-6 p-4 bg-white border border-yellow-300 rounded-lg shadow-sm flex flex-col items-center">
+                    <div class="image-container w-full h-32 sm:h-48 md:h-64 xl:h-80 rounded flex items-center justify-center overflow-hidden" onclick="openModal(this)">
+                        <img src="img/WhatsApp Image 2026-04-09 at 12.38.27 PM (1).jpeg" alt="Sesión 4 - Publicación y Compartición de Informes" class="w-full h-full object-cover">
+                        <div class="zoom-icon">🔍</div>
+                    </div>
+                </div>
+                <p class="text-lg text-slate-700 leading-relaxed mb-4">
+                    Bienvenido a la <span class="font-bold text-yellow-700">Sesión 4</span> del curso de Power BI impartido por CINTIA Unicórdoba. En esta sesión final nos enfocaremos en la <strong>publicación y compartición de informes</strong>, <strong>seguridad a nivel de fila (RLS)</strong> y <strong>distribución masiva</strong> a través de aplicaciones Power BI. 🚀✨
+                </p>
+                <p class="text-lg text-slate-700 leading-relaxed mb-4">
+                    Aprenderemos a utilizar Power BI Service, configurar workspaces, implementar seguridad RLS, crear aplicaciones para distribución masiva, configurar alertas y suscripciones, y utilizar Data Gateway para actualización automática. El contenido está estructurado en 7 módulos que te convertirán en un experto en la publicación y compartición de informes.
+                </p>
+                <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg mb-4">
+                    <p class="font-bold text-blue-800 mb-2">⏱ Duración: 1 hora | Nivel: Intermedio</p>
+                    <p class="text-sm text-blue-700">6 bloques temáticos · Publicación completa de extremo a extremo</p>
+                </div>
+            <div class="speech-controls mb-4 p-3 bg-yellow-100 rounded-lg flex items-center flex-wrap gap-2" data-target="introduccion">
+    <button class="play-btn bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+        <span class="mr-1">▶️</span> Leer
+    </button>
+    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+        <span class="mr-1">⏸️</span> Pausar
+    </button>
+    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+        <span class="mr-1">⏹️</span> Detener
+    </button>
+    <div class="flex items-center ml-2">
+        <label for="speech-rate-introduccion" class="text-sm text-yellow-800 mr-2">Velocidad:</label>
+        <input type="range" class="speech-rate" id="speech-rate-introduccion" min="0.5" max="2" step="0.1" value="1" class="w-24">
+    </div>
+</div>
+                <div class="mt-2 p-2 bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+                    <strong>💡 Atajos de teclado:</strong> Presiona <kbd class="bg-white px-2 py-1 rounded border">Espacio</kbd> para reproducir/pausar, <kbd class="bg-white px-2 py-1 rounded border">Tab</kbd> para detener
+                </div>
+            </div>
+
+            <!-- Objetivos -->
+            <div id="objetivos" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-yellow-800 mb-6">Objetivos de aprendizaje</h2>
+                <div class="speech-controls mb-4 p-3 bg-yellow-100 rounded-lg flex items-center flex-wrap gap-2" data-target="objetivos">
+                    <button class="play-btn bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-objetivos" class="text-sm text-yellow-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-objetivos" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                <ul class="space-y-4">
+                    <li class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                        <span class="text-yellow-700 mr-3 text-2xl">🌐</span>
+                        <span>Diferenciar entre Power BI Desktop y Power BI Service, comprendiendo sus roles complementarios en el flujo de trabajo.</span>
+                    </li>
+                    <li class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                        <span class="text-yellow-700 mr-3 text-2xl">📤</span>
+                        <span>Publicar informes desde Desktop a Service y gestionar workspaces para organizar el contenido.</span>
+                    </li>
+                    <li class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                        <span class="text-yellow-700 mr-3 text-2xl">🔐</span>
+                        <span>Configurar seguridad a nivel de fila (RLS) para restringir el acceso a datos según el usuario autenticado.</span>
+                    </li>
+                    <li class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                        <span class="text-yellow-700 mr-3 text-2xl">👥</span>
+                        <span>Compartir informes con permisos y roles, y crear aplicaciones Power BI para distribución masiva.</span>
+                    </li>
+                    <li class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                        <span class="text-yellow-700 mr-3 text-2xl">🔔</span>
+                        <span>Configurar alertas de datos y suscripciones a reportes para mantenerse informado automáticamente.</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Contenido -->
+            <div id="contenido" class="content-pane">
+                <div class="speech-controls mb-4 p-3 bg-yellow-100 rounded-lg flex items-center flex-wrap gap-2" data-target="contenido">
+                    <button class="play-btn bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-contenido" class="text-sm text-yellow-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-contenido" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                
+                <div class="w-full max-w-8xl mx-auto">
+                    <!-- Módulo 01: Power BI Service vs Desktop -->
+                    <div class="mb-4">
+                        <button type="button" class="w-full flex justify-between items-center p-4 bg-yellow-100 border border-yellow-300 rounded-t-lg focus:outline-none font-bold text-yellow-800 text-lg accordion-btn mb-2" data-target="#panel-service">
+                            MÓDULO 01: Power BI Service vs Power BI Desktop<span class="ml-2">➕</span>
+                        </button>
+                    </div>
+                    <div id="panel-service" class="accordion-panel hidden bg-white border border-t-0 border-yellow-300 rounded-b-lg p-4 mb-6">
+                        <div class="space-y-8 text-slate-700 leading-relaxed">
+                            <div>
+                                <h4 class="font-bold text-yellow-800 mb-2">🌐 Dos herramientas complementarias</h4>
+                                <p class="mb-4">Power BI Desktop y Power BI Service son dos herramientas que trabajan juntas en el flujo de trabajo de Business Intelligence, cada una con su rol específico.</p>
+                                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg mb-4">
+                                    <p class="font-bold text-yellow-800 mb-2">💡 Concepto clave:</p>
+                                    <p class="text-sm">Desktop es para crear y modelar; Service es para publicar, compartir y colaborar.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-blue-800 mb-2">📊 Comparación: Power BI Desktop vs Service</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div class="bg-white p-4 rounded border-l-4 border-blue-300">
+                                        <h5 class="font-semibold text-blue-700 mb-2">💻 Power BI Desktop</h5>
+                                        <ul class="text-sm space-y-1">
+                                            <li>• Aplicación Windows (gratuita)</li>
+                                            <li>• Modelado y transformación de datos</li>
+                                            <li>• Crear visualizaciones y reportes</li>
+                                            <li>• Escribir medidas DAX</li>
+                                            <li>• Archivo local .pbix</li>
+                                            <li>• SIN colaboración en tiempo real</li>
+                                        </ul>
+                                    </div>
+                                    <div class="bg-white p-4 rounded border-l-4 border-green-300">
+                                        <h5 class="font-semibold text-green-700 mb-2">☁️ Power BI Service</h5>
+                                        <ul class="text-sm space-y-1">
+                                            <li>• Plataforma web en la nube (app.powerbi.com)</li>
+                                            <li>• Publicar, compartir y colaborar</li>
+                                            <li>• Dashboards interactivos en el navegador</li>
+                                            <li>• Permisos, roles y seguridad RLS</li>
+                                            <li>• Aplicaciones, alertas y suscripciones</li>
+                                            <li>• Acceso móvil (iOS / Android)</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Módulo 02: Publicación y Workspaces -->
+                    <div class="mb-4">
+                        <button type="button" class="w-full flex justify-between items-start p-4 bg-yellow-100 border border-yellow-300 rounded-t-lg focus:outline-none font-bold text-yellow-800 text-lg accordion-btn mb-2 text-left" data-target="#panel-publicacion">
+                            MÓDULO 02: Publicación y Workspaces<span class="ml-2">➕</span>
+                        </button>
+                    </div>
+                    <div id="panel-publicacion" class="accordion-panel hidden bg-white border border-t-0 border-yellow-300 rounded-b-lg p-4 mb-6">
+                        <div class="text-slate-700 leading-relaxed space-y-6">
+                            <h4 class="font-bold text-yellow-800 mb-2">📤 Publicar desde Desktop a Service</h4>
+                            <p class="mb-4">El proceso de publicación lleva tu reporte desde el archivo local .pbix a la nube de Power BI Service.</p>
+                            
+                            <div class="bg-orange-50 border-l-4 border-orange-400 p-4 rounded-r-lg mb-4">
+                                <p class="font-bold text-orange-800 mb-2">📋 Pasos para publicar:</p>
+                                <ol class="text-sm space-y-1 list-decimal pl-5">
+                                    <li>Abre tu reporte en Power BI Desktop</li>
+                                    <li>Clic en el botón "Publicar" en la cinta de opciones</li>
+                                    <li>Selecciona el workspace de destino</li>
+                                    <li>El reporte se publica en app.powerbi.com</li>
+                                    <li>El dataset y el reporte viajan juntos al Service</li>
+                                </ol>
+                            </div>
+                            
+                            <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-green-800 mb-2">🗂️ Workspaces: Organización del Contenido</h4>
+                                <p class="mb-3">Los workspaces son contenedores para organizar reportes, dashboards y datasets en Power BI Service.</p>
+                                
+                                <div class="bg-white p-4 rounded border-l-4 border-green-300 mb-3">
+                                    <h5 class="font-semibold text-green-700 mb-2">📌 Crear un Workspace:</h5>
+                                    <ol class="text-sm space-y-1 list-decimal pl-5">
+                                        <li>En Power BI Service, navega a "Workspaces"</li>
+                                        <li>Clic en "Crear workspace"</li>
+                                        <li>Asigna un nombre descriptivo</li>
+                                        <li>Agrega miembros con roles apropiados</li>
+                                        <li>Organiza contenido por departamento o proyecto</li>
+                                    </ol>
+                                </div>
+                                
+                                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded-r-lg">
+                                    <p class="text-sm"><strong>💡 Nota importante:</strong> Un workspace bien organizado facilita la colaboración y el mantenimiento de los reportes a largo plazo.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Módulo 03: Compartir y Permisos -->
+                    <div class="mb-4">
+                        <button type="button" class="w-full flex justify-between items-start p-4 bg-yellow-100 border border-yellow-300 rounded-t-lg focus:outline-none font-bold text-yellow-800 text-lg accordion-btn mb-2 text-left" data-target="#panel-compartir">
+                            MÓDULO 03: Compartir y Permisos<span class="ml-2">➕</span>
+                        </button>
+                    </div>
+                    <div id="panel-compartir" class="accordion-panel hidden bg-white border border-t-0 border-yellow-300 rounded-b-lg p-4 mb-6">
+                        <div class="text-slate-700 leading-relaxed space-y-6">
+                            <h4 class="font-bold text-yellow-800 mb-2">👥 Roles en un Workspace</h4>
+                            <p class="mb-4">Los roles determinan qué pueden hacer los usuarios dentro de un workspace de Power BI Service.</p>
+                            
+                            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 p-4 rounded-r-lg mb-6">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div class="bg-white p-3 rounded border-l-4 border-blue-300">
+                                        <h5 class="font-semibold text-blue-700">👑 Administrador</h5>
+                                        <p class="text-sm">Control total: editar, publicar, compartir, gestionar miembros y permisos</p>
+                                    </div>
+                                    <div class="bg-white p-3 rounded border-l-4 border-green-300">
+                                        <h5 class="font-semibold text-green-700">👤 Miembro</h5>
+                                        <p class="text-sm">Puede publicar, editar y compartir contenido dentro del workspace</p>
+                                    </div>
+                                    <div class="bg-white p-3 rounded border-l-4 border-purple-300">
+                                        <h5 class="font-semibold text-purple-700">🤝 Colaborador</h5>
+                                        <p class="text-sm">Puede editar y compartir, pero no puede publicar nuevo contenido</p>
+                                    </div>
+                                    <div class="bg-white p-3 rounded border-l-4 border-orange-300">
+                                        <h5 class="font-semibold text-orange-700">👁️ Visor</h5>
+                                        <p class="text-sm">Solo puede ver el contenido, no puede editar ni compartir</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-green-800 mb-2">🔐 Compartir Reportes</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <h5 class="font-semibold text-green-700 mb-2">📋 Opciones de compartición:</h5>
+                                        <ul class="text-sm space-y-1">
+                                            <li><strong>Compartir directamente:</strong> Enviar enlace a usuarios específicos</li>
+                                            <li><strong>Publicar en workspace:</strong> Disponible para miembros del workspace</li>
+                                            <li><strong>Crear aplicación:</strong> Distribución masiva a grupos grandes</li>
+                                            <li><strong>Embed:</strong> Insertar en SharePoint, Teams o sitios web</li>
+                                        </ul>
+                                    </div>
+                                    <div>
+                                        <h5 class="font-semibold text-green-700 mb-2">⚠️ Consideraciones de seguridad:</h5>
+                                        <ul class="text-sm space-y-1">
+                                            <li>• Verifica permisos antes de compartir</li>
+                                            <li>• Nunca publiques en 'Todos' sin aprobación</li>
+                                            <li>• Usa RLS si hay datos sensibles</li>
+                                            <li>• Revisa destinatarios del enlace</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Módulo 04: Seguridad RLS -->
+                    <div class="mb-4">
+                        <button type="button" class="w-full flex justify-between items-start p-4 bg-yellow-100 border border-yellow-300 rounded-t-lg focus:outline-none font-bold text-yellow-800 text-lg accordion-btn mb-2 text-left" data-target="#panel-rls">
+                            MÓDULO 04: Seguridad a Nivel de Fila (RLS)<span class="ml-2">➕</span>
+                        </button>
+                    </div>
+                    <div id="panel-rls" class="accordion-panel hidden bg-white border border-t-0 border-yellow-300 rounded-b-lg p-4 mb-6">
+                        <div class="text-slate-700 leading-relaxed space-y-6">
+                            <h4 class="font-bold text-yellow-800 mb-2">🔒 Row-Level Security (RLS)</h4>
+                            <p class="mb-4">RLS restringe el acceso a filas de datos según el usuario autenticado. Cada persona ve solo la información correspondiente a su dependencia, sede o rol, sin necesidad de crear múltiples reportes.</p>
+                            
+                            <div class="bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg mb-4">
+                                <p class="font-bold text-red-800 mb-2">⚠️ Importante:</p>
+                                <p class="text-sm">RLS se configura en Power BI Desktop y viaja con el .pbix al Service. Los usuarios se asignan a roles en el Service.</p>
+                            </div>
+                            
+                            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg mb-4">
+                                <h4 class="font-bold text-blue-800 mb-2">⚙️ Configurar RLS en Power BI Desktop</h4>
+                                <div class="space-y-3">
+                                    <div class="bg-white p-3 rounded border-l-4 border-blue-300">
+                                        <h5 class="font-semibold text-blue-700">1️⃣ Abrir Gestión de Roles</h5>
+                                        <p class="text-sm">Modelado → Administrar roles → Nuevo rol</p>
+                                    </div>
+                                    <div class="bg-white p-3 rounded border-l-4 border-green-300">
+                                        <h5 class="font-semibold text-green-700">2️⃣ Nombrar el rol</h5>
+                                        <p class="text-sm">Ej: Rol_Ingeniería · Rol_Bienestar · Rol_RRHH</p>
+                                    </div>
+                                    <div class="bg-white p-3 rounded border-l-4 border-purple-300">
+                                        <h5 class="font-semibold text-purple-700">3️⃣ Definir filtro DAX</h5>
+                                        <p class="text-sm">[Dependencia] = USERPRINCIPALNAME() o [Dependencia] = "Ingeniería"</p>
+                                    </div>
+                                    <div class="bg-white p-3 rounded border-l-4 border-orange-300">
+                                        <h5 class="font-semibold text-orange-700">4️⃣ Guardar y publicar</h5>
+                                        <p class="text-sm">Publicar a Service → el rol viaja con el .pbix</p>
+                                    </div>
+                                    <div class="bg-white p-3 rounded border-l-4 border-red-300">
+                                        <h5 class="font-semibold text-red-700">5️⃣ Asignar usuarios al rol</h5>
+                                        <p class="text-sm">Service → Dataset → Seguridad → Agregar email al rol</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-green-800 mb-2">📊 Ejemplo Unicordoba</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div class="bg-white p-3 rounded">
+                                        <p class="text-sm"><strong>Decano de Ingeniería:</strong> Ve solo datos de Ingeniería</p>
+                                    </div>
+                                    <div class="bg-white p-3 rounded">
+                                        <p class="text-sm"><strong>Bienestar Universitario:</strong> Ve solo su dependencia</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Módulo 05: Aplicaciones Power BI -->
+                    <div class="mb-4">
+                        <button type="button" class="w-full flex justify-between items-start p-4 bg-yellow-100 border border-yellow-300 rounded-t-lg focus:outline-none font-bold text-yellow-800 text-lg accordion-btn mb-2 text-left" data-target="#panel-apps">
+                            MÓDULO 05: Aplicaciones Power BI y Distribución Masiva<span class="ml-2">➕</span>
+                        </button>
+                    </div>
+                    <div id="panel-apps" class="accordion-panel hidden bg-white border border-t-0 border-yellow-300 rounded-b-lg p-4 mb-6">
+                        <div class="text-slate-700 leading-relaxed space-y-6">
+                            <h4 class="font-bold text-yellow-800 mb-2">📱 Aplicaciones Power BI</h4>
+                            <p class="mb-4">Las aplicaciones Power BI permiten distribuir reportes a grupos grandes de usuarios de manera controlada y personalizada.</p>
+                            
+                            <div class="bg-orange-50 border-l-4 border-orange-400 p-4 rounded-r-lg mb-4">
+                                <p class="font-bold text-orange-800 mb-2">💡 Ventajas de las Apps:</p>
+                                <ul class="text-sm space-y-1">
+                                    <li>• Distribución masiva a grupos de seguridad o listas de distribución</li>
+                                    <li>• Navegación personalizada para los usuarios finales</li>
+                                    <li>• Branding y personalización de la interfaz</li>
+                                    <li>• Control centralizado de accesos y permisos</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-blue-800 mb-2">⚙️ Crear una Aplicación</h4>
+                                <div class="space-y-3">
+                                    <div class="bg-white p-3 rounded border-l-4 border-blue-300">
+                                        <h5 class="font-semibold text-blue-700">1️⃣ Seleccionar contenido</h5>
+                                        <p class="text-sm">Elige los reportes, dashboards y datasets del workspace</p>
+                                    </div>
+                                    <div class="bg-white p-3 rounded border-l-4 border-green-300">
+                                        <h5 class="font-semibold text-green-700">2️⃣ Configurar navegación</h5>
+                                        <p class="text-sm">Personaliza el orden y la estructura de navegación</p>
+                                    </div>
+                                    <div class="bg-white p-3 rounded border-l-4 border-purple-300">
+                                        <h5 class="font-semibold text-purple-700">3️⃣ Definir accesos</h5>
+                                        <p class="text-sm">Asigna grupos de seguridad o listas de distribución</p>
+                                    </div>
+                                    <div class="bg-white p-3 rounded border-l-4 border-orange-300">
+                                        <h5 class="font-semibold text-orange-700">4️⃣ Publicar la App</h5>
+                                        <p class="text-sm">Los usuarios reciben notificación y acceso automático</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Módulo 06: Alertas y Suscripciones -->
+                    <div class="mb-4">
+                        <button type="button" class="w-full flex justify-between items-start p-4 bg-yellow-100 border border-yellow-300 rounded-t-lg focus:outline-none font-bold text-yellow-800 text-lg accordion-btn mb-2 text-left" data-target="#panel-alertas">
+                            MÓDULO 06: Alertas de Datos y Suscripciones<span class="ml-2">➕</span>
+                        </button>
+                    </div>
+                    <div id="panel-alertas" class="accordion-panel hidden bg-white border border-t-0 border-yellow-300 rounded-b-lg p-4 mb-6">
+                        <div class="text-slate-700 leading-relaxed space-y-6">
+                            <h4 class="font-bold text-yellow-800 mb-2">🔔 Alertas de Datos y Suscripciones</h4>
+                            <p class="mb-4">Mantente informado automáticamente sin abrir Power BI. Las alertas y suscripciones te notifican cuando ocurren eventos importantes en tus datos.</p>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+                                    <h5 class="font-bold text-blue-800 mb-2">🚨 Alertas de Datos</h5>
+                                    <p class="text-sm mb-2">Recibe una notificación cuando un KPI supera (o baja de) un umbral definido.</p>
+                                    <ul class="text-sm space-y-1">
+                                        <li>• Solo funcionan en visuales tipo Tarjeta, KPI o Medidor</li>
+                                        <li>• Dashboard en Service → … → Administrar alertas</li>
+                                        <li>• Define: condición + umbral + frecuencia</li>
+                                        <li>• Notificación vía email y Centro de notificaciones</li>
+                                    </ul>
+                                </div>
+                                
+                                <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                    <h5 class="font-bold text-green-800 mb-2">📧 Suscripciones a Reportes</h5>
+                                    <p class="text-sm mb-2">Recibe capturas de pantalla de un reporte por email según una programación.</p>
+                                    <ul class="text-sm space-y-1">
+                                        <li>• Abre el reporte en Power BI Service</li>
+                                        <li>• Clic en Suscribirse → Agregar suscripción</li>
+                                        <li>• Define frecuencia: diaria, semanal, horaria</li>
+                                        <li>• Agrega destinatarios (email)</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded-r-lg">
+                                <p class="text-sm"><strong>💡 Ejemplos prácticos:</strong> Alerta si Activos < 350 → email automático al jefe de RRHH. Reporte semanal de matrículas cada lunes 7am a 3 decanos.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Módulo 07: Data Gateway -->
+                    <div class="mb-4">
+                        <button type="button" class="w-full flex justify-between items-start p-4 bg-yellow-100 border border-yellow-300 rounded-t-lg focus:outline-none font-bold text-yellow-800 text-lg accordion-btn mb-2 text-left" data-target="#panel-gateway">
+                            MÓDULO EXTRA: Data Gateway: Actualización Automática<span class="ml-2">➕</span>
+                        </button>
+                    </div>
+                    <div id="panel-gateway" class="accordion-panel hidden bg-white border border-t-0 border-yellow-300 rounded-b-lg p-4 mb-6">
+                        <div class="text-slate-700 leading-relaxed space-y-6">
+                            <h4 class="font-bold text-yellow-800 mb-2">🔄 Data Gateway: Conexión On-Premise</h4>
+                            <p class="mb-4">Data Gateway conecta el Power BI Service en la nube con tus bases de datos on-premise, permitiendo actualizaciones automáticas de datos.</p>
+                            
+                            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg mb-4">
+                                <h4 class="font-bold text-blue-800 mb-2">🏗️ Arquitectura del Gateway</h4>
+                                <div class="bg-white p-4 rounded">
+                                    <div class="flex flex-wrap justify-center items-center gap-2 text-sm">
+                                        <div class="bg-blue-100 p-2 rounded">Base de datos On-Premise</div>
+                                        <span>→</span>
+                                        <div class="bg-green-100 p-2 rounded">Power BI Gateway</div>
+                                        <span>→</span>
+                                        <div class="bg-purple-100 p-2 rounded">Power BI Service</div>
+                                        <span>→</span>
+                                        <div class="bg-orange-100 p-2 rounded">Usuarios</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-green-800 mb-2">⚙️ Configurar Gateway en 4 pasos</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div class="bg-white p-3 rounded border-l-4 border-green-300">
+                                        <h5 class="font-semibold text-green-700">1️⃣ Descargar e instalar</h5>
+                                        <p class="text-sm">powerbi.microsoft.com → Descargar Gateway → instalar en servidor con acceso a BD local</p>
+                                    </div>
+                                    <div class="bg-white p-3 rounded border-l-4 border-blue-300">
+                                        <h5 class="font-semibold text-blue-700">2️⃣ Registrar en Service</h5>
+                                        <p class="text-sm">Iniciar sesión con cuenta organizacional → el gateway queda registrado en el tenant</p>
+                                    </div>
+                                    <div class="bg-white p-3 rounded border-l-4 border-purple-300">
+                                        <h5 class="font-semibold text-purple-700">3️⃣ Agregar fuente de datos</h5>
+                                        <p class="text-sm">Service → Configuración → Gateways → Agregar fuente de datos → ingresar credenciales BD</p>
+                                    </div>
+                                    <div class="bg-white p-3 rounded border-l-4 border-orange-300">
+                                        <h5 class="font-semibold text-orange-700">4️⃣ Programar actualización</h5>
+                                        <p class="text-sm">Dataset → Programar actualización → definir frecuencia (diaria, cada hora, etc.)</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actividades Prácticas -->
+            <div id="actividades" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-yellow-800 mb-6">Actividades prácticas</h2>
+                <div class="speech-controls mb-4 p-3 bg-yellow-100 rounded-lg flex items-center flex-wrap gap-2" data-target="actividades">
+                    <button class="play-btn bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-actividades" class="text-sm text-yellow-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-actividades" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                
+                <div class="space-y-8">
+                    <!-- Actividad 1: Arrastrar y Soltar - Roles en Workspace -->
+                    <div class="bg-white border-l-4 border-blue-500 rounded-lg shadow-sm p-6">
+                        <h3 class="text-xl font-bold text-blue-700 mb-2">👥 Actividad 1: Asigna Permisos a Roles</h3>
+                        <p class="mb-4"><span class="font-semibold">Instrucciones:</span> Arrastra cada permiso al rol de workspace que le corresponde.</p>
+                        
+                        <div class="mb-6">
+                            <div class="flex justify-between text-sm text-slate-600 mb-2">
+                                <span>Progreso</span>
+                                <span id="progress-text-1">0/8 asociaciones</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progress-fill-1" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Permisos -->
+                            <div>
+                                <h4 class="font-semibold text-slate-700 mb-3">📋 Permisos</h4>
+                                <div class="space-y-2">
+                                    <div class="visual-item bg-yellow-50 border-2 border-yellow-300 rounded-lg p-3 cursor-move" draggable="true" data-type="editar-publicar">
+                                        <div class="flex items-center">
+                                            <span class="text-lg mr-2">✏️</span>
+                                            <span class="font-medium">Editar y publicar contenido</span>
+                                        </div>
+                                    </div>
+                                    <div class="visual-item bg-yellow-50 border-2 border-yellow-300 rounded-lg p-3 cursor-move" draggable="true" data-type="gestionar-miembros">
+                                        <div class="flex items-center">
+                                            <span class="text-lg mr-2">👑</span>
+                                            <span class="font-medium">Gestionar miembros y permisos</span>
+                                        </div>
+                                    </div>
+                                    <div class="visual-item bg-yellow-50 border-2 border-yellow-300 rounded-lg p-3 cursor-move" draggable="true" data-type="compartir">
+                                        <div class="flex items-center">
+                                            <span class="text-lg mr-2">🔗</span>
+                                            <span class="font-medium">Compartir reportes</span>
+                                        </div>
+                                    </div>
+                                    <div class="visual-item bg-yellow-50 border-2 border-yellow-300 rounded-lg p-3 cursor-move" draggable="true" data-type="solo-ver">
+                                        <div class="flex items-center">
+                                            <span class="text-lg mr-2">👁️</span>
+                                            <span class="font-medium">Solo ver contenido</span>
+                                        </div>
+                                    </div>
+                                    <div class="visual-item bg-yellow-50 border-2 border-yellow-300 rounded-lg p-3 cursor-move" draggable="true" data-type="editar-no-publicar">
+                                        <div class="flex items-center">
+                                            <span class="text-lg mr-2">📝</span>
+                                            <span class="font-medium">Editar pero no publicar</span>
+                                        </div>
+                                    </div>
+                                    <div class="visual-item bg-yellow-50 border-2 border-yellow-300 rounded-lg p-3 cursor-move" draggable="true" data-type="control-total">
+                                        <div class="flex items-center">
+                                            <span class="text-lg mr-2">🎛️</span>
+                                            <span class="font-medium">Control total del workspace</span>
+                                        </div>
+                                    </div>
+                                    <div class="visual-item bg-yellow-50 border-2 border-yellow-300 rounded-lg p-3 cursor-move" draggable="true" data-type="no-editar">
+                                        <div class="flex items-center">
+                                            <span class="text-lg mr-2">🚫</span>
+                                            <span class="font-medium">No editar ni compartir</span>
+                                        </div>
+                                    </div>
+                                    <div class="visual-item bg-yellow-50 border-2 border-yellow-300 rounded-lg p-3 cursor-move" draggable="true" data-type="editar-compartir">
+                                        <div class="flex items-center">
+                                            <span class="text-lg mr-2">🤝</span>
+                                            <span class="font-medium">Editar y compartir</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Roles -->
+                            <div>
+                                <h4 class="font-semibold text-slate-700 mb-3">🎭 Roles de Workspace</h4>
+                                <div class="space-y-2">
+                                    <div class="drop-zone bg-blue-50 border-2 border-dashed border-blue-300 rounded-lg p-3 min-h-[60px]" data-accept="control-total">
+                                        <div class="text-center text-slate-600">
+                                            <span class="text-lg">👑</span>
+                                            <p class="font-medium">Administrador</p>
+                                        </div>
+                                    </div>
+                                    <div class="drop-zone bg-green-50 border-2 border-dashed border-green-300 rounded-lg p-3 min-h-[60px]" data-accept="editar-publicar">
+                                        <div class="text-center text-slate-600">
+                                            <span class="text-lg">👤</span>
+                                            <p class="font-medium">Miembro</p>
+                                        </div>
+                                    </div>
+                                    <div class="drop-zone bg-purple-50 border-2 border-dashed border-purple-300 rounded-lg p-3 min-h-[60px]" data-accept="editar-compartir">
+                                        <div class="text-center text-slate-600">
+                                            <span class="text-lg">🤝</span>
+                                            <p class="font-medium">Colaborador</p>
+                                        </div>
+                                    </div>
+                                    <div class="drop-zone bg-orange-50 border-2 border-dashed border-orange-300 rounded-lg p-3 min-h-[60px]" data-accept="solo-ver">
+                                        <div class="text-center text-slate-600">
+                                            <span class="text-lg">👁️</span>
+                                            <p class="font-medium">Visor</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 p-3 bg-green-50 rounded-lg hidden" id="feedback-1">
+                            <p class="text-green-700 font-medium">✅ ¡Excelente! Has asociado correctamente todos los permisos con sus roles correspondientes.</p>
+                        </div>
+                    </div>
+
+                    <!-- Actividad 2: Ordenar Pasos de RLS -->
+                    <div class="bg-white border-l-4 border-green-500 rounded-lg shadow-sm p-6">
+                        <h3 class="text-xl font-bold text-green-700 mb-2">🔒 Actividad 2: Ordena los Pasos de Configuración RLS</h3>
+                        <p class="mb-4"><span class="font-semibold">Instrucciones:</span> Ordena los pasos para configurar Seguridad a Nivel de Fila (RLS) en el orden correcto.</p>
+                        
+                        <div class="mb-6">
+                            <div class="flex justify-between text-sm text-slate-600 mb-2">
+                                <span>Progreso</span>
+                                <span id="progress-text-2">0/5 pasos</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progress-fill-2" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <div id="rls-simulator" class="space-y-3">
+                            <div class="filter-card border-2 border-slate-200 rounded-lg p-4 cursor-move" draggable="true" data-filter="asignar-usuarios" data-correct-order="5">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <div class="filter-number bg-slate-200 text-slate-600 w-8 h-8 rounded-full flex items-center justify-center font-bold">?</div>
+                                        <div>
+                                            <h4 class="font-semibold text-slate-800">Asignar usuarios al rol</h4>
+                                            <p class="text-sm text-slate-600">Service → Dataset → Seguridad → Agregar email</p>
+                                        </div>
+                                    </div>
+                                    <span class="text-2xl">👥</span>
+                                </div>
+                            </div>
+
+                            <div class="filter-card border-2 border-slate-200 rounded-lg p-4 cursor-move" draggable="true" data-filter="abrir-roles" data-correct-order="1">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <div class="filter-number bg-slate-200 text-slate-600 w-8 h-8 rounded-full flex items-center justify-center font-bold">?</div>
+                                        <div>
+                                            <h4 class="font-semibold text-slate-800">Abrir Gestión de Roles</h4>
+                                            <p class="text-sm text-slate-600">Modelado → Administrar roles → Nuevo rol</p>
+                                        </div>
+                                    </div>
+                                    <span class="text-2xl">⚙️</span>
+                                </div>
+                            </div>
+
+                            <div class="filter-card border-2 border-slate-200 rounded-lg p-4 cursor-move" draggable="true" data-filter="definir-filtro" data-correct-order="3">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <div class="filter-number bg-slate-200 text-slate-600 w-8 h-8 rounded-full flex items-center justify-center font-bold">?</div>
+                                        <div>
+                                            <h4 class="font-semibold text-slate-800">Definir filtro DAX</h4>
+                                            <p class="text-sm text-slate-600">[Dependencia] = USERPRINCIPALNAME()</p>
+                                        </div>
+                                    </div>
+                                    <span class="text-2xl">📊</span>
+                                </div>
+                            </div>
+
+                            <div class="filter-card border-2 border-slate-200 rounded-lg p-4 cursor-move" draggable="true" data-filter="publicar" data-correct-order="4">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <div class="filter-number bg-slate-200 text-slate-600 w-8 h-8 rounded-full flex items-center justify-center font-bold">?</div>
+                                        <div>
+                                            <h4 class="font-semibold text-slate-800">Guardar y publicar</h4>
+                                            <p class="text-sm text-slate-600">Publicar a Service → el rol viaja con el .pbix</p>
+                                        </div>
+                                    </div>
+                                    <span class="text-2xl">📤</span>
+                                </div>
+                            </div>
+
+                            <div class="filter-card border-2 border-slate-200 rounded-lg p-4 cursor-move" draggable="true" data-filter="nombrar-rol" data-correct-order="2">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <div class="filter-number bg-slate-200 text-slate-600 w-8 h-8 rounded-full flex items-center justify-center font-bold">?</div>
+                                        <div>
+                                            <h4 class="font-semibold text-slate-800">Nombrar el rol</h4>
+                                            <p class="text-sm text-slate-600">Ej: Rol_Ingeniería · Rol_Bienestar</p>
+                                        </div>
+                                    </div>
+                                    <span class="text-2xl">🏷️</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 p-3 bg-green-50 rounded-lg hidden" id="feedback-2">
+                            <p class="text-green-700 font-medium">✅ ¡Perfecto! Has ordenado correctamente los pasos de configuración RLS.</p>
+                        </div>
+                    </div>
+
+                            <!-- Actividad 3: Quiz sobre Buenas Prácticas -->
+                    <div class="bg-white border-l-4 border-purple-500 rounded-lg shadow-sm p-6">
+                        <h3 class="text-xl font-bold text-purple-700 mb-2">✅ Actividad 3: Buenas Prácticas al Publicar</h3>
+                        <p class="mb-4"><span class="font-semibold">Instrucciones:</span> Identifica qué acción corresponde a cada categoría de buenas prácticas.</p>
+                        
+                        <div class="space-y-4">
+                            <div class="bg-purple-50 border-l-4 border-purple-400 p-4 rounded-r-lg">
+                                <div class="mb-3">
+                                    <p class="font-medium text-purple-800 mb-2">Categoría: Datos</p>
+                                    <p class="text-sm text-slate-700">"Elimina columnas innecesarias del modelo"</p>
+                                </div>
+                                <select class="practice-select w-full p-2 border border-purple-300 rounded" data-question="1" data-answer="datos">
+                                    <option value="">Selecciona la categoría...</option>
+                                    <option value="datos">Datos</option>
+                                    <option value="diseno">Diseño</option>
+                                    <option value="seguridad">Seguridad</option>
+                                    <option value="rendimiento">Rendimiento</option>
+                                </select>
+                            </div>
+                            
+                            <div class="bg-purple-50 border-l-4 border-purple-400 p-4 rounded-r-lg">
+                                <div class="mb-3">
+                                    <p class="font-medium text-purple-800 mb-2">Categoría: Seguridad</p>
+                                    <p class="text-sm text-slate-700">"Aplica RLS si hay datos por dependencia/sede"</p>
+                                </div>
+                                <select class="practice-select w-full p-2 border border-purple-300 rounded" data-question="2" data-answer="seguridad">
+                                    <option value="">Selecciona la categoría...</option>
+                                    <option value="datos">Datos</option>
+                                    <option value="diseno">Diseño</option>
+                                    <option value="seguridad">Seguridad</option>
+                                    <option value="rendimiento">Rendimiento</option>
+                                </select>
+                            </div>
+                            
+                            <div class="bg-purple-50 border-l-4 border-purple-400 p-4 rounded-r-lg">
+                                <div class="mb-3">
+                                    <p class="font-medium text-purple-800 mb-2">Categoría: Rendimiento</p>
+                                    <p class="text-sm text-slate-700">"Máximo 8 visuals por página"</p>
+                                </div>
+                                <select class="practice-select w-full p-2 border border-purple-300 rounded" data-question="3" data-answer="rendimiento">
+                                    <option value="">Selecciona la categoría...</option>
+                                    <option value="datos">Datos</option>
+                                    <option value="diseno">Diseño</option>
+                                    <option value="seguridad">Seguridad</option>
+                                    <option value="rendimiento">Rendimiento</option>
+                                </select>
+                            </div>
+                            
+                            <div class="bg-purple-50 border-l-4 border-purple-400 p-4 rounded-r-lg">
+                                <div class="mb-3">
+                                    <p class="font-medium text-purple-800 mb-2">Categoría: Diseño</p>
+                                    <p class="text-sm text-slate-700">"Usa colores institucionales de forma consistente"</p>
+                                </div>
+                                <select class="practice-select w-full p-2 border border-purple-300 rounded" data-question="4" data-answer="diseno">
+                                    <option value="">Selecciona la categoría...</option>
+                                    <option value="datos">Datos</option>
+                                    <option value="diseno">Diseño</option>
+                                    <option value="seguridad">Seguridad</option>
+                                    <option value="rendimiento">Rendimiento</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 flex gap-2">
+                            <button id="check-practices-btn" class="bg-purple-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-purple-700 transition-colors">
+                                Verificar respuestas
+                            </button>
+                            <button id="reset-practices-btn" class="bg-slate-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-slate-600 transition-colors">
+                                Reiniciar
+                            </button>
+                        </div>
+                        
+                        <div id="practices-result" class="mt-4 font-medium"></div>
+                        <div id="practices-feedback" class="mt-4 p-4 bg-purple-50 border border-purple-200 rounded-lg hidden">
+                            <h4 class="font-bold text-purple-800 mb-2">📖 Categorías de Buenas Prácticas:</h4>
+                            <ul class="list-disc pl-5 text-slate-700 space-y-1">
+                                <li><strong>Datos:</strong> Limpiar modelo, proteger datos sensibles, programar actualización</li>
+                                <li><strong>Diseño:</strong> Títulos descriptivos, colores consistentes, layout móvil</li>
+                                <li><strong>Seguridad:</strong> Aplicar RLS, revisar permisos, no publicar en 'Todos'</li>
+                                <li><strong>Rendimiento:</strong> Máximo 8 visuals, usar medidas DAX, filtrar en Power Query</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Evaluación -->
+            <div id="evaluacion" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-yellow-800 mb-6">Evaluación final</h2>
+                <div class="speech-controls mb-4 p-3 bg-yellow-100 rounded-lg flex items-center flex-wrap gap-2" data-target="evaluacion">
+                    <button class="play-btn bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-evaluacion" class="text-sm text-yellow-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-evaluacion" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                
+                <div class="bg-white border-l-4 border-red-500 rounded-lg shadow-sm p-6">
+                    <h3 class="text-xl font-bold text-red-700 mb-4">📋 Cuestionario de Evaluación</h3>
+                    <p class="mb-6 text-slate-700">Responde las siguientes preguntas para evaluar tu comprensión de los temas de la sesión.</p>
+                    
+                    <div class="space-y-6">
+                        <div class="quiz-question bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg">
+                            <p class="font-medium text-red-800 mb-3">1. ¿Cuál es la principal diferencia entre Power BI Desktop y Power BI Service?</p>
+                            <select class="quiz-select w-full p-2 border border-red-300 rounded" data-question="1" data-answer="desktop-crear-service-publicar">
+                                <option value="">Selecciona una respuesta...</option>
+                                <option value="desktop-gratuito-service-pago">Desktop es gratuito, Service es de pago</option>
+                                <option value="desktop-crear-service-publicar">Desktop es para crear, Service es para publicar</option>
+                                <option value="desktop-online-service-offline">Desktop es online, Service es offline</option>
+                                <option value="desktop-movil-service-web">Desktop es móvil, Service es web</option>
+                            </select>
+                        </div>
+                        
+                        <div class="quiz-question bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg">
+                            <p class="font-medium text-red-800 mb-3">2. ¿Qué rol de workspace tiene control total incluyendo gestión de miembros?</p>
+                            <select class="quiz-select w-full p-2 border border-red-300 rounded" data-question="2" data-answer="administrador">
+                                <option value="">Selecciona una respuesta...</option>
+                                <option value="administrador">Administrador</option>
+                                <option value="miembro">Miembro</option>
+                                <option value="colaborador">Colaborador</option>
+                                <option value="visor">Visor</option>
+                            </select>
+                        </div>
+                        
+                        <div class="quiz-question bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg">
+                            <p class="font-medium text-red-800 mb-3">3. ¿Dónde se configura la Seguridad a Nivel de Fila (RLS)?</p>
+                            <select class="quiz-select w-full p-2 border border-red-300 rounded" data-question="3" data-answer="desktop">
+                                <option value="">Selecciona una respuesta...</option>
+                                <option value="desktop">Power BI Desktop</option>
+                                <option value="service">Power BI Service</option>
+                                <option value="power-query">Power Query</option>
+                                <option value="excel">Excel</option>
+                            </select>
+                        </div>
+                        
+                        <div class="quiz-question bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg">
+                            <p class="font-medium text-red-800 mb-3">4. ¿Qué tipo de visuales soportan alertas de datos?</p>
+                            <select class="quiz-select w-full p-2 border border-red-300 rounded" data-question="4" data-answer="tarjeta-kpi-medidor">
+                                <option value="">Selecciona una respuesta...</option>
+                                <option value="barras-lineas">Barras y líneas</option>
+                                <option value="tarjeta-kpi-medidor">Tarjeta, KPI y Medidor</option>
+                                <option value="tablas-matrices">Tablas y matrices</option>
+                                <option value="mapas">Mapas</option>
+                            </select>
+                        </div>
+                        
+                        <div class="quiz-question bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg">
+                            <p class="font-medium text-red-800 mb-3">5. ¿Qué función cumple el Data Gateway?</p>
+                            <select class="quiz-select w-full p-2 border border-red-300 rounded" data-question="5" data-answer="conectar-bd-onpremise">
+                                <option value="">Selecciona una respuesta...</option>
+                                <option value="crear-visualizaciones">Crear visualizaciones</option>
+                                <option value="conectar-bd-onpremise">Conectar Service con BD on-premise</option>
+                                <option value="compartir-reportes">Compartir reportes</option>
+                                <option value="crear-apps">Crear aplicaciones</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 flex gap-2">
+                        <button id="submit-quiz-btn" class="bg-red-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-red-700 transition-colors">
+                            Enviar evaluación
+                        </button>
+                        <button id="reset-quiz-btn" class="bg-slate-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-slate-600 transition-colors">
+                            Reiniciar
+                        </button>
+                    </div>
+                    
+                    <div id="quiz-result" class="mt-4 font-medium"></div>
+                    <div id="quiz-feedback" class="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg hidden">
+                        <h4 class="font-bold text-red-800 mb-2">📊 Resultados:</h4>
+                        <div id="quiz-details"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recursos -->
+            <div id="recursos" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-yellow-800 mb-6">Recursos adicionales</h2>
+                <div class="speech-controls mb-4 p-3 bg-yellow-100 rounded-lg flex items-center flex-wrap gap-2" data-target="recursos">
+                    <button class="play-btn bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-recursos" class="text-sm text-yellow-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-recursos" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white border-l-4 border-blue-500 rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-bold text-blue-700 mb-3">📚 Documentación Oficial</h3>
+                        <ul class="space-y-2">
+                            <li class="flex items-start">
+                                <span class="text-blue-500 mr-2">•</span>
+                                <a href="https://docs.microsoft.com/power-bi/collaborate-share/service-gateway-onprem" target="_blank" class="text-blue-600 hover:underline">Data Gateway - Documentación</a>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-blue-500 mr-2">•</span>
+                                <a href="https://docs.microsoft.com/power-bi/collaborate-share/service-admin-rls" target="_blank" class="text-blue-600 hover:underline">Seguridad RLS - Guía completa</a>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-blue-500 mr-2">•</span>
+                                <a href="https://docs.microsoft.com/power-bi/collaborate-share/service-create-distribute-apps" target="_blank" class="text-blue-600 hover:underline">Aplicaciones Power BI</a>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-white border-l-4 border-green-500 rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-bold text-green-700 mb-3">🎥 Tutoriales y Videos</h3>
+                        <ul class="space-y-2">
+                            <li class="flex items-start">
+                                <span class="text-green-500 mr-2">•</span>
+                                <a href="https://www.youtube.com/c/MicrosoftPowerBI" target="_blank" class="text-green-600 hover:underline">Canal YouTube Power BI</a>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-green-500 mr-2">•</span>
+                                <a href="https://powerbi.microsoft.com/tutorials/" target="_blank" class="text-green-600 hover:underline">Tutoriales Guiados</a>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-green-500 mr-2">•</span>
+                                <a href="https://docs.microsoft.com/learn/paths/power-bi/" target="_blank" class="text-green-600 hover:underline">Rutas de Aprendizaje Microsoft Learn</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bibliografía -->
+            <div id="bibliografia" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-yellow-800 mb-6">Bibliografía</h2>
+                <div class="speech-controls mb-4 p-3 bg-yellow-100 rounded-lg flex items-center flex-wrap gap-2" data-target="bibliografia">
+                    <button class="play-btn bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-bibliografia" class="text-sm text-yellow-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-bibliografia" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                
+                <div class="bg-white border-l-4 border-yellow-500 rounded-lg shadow-sm p-6">
+                    <ul class="space-y-3">
+                        <li class="text-slate-700">
+                            <strong>Microsoft Corporation.</strong> (2024). <em>Power BI Documentation - Service and Administration</em>. Microsoft Docs. Recuperado de https://docs.microsoft.com/power-bi/
+                        </li>
+                        <li class="text-slate-700">
+                            <strong>Power BI Team.</strong> (2024). <em>Row-Level Security (RLS) with Power BI</em>. Power BI Blog. Recuperado de https://powerbi.microsoft.com/blog/
+                        </li>
+                        <li class="text-slate-700">
+                            <strong>CINTIA Unicórdoba.</strong> (2024). <em>Material de Curso Power BI - Sesión 4</em>. Material educativo interno.
+                        </li>
+                        <li class="text-slate-700">
+                            <strong>Microsoft Learn.</strong> (2024). <em>Power BI learning paths</em>. Microsoft Learn Platform.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal para imágenes -->
+        <div id="imageModal" class="fixed inset-0 bg-black bg-opacity-75 z-50 hidden flex items-center justify-center p-4">
+            <div class="relative max-w-6xl max-h-full">
+                <button onclick="closeModal()" class="absolute -top-10 right-0 text-white text-4xl hover:text-gray-300">&times;</button>
+                <img id="modalImage" src="" alt="Imagen ampliada" class="max-w-full max-h-full object-contain rounded-lg">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales para síntesis de voz
+        let currentUtterance = null;
+        let currentSpeechTarget = null;
+        let speechQueue = [];
+        let isSpeaking = false;
+
+        // Función para abrir modal de imagen
+        function openModal(imageContainer) {
+            const modal = document.getElementById('imageModal');
+            const modalImage = document.getElementById('modalImage');
+            const img = imageContainer.querySelector('img');
+            
+            if (img) {
+                modalImage.src = img.src;
+                modalImage.alt = img.alt;
+            }
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        // Función para cerrar modal
+        function closeModal() {
+            const modal = document.getElementById('imageModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        // Función para obtener texto de un elemento
+        function getTextContent(element) {
+            const selector = element.dataset.target;
+            const targetElement = document.getElementById(selector);
+            if (!targetElement) return '';
+            
+            // Excluir elementos que no deben ser leídos
+            const excludeSelectors = 'button, .speech-controls, .progress-bar, .drop-zone, .visual-item, .filter-card, .step-card, .quiz-question select';
+            const textElements = targetElement.querySelectorAll('h1, h2, h3, h4, h5, h6, p, li, span:not(.zoom-icon):not(.step-number):not(.filter-number)');
+            
+            let text = '';
+            textElements.forEach(el => {
+                if (!el.closest(excludeSelectors)) {
+                    text += el.textContent + ' ';
+                }
+            });
+            
+            return text.trim();
+        }
+
+        // Función para iniciar síntesis de voz
+        function startSpeech(targetId) {
+            const control = document.querySelector(`[data-target="${targetId}"]`);
+            const playBtn = control.querySelector('.play-btn');
+            const pauseBtn = control.querySelector('.pause-btn');
+            const stopBtn = control.querySelector('.stop-btn');
+            const rateInput = control.querySelector('.speech-rate');
+            
+            if (isSpeaking && currentSpeechTarget === targetId) {
+                // Reanudar si está pausado
+                if (window.speechSynthesis.paused) {
+                    window.speechSynthesis.resume();
+                    playBtn.disabled = true;
+                    pauseBtn.disabled = false;
+                    isSpeaking = true;
+                }
+                return;
+            }
+            
+            // Detener cualquier speech anterior
+            stopAllSpeech();
+            
+            const text = getTextContent(control);
+            if (!text) return;
+            
+            currentUtterance = new SpeechSynthesisUtterance(text);
+            currentUtterance.lang = 'es-ES';
+            currentUtterance.rate = parseFloat(rateInput.value);
+            
+            currentUtterance.onstart = () => {
+                playBtn.disabled = true;
+                pauseBtn.disabled = false;
+                stopBtn.disabled = false;
+                isSpeaking = true;
+                currentSpeechTarget = targetId;
+            };
+            
+            currentUtterance.onend = () => {
+                playBtn.disabled = false;
+                pauseBtn.disabled = true;
+                stopBtn.disabled = true;
+                isSpeaking = false;
+                currentSpeechTarget = null;
+            };
+            
+            currentUtterance.onerror = (event) => {
+                console.error('Error en síntesis de voz:', event);
+                playBtn.disabled = false;
+                pauseBtn.disabled = true;
+                stopBtn.disabled = true;
+                isSpeaking = false;
+                currentSpeechTarget = null;
+            };
+            
+            window.speechSynthesis.speak(currentUtterance);
+        }
+
+        // Función para pausar síntesis de voz
+        function pauseSpeech(targetId) {
+            if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+                window.speechSynthesis.pause();
+                const control = document.querySelector(`[data-target="${targetId}"]`);
+                control.querySelector('.play-btn').disabled = false;
+                control.querySelector('.pause-btn').disabled = true;
+                isSpeaking = false;
+            }
+        }
+
+        // Función para detener síntesis de voz
+        function stopSpeech(targetId) {
+            stopAllSpeech();
+        }
+
+        // Función para detener toda síntesis de voz
+        function stopAllSpeech() {
+            window.speechSynthesis.cancel();
+            document.querySelectorAll('.play-btn').forEach(btn => btn.disabled = false);
+            document.querySelectorAll('.pause-btn').forEach(btn => btn.disabled = true);
+            document.querySelectorAll('.stop-btn').forEach(btn => btn.disabled = true);
+            isSpeaking = false;
+            currentSpeechTarget = null;
+            currentUtterance = null;
+        }
+
+        // Función para actualizar velocidad de voz
+        function updateSpeechRate(targetId) {
+            const control = document.querySelector(`[data-target="${targetId}"]`);
+            const rateInput = control.querySelector('.speech-rate');
+            
+            if (currentUtterance && currentSpeechTarget === targetId && !window.speechSynthesis.paused) {
+                currentUtterance.rate = parseFloat(rateInput.value);
+            }
+        }
+
+        // Navegación por secciones
+        function navigateToSection(sectionId) {
+            // Ocultar todas las secciones
+            document.querySelectorAll('.content-pane').forEach(pane => {
+                pane.classList.remove('active');
+            });
+            
+            // Mostrar sección seleccionada
+            const targetPane = document.getElementById(sectionId);
+            if (targetPane) {
+                targetPane.classList.add('active');
+            }
+            
+            // Actualizar estado activo en sidebar
+            document.querySelectorAll('.sidebar-link').forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('data-target') === sectionId) {
+                    link.classList.add('active');
+                }
+            });
+            
+            // Actualizar selector móvil
+            const mobileNav = document.getElementById('mobile-nav');
+            if (mobileNav) {
+                mobileNav.value = sectionId;
+            }
+        }
+
+        // Funcionalidad de acordeones
+        function initAccordions() {
+            const accordionBtns = document.querySelectorAll('.accordion-btn');
+            
+            accordionBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const targetId = btn.dataset.target;
+                    const panel = document.querySelector(targetId);
+                    const icon = btn.querySelector('span:last-child');
+                    
+                    if (panel.classList.contains('hidden')) {
+                        panel.classList.remove('hidden');
+                        icon.textContent = '➖';
+                    } else {
+                        panel.classList.add('hidden');
+                        icon.textContent = '➕';
+                    }
+                });
+            });
+        }
+
+        // Funcionalidad de arrastrar y soltar para roles
+        function initVisualDragDrop() {
+            const visualItems = document.querySelectorAll('.visual-item');
+            const dropZones = document.querySelectorAll('.drop-zone');
+            let draggedItem = null;
+            let matchedPairs = 0;
+            const totalPairs = 4;
+            
+            visualItems.forEach(item => {
+                item.addEventListener('dragstart', (e) => {
+                    draggedItem = e.target;
+                    e.target.style.opacity = '0.5';
+                });
+                
+                item.addEventListener('dragend', (e) => {
+                    e.target.style.opacity = '';
+                });
+            });
+            
+            dropZones.forEach(zone => {
+                zone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    zone.style.backgroundColor = '#dbeafe';
+                });
+                
+                zone.addEventListener('dragleave', (e) => {
+                    zone.style.backgroundColor = '';
+                });
+                
+                zone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    zone.style.backgroundColor = '';
+                    
+                    if (draggedItem && zone.dataset.accept === draggedItem.dataset.type) {
+                        // Match correcto
+                        zone.innerHTML = draggedItem.innerHTML;
+                        zone.classList.add('bg-green-100', 'border-green-500');
+                        zone.classList.remove('bg-blue-50', 'bg-green-50', 'bg-purple-50', 'bg-orange-50', 'border-dashed', 'border-blue-300', 'border-green-300', 'border-purple-300', 'border-orange-300');
+                        draggedItem.style.display = 'none';
+                        
+                        matchedPairs++;
+                        updateProgress('progress-text-1', 'progress-fill-1', matchedPairs, totalPairs);
+                        
+                        if (matchedPairs === totalPairs) {
+                            document.getElementById('feedback-1').classList.remove('hidden');
+                        }
+                    } else {
+                        // Match incorrecto
+                        zone.style.backgroundColor = '#fee2e2';
+                        setTimeout(() => {
+                            zone.style.backgroundColor = '';
+                        }, 1000);
+                    }
+                });
+            });
+        }
+
+        // Funcionalidad de arrastrar y soltar para RLS
+        function initFilterDragDrop() {
+            const filterCards = document.querySelectorAll('.filter-card');
+            const filterContainer = document.getElementById('rls-simulator');
+            let draggedCard = null;
+            let correctOrder = 0;
+            const totalFilters = 5;
+            
+            filterCards.forEach(card => {
+                card.addEventListener('dragstart', (e) => {
+                    draggedCard = e.target;
+                    e.target.style.opacity = '0.5';
+                });
+                
+                card.addEventListener('dragend', (e) => {
+                    e.target.style.opacity = '';
+                });
+            });
+            
+            filterContainer.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                const afterElement = getDragAfterElement(filterContainer, e.clientY);
+                if (afterElement == null) {
+                    filterContainer.appendChild(draggedCard);
+                } else {
+                    filterContainer.insertBefore(draggedCard, afterElement);
+                }
+            });
+            
+            // Verificar orden
+            filterContainer.addEventListener('drop', () => {
+                setTimeout(() => checkFilterOrder(), 100);
+            });
+            
+            function checkFilterOrder() {
+                const cards = filterContainer.querySelectorAll('.filter-card');
+                correctOrder = 0;
+                
+                cards.forEach((card, index) => {
+                    const number = card.querySelector('.filter-number');
+                    const expectedOrder = parseInt(card.dataset.correctOrder);
+                    
+                    if (index + 1 === expectedOrder) {
+                        number.textContent = index + 1;
+                        number.classList.add('bg-green-500', 'text-white');
+                        number.classList.remove('bg-slate-200', 'text-slate-600');
+                        correctOrder++;
+                    } else {
+                        number.textContent = '?';
+                        number.classList.remove('bg-green-500', 'text-white');
+                        number.classList.add('bg-slate-200', 'text-slate-600');
+                    }
+                });
+                
+                updateProgress('progress-text-2', 'progress-fill-2', correctOrder, totalFilters);
+                
+                if (correctOrder === totalFilters) {
+                    document.getElementById('feedback-2').classList.remove('hidden');
+                }
+            }
+        }
+
+        // Función auxiliar para obtener elemento después del cual soltar
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('.filter-card:not(.dragging)')];
+            
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+        // Función para actualizar progreso
+        function updateProgress(textId, fillId, current, total) {
+            document.getElementById(textId).textContent = `${current}/${total} completados`;
+            document.getElementById(fillId).style.width = `${(current / total) * 100}%`;
+        }
+
+        // Funcionalidad del quiz de prácticas
+        function initPracticesQuiz() {
+            const checkBtn = document.getElementById('check-practices-btn');
+            const resetBtn = document.getElementById('reset-practices-btn');
+            
+            checkBtn.addEventListener('click', () => {
+                const selects = document.querySelectorAll('.practice-select');
+                let correct = 0;
+                
+                selects.forEach(select => {
+                    const userAnswer = select.value;
+                    const correctAnswer = select.dataset.answer;
+                    
+                    if (userAnswer === correctAnswer) {
+                        select.classList.add('bg-green-100', 'border-green-500');
+                        select.classList.remove('border-purple-300');
+                        correct++;
+                    } else {
+                        select.classList.add('bg-red-100', 'border-red-500');
+                        select.classList.remove('border-purple-300');
+                    }
+                });
+                
+                const resultDiv = document.getElementById('practices-result');
+                const feedbackDiv = document.getElementById('practices-feedback');
+                
+                if (correct === selects.length) {
+                    resultDiv.innerHTML = '<span class="text-green-600">✅ ¡Excelente! Todas las respuestas son correctas.</span>';
+                    feedbackDiv.classList.remove('hidden');
+                } else {
+                    resultDiv.innerHTML = `<span class="text-orange-600">⚠️ Has respondido correctamente ${correct} de ${selects.length} preguntas.</span>`;
+                }
+            });
+            
+            resetBtn.addEventListener('click', () => {
+                document.querySelectorAll('.practice-select').forEach(select => {
+                    select.value = '';
+                    select.classList.remove('bg-green-100', 'bg-red-100', 'border-green-500', 'border-red-500');
+                    select.classList.add('border-purple-300');
+                });
+                document.getElementById('practices-result').innerHTML = '';
+                document.getElementById('practices-feedback').classList.add('hidden');
+            });
+        }
+
+        // Funcionalidad del quiz final
+        function initFinalQuiz() {
+            const submitBtn = document.getElementById('submit-quiz-btn');
+            const resetBtn = document.getElementById('reset-quiz-btn');
+            
+            submitBtn.addEventListener('click', () => {
+                const selects = document.querySelectorAll('.quiz-select');
+                let correct = 0;
+                const results = [];
+                
+                selects.forEach(select => {
+                    const userAnswer = select.value;
+                    const correctAnswer = select.dataset.answer;
+                    
+                    if (userAnswer === correctAnswer) {
+                        select.classList.add('bg-green-100', 'border-green-500');
+                        select.classList.remove('border-red-300');
+                        correct++;
+                        results.push({ question: select.dataset.question, correct: true });
+                    } else {
+                        select.classList.add('bg-red-100', 'border-red-500');
+                        select.classList.remove('border-red-300');
+                        results.push({ question: select.dataset.question, correct: false });
+                    }
+                });
+                
+                const percentage = Math.round((correct / selects.length) * 100);
+                const resultDiv = document.getElementById('quiz-result');
+                const feedbackDiv = document.getElementById('quiz-feedback');
+                const detailsDiv = document.getElementById('quiz-details');
+                
+                if (percentage >= 80) {
+                    resultDiv.innerHTML = `<span class="text-green-600">🎉 ¡Excelente! Has obtenido ${correct}/${selects.length} (${percentage}%)</span>`;
+                } else if (percentage >= 60) {
+                    resultDiv.innerHTML = `<span class="text-orange-600">👍 Bien hecho. Has obtenido ${correct}/${selects.length} (${percentage}%)</span>`;
+                } else {
+                    resultDiv.innerHTML = `<span class="text-red-600">📚 Necesitas repasar. Has obtenido ${correct}/${selects.length} (${percentage}%)</span>`;
+                }
+                
+                // Mostrar detalles
+                let detailsHTML = '<ul class="space-y-1">';
+                results.forEach(result => {
+                    const icon = result.correct ? '✅' : '❌';
+                    const text = result.correct ? 'Correcto' : 'Incorrecto';
+                    detailsHTML += `<li>${icon} Pregunta ${result.question}: ${text}</li>`;
+                });
+                detailsHTML += '</ul>';
+                detailsDiv.innerHTML = detailsHTML;
+                
+                feedbackDiv.classList.remove('hidden');
+            });
+            
+            resetBtn.addEventListener('click', () => {
+                document.querySelectorAll('.quiz-select').forEach(select => {
+                    select.value = '';
+                    select.classList.remove('bg-green-100', 'bg-red-100', 'border-green-500', 'border-red-500');
+                    select.classList.add('border-red-300');
+                });
+                document.getElementById('quiz-result').innerHTML = '';
+                document.getElementById('quiz-feedback').classList.add('hidden');
+            });
+        }
+
+        // Atajos de teclado
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && e.target.tagName !== 'SELECT' && e.target.tagName !== 'INPUT') {
+                e.preventDefault();
+                const activePane = document.querySelector('.content-pane.active');
+                if (activePane) {
+                    const targetId = activePane.id;
+                    if (isSpeaking && currentSpeechTarget === targetId) {
+                        pauseSpeech(targetId);
+                    } else {
+                        startSpeech(targetId);
+                    }
+                }
+            } else if (e.code === 'Tab' && isSpeaking) {
+                e.preventDefault();
+                stopAllSpeech();
+            }
+        });
+
+        // Prevenir navegación al arrastrar
+        document.addEventListener('dragover', (e) => {
+            e.preventDefault();
+        });
+
+        document.addEventListener('drop', (e) => {
+            e.preventDefault();
+        });
+
+        // Inicialización cuando el DOM está listo
+        document.addEventListener('DOMContentLoaded', () => {
+            initAccordions();
+            initVisualDragDrop();
+            initFilterDragDrop();
+            initPracticesQuiz();
+            initFinalQuiz();
+            
+            // Event listeners para controles de voz
+            document.querySelectorAll('.play-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const targetId = btn.closest('.speech-controls').dataset.target;
+                    startSpeech(targetId);
+                });
+            });
+            
+            document.querySelectorAll('.pause-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const targetId = btn.closest('.speech-controls').dataset.target;
+                    pauseSpeech(targetId);
+                });
+            });
+            
+            document.querySelectorAll('.stop-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const targetId = btn.closest('.speech-controls').dataset.target;
+                    stopSpeech(targetId);
+                });
+            });
+            
+            document.querySelectorAll('.speech-rate').forEach(input => {
+                input.addEventListener('input', () => {
+                    const targetId = input.closest('.speech-controls').dataset.target;
+                    updateSpeechRate(targetId);
+                });
+            });
+            
+            // Navegación por secciones - Sidebar
+            document.querySelectorAll('.sidebar-link').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetId = link.getAttribute('data-target');
+                    navigateToSection(targetId);
+                });
+            });
+            
+            // Navegación por secciones - Mobile
+            const mobileNav = document.getElementById('mobile-nav');
+            if (mobileNav) {
+                mobileNav.addEventListener('change', (e) => {
+                    navigateToSection(e.target.value);
+                });
+            }
+            
+            // Cerrar modal con Escape
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    closeModal();
+                }
+            });
+            
+            // Cerrar modal haciendo clic fuera
+            document.getElementById('imageModal').addEventListener('click', (e) => {
+                if (e.target.id === 'imageModal') {
+                    closeModal();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OVA: Bioética en Enfermería</title>
+    <script src="https://cdn.tailwindcss.com?_ver=3.4.1"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+        .sidebar-link {
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+        .sidebar-link.active, .sidebar-link:hover {
+            background-color: #e6f4ea;
+            color: #166534;
+            border-left-color: #22c55e;
+        }
+        .content-pane {
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+            position: relative;
+            z-index: 10;
+        }
+        .content-pane.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .quiz-option:hover {
+            background-color: #f0fdf4;
+        }
+        .quiz-option.selected {
+            background-color: #dcfce7;
+            border-color: #22c55e;
+        }
+        .type-card {
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .type-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .accordion-panel {
+            display: none;
+        }
+        .accordion-panel.active {
+            display: block;
+        }
+        .accordion-btn {
+            transition: all 0.3s ease;
+        }
+        .accordion-btn:hover {
+            background-color: #dcfce7;
+        }
+        /* Responsive table for evaluation */
+        .responsive-table {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .responsive-table table {
+            min-width: 600px;
+        }
+        @media (max-width: 768px) {
+            .responsive-table table {
+                min-width: 100%;
+            }
+            .responsive-table th,
+            .responsive-table td {
+                padding: 8px;
+                font-size: 0.875rem;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-50">
+
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white shadow-lg flex-shrink-0 hidden md:flex md:flex-col">
+            <div class="p-4">
+                <div style="width: 150px; height: 150px;" class="p-2 mx-auto flex items-center justify-center bg-white rounded-full shadow-lg border-2 border-green-500 transition-shadow duration-300 hover:shadow-green-400">
+                    <div class="text-center">
+                        <span class="text-5xl">⚕️</span>
+                        <p class="text-xs font-bold text-green-700 mt-1">Bioética</p>
+                    </div>
+                </div>
+            </div>
+            <nav class="mt-6 flex-1">
+                <a href="#" class="sidebar-link active flex items-center py-3 px-6 font-medium text-slate-700" data-target="introduccion"><span class="mr-3 text-xl">🚀</span> Introducción</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="objetivos"><span class="mr-3 text-xl">🎯</span> Objetivos</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="contenido"><span class="mr-3 text-xl">📚</span> Contenido</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="actividades"><span class="mr-3 text-xl">✍️</span> Actividades</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="evaluacion"><span class="mr-3 text-xl">✔️</span> Evaluación</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="bibliografia"><span class="mr-3 text-xl">📚</span> Bibliografía</a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-4 sm:p-6 md:p-10 bg-gray-50"> 
+            <div class="responsive-table">
+                <table class="min-w-full text-left">
+                    <thead>
+                                            </thead>
+                    <tbody>
+                                            </tbody>
+                </table>
+            </div>
+            <!-- Mobile Header -->
+            <div class="md:hidden mb-6 flex flex-col items-center">
+                <div style="width: 100px; height: 100px;" class="p-2 flex items-center justify-center bg-white rounded-full shadow-lg transition-shadow duration-300 hover:shadow-green-400 mb-2">
+                    <div class="text-center">
+                        <span class="text-4xl">⚕️</span>
+                        <p class="text-xs font-bold text-green-700">Bioética</p>
+                    </div>
+                </div>
+                 <select id="mobile-nav" class="w-full mt-2 p-2 border rounded-md bg-white shadow-sm">
+                    <option value="introduccion">🚀 Introducción</option>
+                    <option value="objetivos">🎯 Objetivos</option>
+                    <option value="contenido">📚 Contenido</option>
+                    <option value="actividades">✍️ Actividades</option>
+                    <option value="evaluacion">✔️ Evaluación</option>
+                    <option value="bibliografia">📚 Bibliografía</option>
+                </select>
+            </div>
+            
+            <!-- Introducción -->
+            <div id="introduccion" class="content-pane active">
+                <img src="img/bannerbioetica.png" alt="Información del Curso" class="w-full h-auto rounded-lg mb-6" />
+
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+                    <h3 class="text-xl font-bold text-blue-800 mb-3">Justificación</h3>
+                    <p class="text-slate-700 leading-relaxed mb-4">
+                        El estudiante y futuro profesional de enfermería, para brindar un cuidado integral y humanizado, requiere valorar al paciente como un ser total, reconociendo que su vida transcurre en un entorno familiar, social, cultural, económico y laboral. En el marco de este cuidado personalizado, el profesional suele enfrentarse a conflictos de carácter bioético derivados de las responsabilidades propias de la atención, así como del ejercicio en un entorno de salud crecientemente tecnificado.
+                    </p>
+                    <p class="text-slate-700 leading-relaxed">
+                        Por ello, resulta indispensable una formación que conjugue los conocimientos científicos y técnicos con los fundamentos bioéticos, proporcionando una guía para la toma de decisiones críticas, éticas y responsables, caracterizadas por el razonamiento moral, la sensibilidad ética y el respeto profundo por los sujetos de cuidado.
+                    </p>
+                </div>
+
+                <div class="bg-purple-50 border border-purple-200 rounded-lg p-6">
+                    <h3 class="text-xl font-bold text-purple-800 mb-3">Competencias Transversales</h3>
+                    <ul class="space-y-3">
+                        <li class="flex items-start">
+                            <span class="text-purple-700 mr-2">💬</span>
+                            <span><strong>Comunicativa:</strong> Demuestra capacidad de argumentación en talleres, foros y seminarios que se desarrollen en el aula de clase y realiza producción textual.</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-purple-700 mr-2">🌐</span>
+                            <span><strong>Competencia comunicativa en inglés:</strong> Ejercicios de vocabulario técnico del área de la salud. Lectura de artículos de revistas científicas en inglés.</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-purple-700 mr-2">🤝</span>
+                            <span><strong>Competencia Ciudadana, Paz, Resolución de Conflictos:</strong> Trabaja en equipo durante las actividades grupales, mostrando respeto en las diferencias existentes entre sus compañeros.</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-purple-700 mr-2">🔬</span>
+                            <span><strong>Competencia investigativa:</strong> Desarrollo de guías de estudio independiente. Revisión bibliográfica de temas específicos del cuidado de las personas.</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Objetivos -->
+            <div id="objetivos" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-green-800 mb-6">Objetivo del Curso</h2>
+                <div class="bg-white border border-green-300 rounded-lg shadow-sm p-6 mb-6">
+                    <p class="text-lg text-slate-700 leading-relaxed">
+                        Analizar los aspectos bioéticos de la práctica de enfermería para brindar un cuidado integral y humanizado a las personas en todas las etapas de la vida, garantizando el respeto por la dignidad, la cultura, la integridad y el papel activo del paciente como sujeto de derechos en la toma de decisiones sobre su salud.
+                    </p>
+                </div>
+
+                <h3 class="text-xl font-bold text-green-800 mb-4">Resultados de Aprendizaje del Programa</h3>
+                <div class="space-y-4">
+                    <div class="bg-white border border-green-300 rounded-lg shadow-sm p-4">
+                        <h4 class="font-bold text-green-700 mb-2">RAP 1 (Análisis ético)</h4>
+                        <p class="text-slate-700">Analiza dilemas bioéticos frecuentes en la práctica de enfermería (hospitalaria y comunitaria), argumentando posturas éticas basadas en los derechos humanos, los principios bioéticos y la normativa vigente.</p>
+                    </div>
+                    <div class="bg-white border border-green-300 rounded-lg shadow-sm p-4">
+                        <h4 class="font-bold text-green-700 mb-2">RAP 2 (Toma de decisiones y deliberación)</h4>
+                        <p class="text-slate-700">Aplica modelos de deliberación moral en la solución de conflictos éticos derivados de la alta tecnificación de la salud y la atención al final de la vida, priorizando la dignidad y la autonomía del sujeto de cuidado.</p>
+                    </div>
+                    <div class="bg-white border border-green-300 rounded-lg shadow-sm p-4">
+                        <h4 class="font-bold text-green-700 mb-2">RAP 3 (Cuidado humanizado)</h4>
+                        <p class="text-slate-700">Diseña estrategias de cuidado humanizado dentro del Proceso de Atención de Enfermería (PAE), incorporando el contexto cultural, familiar y social del usuario para favorecer la toma de decisiones informada.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contenido -->
+            <div id="contenido" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-green-800 mb-6">Contenido del Curso</h2>
+                
+                <!-- Unidad I -->
+                <div class="mb-6">
+                    <button type="button" class="w-full flex justify-between items-center p-4 bg-green-100 border border-green-300 rounded-t-lg focus:outline-none font-bold text-green-800 text-lg accordion-btn" data-target="#panel-unidad1">
+                        Unidad I: Diversidad Cultural en Salud (2 semanas) <span class="ml-2">➕</span>
+                    </button>
+                    <div id="panel-unidad1" class="accordion-panel hidden bg-white border border-t-0 border-green-300 rounded-b-lg p-4">
+                        <h3 class="text-xl font-bold text-green-700 mb-3">Propósito</h3>
+                        <p class="text-slate-700 mb-4">Sensibilizar y dotar al estudiante de herramientas teórico-prácticas para brindar cuidados éticos, humanizados y culturalmente congruentes, reconociendo la diversidad de valores y creencias de las personas y comunidades.</p>
+                        
+                        <h3 class="text-xl font-bold text-green-700 mb-3">Contenidos</h3>
+                        <div class="space-y-3 mb-4">
+                            <div class="bg-green-50 border-l-4 border-green-400 p-3 rounded-r-lg">
+                                <p class="font-semibold text-green-800">Conceptos Fundamentales:</p>
+                                <p class="text-slate-700">Cultura, diversidad, etnocentrismo, relativismo cultural y transculturalidad en salud.</p>
+                            </div>
+                            <div class="bg-green-50 border-l-4 border-green-400 p-3 rounded-r-lg">
+                                <p class="font-semibold text-green-800">Modelos de Enfermería Transcultural:</p>
+                                <p class="text-slate-700">El modelo de la "Puesta del Sol" de Madeleine Leininger y la Competencia Cultural de Campinha-Bacote.</p>
+                            </div>
+                        </div>
+
+                        <h3 class="text-xl font-bold text-green-700 mb-3">Resultado de Aprendizaje</h3>
+                        <p class="text-slate-700 mb-4">Aplica los principios de la enfermería transcultural y la bioética en la valoración del paciente, garantizando un cuidado humanizado que respete la diversidad cultural, las creencias y los valores del sujeto de cuidado.</p>
+                    </div>
+                </div>
+
+                <!-- Unidad II -->
+                <div class="mb-6">
+                    <button type="button" class="w-full flex justify-between items-center p-4 bg-green-100 border border-green-300 rounded-t-lg focus:outline-none font-bold text-green-800 text-lg accordion-btn" data-target="#panel-unidad2">
+                        Unidad II: Conceptos de Bioética (1 semana) <span class="ml-2">➕</span>
+                    </button>
+                    <div id="panel-unidad2" class="accordion-panel hidden bg-white border border-t-0 border-green-300 rounded-b-lg p-4">
+                        <h3 class="text-xl font-bold text-green-700 mb-3">Propósito</h3>
+                        <p class="text-slate-700 mb-4">Analizar la importancia de la bioética en el quehacer enfermero para orientar la toma de decisiones éticas y el juicio moral en el cuidado integral del paciente.</p>
+                        
+                        <h3 class="text-xl font-bold text-green-700 mb-3">Contenidos</h3>
+                        <div class="space-y-3 mb-4">
+                            <div class="bg-blue-50 border-l-4 border-blue-400 p-3 rounded-r-lg">
+                                <p class="font-semibold text-blue-800">Concepto de Bioética</p>
+                                <p class="text-slate-700">El cuidado como esencia de enfermería: La ética del cuidado (Carol Gilligan) frente a la ética de los principios.</p>
+                            </div>
+                            <div class="bg-blue-50 border-l-4 border-blue-400 p-3 rounded-r-lg">
+                                <p class="font-semibold text-blue-800">Principios de Bioética</p>
+                                <ul class="text-slate-700 list-disc list-inside">
+                                    <li><strong>Autonomía:</strong> El rol de la enfermera en la explicación y respeto del consentimiento informado.</li>
+                                    <li><strong>Beneficencia y No Maleficencia:</strong> Prevención de negligencias, impericia, imprudencia y eventos adversos.</li>
+                                    <li><strong>Justicia:</strong> Distribución equitativa del tiempo y recursos entre pacientes.</li>
+                                </ul>
+                            </div>
+                            <div class="bg-blue-50 border-l-4 border-blue-400 p-3 rounded-r-lg">
+                                <p class="font-semibold text-blue-800">Código Deontológico de Enfermería</p>
+                                <p class="text-slate-700">Deberes, derechos profesionales y la objeción de conciencia.</p>
+                            </div>
+                            <div class="bg-blue-50 border-l-4 border-blue-400 p-3 rounded-r-lg">
+                                <p class="font-semibold text-blue-800">Dilemas Éticos en el Final de la Vida</p>
+                                <ul class="text-slate-700 list-disc list-inside">
+                                    <li>Adecuación del Esfuerzo Terapéutico (AET)</li>
+                                    <li>Cuidados Paliativos y Manejo del Dolor</li>
+                                    <li>Órdenes de No Reanimación (ONR) y Voluntades Anticipadas</li>
+                                    <li>Eutanasia y Suicidio Asistido</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <h3 class="text-xl font-bold text-green-700 mb-3">Resultados de Aprendizaje</h3>
+                        <ul class="text-slate-700 list-disc list-inside space-y-2">
+                            <li>Aplica los principios bioéticos y los modelos de deliberación moral en el análisis de situaciones clínicas.</li>
+                            <li>Argumenta posturas éticas frente a dilemas comunes del quehacer enfermero.</li>
+                            <li>Analiza la importancia de la bioética en el quehacer enfermero.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Unidad III -->
+                <div class="mb-6">
+                    <button type="button" class="w-full flex justify-between items-center p-4 bg-green-100 border border-green-300 rounded-t-lg focus:outline-none font-bold text-green-800 text-lg accordion-btn" data-target="#panel-unidad3">
+                        Unidad III: Humanización del Cuidado (5 semanas) <span class="ml-2">➕</span>
+                    </button>
+                    <div id="panel-unidad3" class="accordion-panel hidden bg-white border border-t-0 border-green-300 rounded-b-lg p-4">
+                        <h3 class="text-xl font-bold text-green-700 mb-3">Propósito</h3>
+                        <p class="text-slate-700 mb-4">Diseña estrategias de cuidado humanizado dentro del proceso de atención de enfermería, incorporando modelos teóricos disciplinares que prioricen la empatía, la dignidad y el bienestar integral de la persona y su familia.</p>
+                        
+                        <h3 class="text-xl font-bold text-green-700 mb-3">Contenidos</h3>
+                        <div class="space-y-3 mb-4">
+                            <div class="bg-purple-50 border-l-4 border-purple-400 p-3 rounded-r-lg">
+                                <p class="font-semibold text-purple-800">Qué es la humanización</p>
+                                <p class="text-slate-700">Desmitificación del concepto (humanizar no solo es ser simpático).</p>
+                            </div>
+                            <div class="bg-purple-50 border-l-4 border-purple-400 p-3 rounded-r-lg">
+                                <p class="font-semibold text-purple-800">Teorías de Enfermería sobre el cuidado humano</p>
+                                <p class="text-slate-700">Jean Watson, Kristen Swanson.</p>
+                            </div>
+                            <div class="bg-purple-50 border-l-4 border-purple-400 p-3 rounded-r-lg">
+                                <p class="font-semibold text-purple-800">Fenomenología de la enfermedad y el sufrimiento</p>
+                                <p class="text-slate-700">Vivencia de la vulnerabilidad, pérdida de la autonomía, miedo a la institucionalización.</p>
+                            </div>
+                            <div class="bg-purple-50 border-l-4 border-purple-400 p-3 rounded-r-lg">
+                                <p class="font-semibold text-purple-800">Relación Terapéutica y Comunicación Humanizada</p>
+                                <p class="text-slate-700">Comunicación de noticias difíciles y contención emocional.</p>
+                            </div>
+                            <div class="bg-purple-50 border-l-4 border-purple-400 p-3 rounded-r-lg">
+                                <p class="font-semibold text-purple-800">Derechos del paciente y la ciudadanía en salud</p>
+                            </div>
+                            <div class="bg-purple-50 border-l-4 border-purple-400 p-3 rounded-r-lg">
+                                <p class="font-semibold text-purple-800">Estrategias operativas de humanización por contextos de atención</p>
+                            </div>
+                            <div class="bg-purple-50 border-l-4 border-purple-400 p-3 rounded-r-lg">
+                                <p class="font-semibold text-purple-800">Humanización del profesional: Cuidar al que cuida</p>
+                            </div>
+                        </div>
+
+                        <h3 class="text-xl font-bold text-green-700 mb-3">Resultado de Aprendizaje</h3>
+                        <p class="text-slate-700">Al finalizar la Unidad, el estudiante evalúa e integra principios, estrategias de comunicación asertiva y empatía en la atención del paciente y su familia, diseñando planes de cuidado que respeten la dignidad humana, la autonomía y la diversidad cultural.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actividades -->
+            <div id="actividades" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-green-800 mb-6">Actividades de Aprendizaje</h2>
+                
+                <div class="space-y-6">
+                    <div class="bg-white border border-green-300 rounded-lg shadow-sm p-6">
+                        <h3 class="text-xl font-bold text-green-700 mb-3">Unidad I: Diversidad Cultural</h3>
+                        <ul class="space-y-2 text-slate-700">
+                                                                                            <span class="text-green-600 mr-2">📖</span>
+                                <span>Lectura previa de literatura para una participación activa durante el encuentro.</span>
+                            </li>
+                                                                                            <span class="text-green-600 mr-2">🎭</span>
+                                <span>Estudio de Caso Intercultural y simulación de casos prácticos.</span>
+                            </li>
+                                                                                            <span class="text-green-600 mr-2">💬</span>
+                                <span>Cátedra dialogada: Conjugar los modelos teóricos (Enfermería Transcultural de Madeleine Leininger) con dilemas bioéticos reales.</span>
+                            </li>
+                                                                                            <span class="text-green-600 mr-2">📝</span>
+                                <span>Elaboración de documento durante el taller.</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-white border border-green-300 rounded-lg shadow-sm p-6">
+                        <h3 class="text-xl font-bold text-green-700 mb-3">Unidad II: Conceptos de Bioética</h3>
+                        <ul class="space-y-2 text-slate-700">
+                                                                                            <span class="text-green-600 mr-2">📖</span>
+                                <span>Revisión de artículos científicos, guías de bioética y códigos deontológicos.</span>
+                            </li>
+                                                                                            <span class="text-green-600 mr-2">🧩</span>
+                                <span>Lectura de microcasos éticos antes de la clase para llegar con posturas argumentadas.</span>
+                            </li>
+                                                                                            <span class="text-green-600 mr-2">💬</span>
+                                <span>Clase dialógica y taller de deliberación moral.</span>
+                            </li>
+                                                                                            <span class="text-green-600 mr-2">📝</span>
+                                <span>Elaboración de documento sobre la importancia de la bioética en su vida personal y profesional.</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-white border border-green-300 rounded-lg shadow-sm p-6">
+                        <h3 class="text-xl font-bold text-green-700 mb-3">Unidad III: Humanización del Cuidado</h3>
+                        <ul class="space-y-2 text-slate-700">
+                                                                                            <span class="text-green-600 mr-2">🎭</span>
+                                <span>Taller de sensibilización.</span>
+                            </li>
+                                                                                            <span class="text-green-600 mr-2">📖</span>
+                                <span>Lecturas y análisis crítico de blogs, libros, cartas de agradecimiento de pacientes.</span>
+                            </li>
+                                                                                            <span class="text-green-600 mr-2">🎬</span>
+                                <span>Proyección de películas, series médicas o documentales.</span>
+                            </li>
+                                                                                            <span class="text-green-600 mr-2">🔍</span>
+                                <span>Selección de una situación de práctica clínica (o caso real) donde observe un acto de cuidado humanizado o deshumanizado.</span>
+                            </li>
+                                                                                            <span class="text-green-600 mr-2">📝</span>
+                                <span>Presentación de casos y deliberación en el salón de clase.</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Juegos Interactivos -->
+                <div class="mt-8 space-y-8">
+                    <h3 class="text-2xl font-bold text-green-800 mb-4 text-center">🎮 Juegos de Aprendizaje</h3>
+                    
+                    <!-- Sopa de Letras -->
+                    <div class="bg-white border border-green-300 rounded-lg shadow-sm p-6">
+                        <h4 class="text-xl font-bold text-green-700 mb-4 text-center">🔍 Sopa de Letras: Conceptos de Bioética</h4>
+                        <p class="text-slate-700 mb-4 text-center">Encuentra las siguientes palabras: AUTONOMÍA, BENEFICENCIA, JUSTICIA, DIGNIDAD, ÉTICA, PACIENTE</p>
+                        
+                        <div class="flex flex-col items-center">
+                            <div id="wordSearch" class="grid grid-cols-10 gap-1 mb-4"></div>
+                            <div id="wordList" class="flex flex-wrap gap-2 justify-center"></div>
+                            <button onclick="initWordSearch()" class="mt-4 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                                🔄 Reiniciar Sopa de Letras
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Ahorcado -->
+                    <div class="bg-white border border-green-300 rounded-lg shadow-sm p-6">
+                        <h4 class="text-xl font-bold text-green-700 mb-4 text-center">🎯 Ahorcado: Términos de Enfermería</h4>
+                        <p class="text-slate-700 mb-4 text-center">Adivina la palabra relacionada con bioética y enfermería</p>
+                        
+                        <div class="flex flex-col items-center">
+                            <div id="hangmanDisplay" class="text-6xl font-bold text-green-800 mb-4 tracking-widest"></div>
+                            <div id="hangmanDrawing" class="mb-4 text-4xl"></div>
+                            <div id="keyboard" class="flex flex-wrap gap-2 justify-center max-w-md"></div>
+                            <div id="hangmanMessage" class="mt-4 text-lg font-semibold"></div>
+                            <button onclick="initHangman()" class="mt-4 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                                🔄 Nueva Palabra
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Evaluación -->
+            <div id="evaluacion" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-green-800 mb-6">Rúbrica de Evaluación</h2>
+                
+                <div class="bg-white border border-green-300 rounded-lg shadow-sm overflow-hidden">
+                    <div class="responsive-table">
+                        <table class="w-full">
+                            <thead class="bg-green-100">
+                                <tr>
+                                    <th class="p-3 text-left text-green-800 font-bold border-b border-green-300">Unidad</th>
+                                    <th class="p-3 text-left text-green-800 font-bold border-b border-green-300">Criterios de Evaluación</th>
+                                    <th class="p-3 text-center text-green-800 font-bold border-b border-green-300">Relacional (3.8-4.5)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b border-green-200">
+                                    <td class="p-3 font-semibold text-slate-700">1</td>
+                                    <td class="p-3 text-slate-700">Comprende la causa-efecto e interconexión entre cultura, determinantes de salud y proceso de enfermería.</td>
+                                    <td class="p-3 text-slate-700 text-sm">Integra modelos teóricos de transculturalidad. Asocia determinantes sociales y creencias culturales. Compara modelo biomédico VS saberes tradicionales. Formula planes de cuidado culturalmente congruentes.</td>
+                                </tr>
+                                <tr class="border-b border-green-200">
+                                    <td class="p-3 font-semibold text-slate-700">2</td>
+                                    <td class="p-3 text-slate-700">Conecta principios bioéticos con toma de decisiones clínicas y análisis de impacto en rol profesional y personal.</td>
+                                    <td class="p-3 text-slate-700 text-sm">Conecta principios bioéticos con juicio clínico. Articula bioética profesional con ética personal. Comprende causas del sufrimiento moral. Correlaciona derechos del paciente y deberes del profesional.</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 font-semibold text-slate-700">3</td>
+                                    <td class="p-3 text-slate-700">Conoce, evalúa, conecta, integra y articula conocimientos y habilidades en interacción compleja con la persona cuidada.</td>
+                                    <td class="p-3 text-slate-700 text-sm">Fundamentación teórica del acto. Correlación entre humanización y resultados. Análisis de complejidad del entorno. Personaliza plan de cuidado integrando biografía del paciente. Demuestra comunicación terapéutica coherente.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-6">
+                    <h3 class="text-xl font-bold text-blue-800 mb-3">Evidencias e Instrumentos</h3>
+                    <ul class="space-y-2 text-slate-700">
+                                                    <span class="text-blue-600 mr-2">📄</span>
+                            <span>Documento elaborado durante el taller (Unidad I)</span>
+                        </li>
+                                                    <span class="text-blue-600 mr-2">📄</span>
+                            <span>Documento sobre importancia de la bioética en vida personal y profesional (Unidad II)</span>
+                        </li>
+                                                    <span class="text-blue-600 mr-2">📄</span>
+                            <span>Documento de caso clínico con análisis de humanización (Unidad III)</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Bibliografía -->
+            <div id="bibliografia" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-green-800 mb-6">Bibliografía</h2>
+                
+                <div class="bg-white border border-green-300 rounded-lg shadow-sm p-6">
+                    <ul class="space-y-4 text-slate-700">
+                                                    <span class="text-green-600 mr-2">📚</span>
+                            <span>Bandrés Moya, Fernando. Ruiz-Valdepeñas, Benjamín. Educar en bioética al profesional de Ciencias de la Salud. Una perspectiva internacional.</span>
+                        </li>
+                                                    <span class="text-green-600 mr-2">📚</span>
+                            <span>Bermeo de Rubio, Myriam. Pardo Herrera, Ivanoba. De la ética a la Bioética en las Ciencias de la Salud. Editorial Santiago de Cali. 2020</span>
+                        </li>
+                                                    <span class="text-green-600 mr-2">📚</span>
+                            <span>Consejo Federal de Medicina. Bioética. 2022</span>
+                        </li>
+                                                    <span class="text-green-600 mr-2">📚</span>
+                            <span>Gracia, Diego. Fundamentos de la Bioética.</span>
+                        </li>
+                                                    <span class="text-green-600 mr-2">📚</span>
+                            <span>Hincapié Sánchez, Jennifer. Medina Arellano, María. Bioética: Teorías y principios. Universidad Autónoma de México.</span>
+                        </li>
+                                                    <span class="text-green-600 mr-2">📚</span>
+                            <span>Lolas, Fernando. Bioética. Editorial Universitaria. Santiago de Chile.</span>
+                        </li>
+                                                    <span class="text-green-600 mr-2">📚</span>
+                            <span>Tom L. Beauchamp y James F. Childress. Principios de Ética Biomédica.</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="mt-6 bg-purple-50 border border-purple-200 rounded-lg p-6">
+                    <h3 class="text-xl font-bold text-purple-800 mb-3">Elaborado por</h3>
+                    <p class="text-slate-700">MARTHA OROZCO VALETA<br>Docente de tiempo completo</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // JavaScript para manejar la navegación
+        const links = document.querySelectorAll('.sidebar-link');
+        const panes = document.querySelectorAll('.content-pane');
+
+        links.forEach(link => {
+            link.addEventListener('click', function() {
+                panes.forEach(pane => pane.classList.remove('active'));
+                links.forEach(l => l.classList.remove('active'));
+                const targetId = this.getAttribute('data-target');
+                // Eliminar cualquier contenido activo antes de mostrar el nuevo
+                panes.forEach(pane => pane.classList.remove('active'));
+                // Eliminar cualquier contenido activo antes de mostrar el nuevo
+                panes.forEach(pane => pane.classList.remove('active'));
+                // Eliminar cualquier contenido activo antes de mostrar el nuevo
+                document.querySelectorAll('.content-pane').forEach(pane => pane.classList.remove('active'));
+                document.getElementById(targetId).classList.add('active');
+                // Asegurarse de que el contenido de  no esté activo al cambiar de sección
+                if (targetId !== 'introduccion') {
+                    document.getElementById('introduccion').classList.remove('active');
+                }
+                // Asegurarse de que el contenido de  no esté activo al cambiar de sección
+                if (targetId !== 'introduccion') {
+                    document.getElementById('introduccion').classList.remove('active');
+                }
+                // Asegurarse de que el contenido de  no esté activo al cambiar de sección
+                if (targetId !== 'introduccion') {
+                    document.getElementById('introduccion').classList.remove('active');
+                }
+                this.classList.add('active');
+            });
+        });
+
+        // Function for Text-to-Speech
+        function speakText(text) {
+            const speech = new SpeechSynthesisUtterance(text);
+            window.speechSynthesis.speak(speech);
+        }
+
+        // Add event listeners for text-to-speech buttons
+        const speechButtons = document.querySelectorAll('.speech-button');
+        speechButtons.forEach((button) => {
+            button.addEventListener('click', () => {
+                const text = button.getAttribute('data-text');
+                speakText(text);
+            });
+        });
+
+        // Mobile navigation
+        document.getElementById('mobile-nav').addEventListener('change', function() {
+            const target = this.value;
+            document.querySelectorAll('.content-pane').forEach(pane => pane.classList.remove('active'));
+            document.getElementById(target).classList.add('active');
+        });
+
+        // Accordion functionality
+        document.querySelectorAll('.accordion-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const target = this.getAttribute('data-target');
+                const panel = document.querySelector(target);
+                const span = this.querySelector('span');
+                
+                if (panel.classList.contains('hidden')) {
+                    panel.classList.remove('hidden');
+                    panel.classList.add('active');
+                    span.textContent = '➖';
+                } else {
+                    panel.classList.add('hidden');
+                    panel.classList.remove('active');
+                    span.textContent = '➕';
+                }
+            });
+        });
+
+        // Word Search Game (Sopa de Letras)
+        const words = ['AUTONOMÍA', 'BENEFICENCIA', 'JUSTICIA', 'DIGNIDAD', 'ÉTICA', 'PACIENTE'];
+        const gridSize = 10;
+        let grid = [];
+        let foundWords = [];
+
+        function initWordSearch() {
+            grid = Array(gridSize).fill(null).map(() => Array(gridSize).fill(''));
+            foundWords = [];
+            
+            // Place words in grid
+            words.forEach(word => {
+                placeWord(word);
+            });
+            
+            // Fill empty cells with random letters
+            for (let i = 0; i < gridSize; i++) {
+                for (let j = 0; j < gridSize; j++) {
+                    if (grid[i][j] === '') {
+                        grid[i][j] = String.fromCharCode(65 + Math.floor(Math.random() * 26));
+                    }
+                }
+            }
+            
+            renderWordSearch();
+            renderWordList();
+        }
+
+        function placeWord(word) {
+            const directions = [
+                [0, 1],   // horizontal
+                [1, 0],   // vertical
+                [1, 1],   // diagonal down-right
+                [-1, 1]   // diagonal up-right
+            ];
+            
+            let placed = false;
+            let attempts = 0;
+            
+            while (!placed && attempts < 100) {
+                const dir = directions[Math.floor(Math.random() * directions.length)];
+                const startRow = Math.floor(Math.random() * gridSize);
+                const startCol = Math.floor(Math.random() * gridSize);
+                
+                if (canPlaceWord(word, startRow, startCol, dir)) {
+                    for (let i = 0; i < word.length; i++) {
+                        grid[startRow + i * dir[0]][startCol + i * dir[1]] = word[i];
+                    }
+                    placed = true;
+                }
+                attempts++;
+            }
+        }
+
+        function canPlaceWord(word, row, col, dir) {
+            for (let i = 0; i < word.length; i++) {
+                const newRow = row + i * dir[0];
+                const newCol = col + i * dir[1];
+                
+                if (newRow < 0 || newRow >= gridSize || newCol < 0 || newCol >= gridSize) {
+                    return false;
+                }
+                
+                if (grid[newRow][newCol] !== '' && grid[newRow][newCol] !== word[i]) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function renderWordSearch() {
+            const container = document.getElementById('wordSearch');
+            container.innerHTML = '';
+            
+            for (let i = 0; i < gridSize; i++) {
+                for (let j = 0; j < gridSize; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'w-8 h-8 flex items-center justify-center bg-green-50 border border-green-200 rounded cursor-pointer hover:bg-green-200 transition-colors font-bold text-green-800';
+                    cell.textContent = grid[i][j];
+                    cell.dataset.row = i;
+                    cell.dataset.col = j;
+                    cell.addEventListener('click', handleCellClick);
+                    container.appendChild(cell);
+                }
+            }
+        }
+
+        function renderWordList() {
+            const container = document.getElementById('wordList');
+            container.innerHTML = '';
+            
+            words.forEach(word => {
+                const wordEl = document.createElement('span');
+                wordEl.className = foundWords.includes(word) 
+                    ? 'px-3 py-1 bg-green-500 text-white rounded-full line-through' 
+                    : 'px-3 py-1 bg-gray-200 text-gray-700 rounded-full';
+                wordEl.textContent = word;
+                container.appendChild(wordEl);
+            });
+        }
+
+        function handleCellClick(e) {
+            const cell = e.target;
+            cell.classList.toggle('bg-yellow-300');
+            checkForWords();
+        }
+
+        function checkForWords() {
+            const selectedCells = document.querySelectorAll('#wordSearch .bg-yellow-300');
+            const selectedLetters = Array.from(selectedCells).map(cell => ({
+                letter: cell.textContent,
+                row: parseInt(cell.dataset.row),
+                col: parseInt(cell.dataset.col)
+            }));
+            
+            words.forEach(word => {
+                if (!foundWords.includes(word) && isWordFound(word, selectedLetters)) {
+                    foundWords.push(word);
+                    renderWordList();
+                    
+                    if (foundWords.length === words.length) {
+                        setTimeout(() => alert('¡Felicidades! Has encontrado todas las palabras.'), 100);
+                    }
+                }
+            });
+        }
+
+        function isWordFound(word, selectedLetters) {
+            const wordLetters = word.split('');
+            const selectedWord = selectedLetters.map(l => l.letter).join('');
+            
+            // Check if selected letters contain the word in order
+            let index = 0;
+            for (const letter of selectedLetters) {
+                if (letter.letter === wordLetters[index]) {
+                    index++;
+                    if (index === wordLetters.length) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        // Hangman Game
+        const hangmanWords = [
+            'BIOÉTICA', 'ENFERMERÍA', 'HUMANIZACIÓN', 'AUTONOMÍA', 
+            'BENEFICENCIA', 'JUSTICIA', 'DIGNIDAD', 'CUIDADO', 
+            'PACIENTE', 'SALUD', 'ÉTICA', 'COMPASIÓN'
+        ];
+        let currentWord = '';
+        let guessedLetters = [];
+        let wrongGuesses = 0;
+        const maxWrongGuesses = 6;
+
+        function initHangman() {
+            currentWord = hangmanWords[Math.floor(Math.random() * hangmanWords.length)];
+            guessedLetters = [];
+            wrongGuesses = 0;
+            renderHangman();
+        }
+
+        function renderHangman() {
+            const display = document.getElementById('hangmanDisplay');
+            const drawing = document.getElementById('hangmanDrawing');
+            const keyboard = document.getElementById('keyboard');
+            const message = document.getElementById('hangmanMessage');
+            
+            // Display word with blanks
+            let displayText = '';
+            let wordComplete = true;
+            
+            for (const letter of currentWord) {
+                if (guessedLetters.includes(letter)) {
+                    displayText += letter + ' ';
+                } else {
+                    displayText += '_ ';
+                    wordComplete = false;
+                }
+            }
+            
+            display.textContent = displayText.trim();
+            
+            // Draw hangman
+            const hangmanParts = ['', '🙂', '🙂|', '🙂/|', '🙂/|\\', '🙂/|\\/', '💀'];
+            drawing.textContent = hangmanParts[wrongGuesses];
+            
+            // Render keyboard
+            keyboard.innerHTML = '';
+            for (let i = 65; i <= 90; i++) {
+                const letter = String.fromCharCode(i);
+                if (letter === 'Ñ') continue;
+                
+                const btn = document.createElement('button');
+                btn.textContent = letter;
+                btn.className = guessedLetters.includes(letter)
+                    ? 'w-8 h-8 bg-gray-300 text-gray-500 rounded cursor-not-allowed'
+                    : 'w-8 h-8 bg-green-500 text-white rounded hover:bg-green-600 transition-colors';
+                
+                if (guessedLetters.includes(letter)) {
+                    btn.disabled = true;
+                } else {
+                    btn.addEventListener('click', () => handleGuess(letter));
+                }
+                
+                keyboard.appendChild(btn);
+            }
+            
+            // Check win/lose
+            if (wordComplete) {
+                message.textContent = '¡Ganaste! 🎉';
+                message.className = 'mt-4 text-lg font-semibold text-green-600';
+            } else if (wrongGuesses >= maxWrongGuesses) {
+                message.textContent = `¡Perdiste! La palabra era: ${currentWord}`;
+                message.className = 'mt-4 text-lg font-semibold text-red-600';
+            } else {
+                message.textContent = '';
+            }
+        }
+
+        function handleGuess(letter) {
+            if (!guessedLetters.includes(letter)) {
+                guessedLetters.push(letter);
+                
+                if (!currentWord.includes(letter)) {
+                    wrongGuesses++;
+                }
+                
+                renderHangman();
+            }
+        }
+
+        // Initialize games when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initWordSearch();
+            initHangman();
+        });
+    </script>
+</body>
+</html>

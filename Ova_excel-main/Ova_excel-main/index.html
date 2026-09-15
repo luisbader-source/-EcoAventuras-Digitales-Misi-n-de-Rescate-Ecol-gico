@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OVA: Excel Intermedio</title>
+    <script src="https://cdn.tailwindcss.com?_ver=3.4.1"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+        .sidebar-link {
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+        .sidebar-link.active, .sidebar-link:hover {
+            background-color: #e6f4ea;
+            color: #166534;
+            border-left-color: #f2c94c;
+        }
+        .content-pane {
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        .content-pane.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .step-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .step-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .step-card.selected {
+            border-color: #f2c94c;
+            background-color: #fefce8;
+        }
+        .step-card.correct {
+            border-color: #22c55e;
+            background-color: #dcfce7;
+        }
+        .step-card.incorrect {
+            border-color: #ef4444;
+            background-color: #fef2f2;
+        }
+        .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #e5e7eb;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #f2c94c, #f59e0b);
+            transition: width 0.3s ease;
+        }
+        .drag-item {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            border-radius: 8px;
+            padding: 12px 16px;
+            cursor: grab;
+            margin: 8px;
+            display: inline-block;
+            transition: all 0.3s;
+        }
+        .drag-item:hover {
+            background: #fde68a;
+            transform: scale(1.05);
+        }
+        .drag-item.dragging {
+            opacity: 0.5;
+        }
+        .drop-zone {
+            background: #f9fafb;
+            border: 2px dashed #d1d5db;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 100px;
+            margin: 10px 0;
+            transition: all 0.3s;
+        }
+        .drop-zone.drag-over {
+            background: #fef3c7;
+            border-color: #f59e0b;
+        }
+        .drop-zone.correct {
+            background: #dcfce7;
+            border-color: #22c55e;
+        }
+        .drop-zone.incorrect {
+            background: #fef2f2;
+            border-color: #ef4444;
+        }
+        .dax-editor {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            min-height: 100px;
+            border: 2px solid #334155;
+            width: 100%;
+        }
+        .dax-editor:focus {
+            outline: none;
+            border-color: #f59e0b;
+        }
+        .image-container {
+            position: relative;
+            cursor: pointer;
+        }
+        .zoom-icon {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .image-container:hover .zoom-icon {
+            opacity: 1;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            animation: fadeIn 0.3s ease;
+        }
+        .modal-content {
+            position: relative;
+            margin: auto;
+            padding: 20px;
+            width: 90%;
+            max-width: 1000px;
+            max-height: 90vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .modal-content img {
+            max-width: 100%;
+            max-height: 90vh;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+        .close-modal {
+            position: absolute;
+            top: -20px;
+            right: -20px;
+            background-color: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50">
+
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white shadow-lg flex-shrink-0 hidden md:flex md:flex-col">
+            <div class="p-4">
+                <div style="width: 150px; height: 150px;" class="p-2 mx-auto flex items-center justify-center bg-white rounded-full shadow-lg border-2 border-yellow-500 transition-shadow duration-300 hover:shadow-yellow-400">
+                    <img src="img/logo.png" alt="Logo OVA" class="w-5/6 h-5/6 object-contain" loading="lazy">
+                </div>
+            </div>
+            <nav class="mt-6 flex-1">
+                <a href="#" class="sidebar-link active flex items-center py-3 px-6 font-medium text-slate-700" data-target="introduccion"><span class="mr-3 text-xl">🚀</span> Introducción</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="objetivos"><span class="mr-3 text-xl">🎯</span> Objetivos</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="contenido"><span class="mr-3 text-xl">📚</span> Contenido</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="actividades"><span class="mr-3 text-xl">✍️</span> Actividades</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="evaluacion"><span class="mr-3 text-xl">✔️</span> Evaluación</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="recursos"><span class="mr-3 text-xl">📖</span> Recursos</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="bibliografia"><span class="mr-3 text-xl">📚</span> Bibliografía</a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-4 sm:p-6 md:p-10 bg-gray-50">
+            <!-- Mobile Header -->
+            <div class="md:hidden mb-6 flex flex-col items-center">
+                <div style="width: 100px; height: 100px;" class="p-2 flex items-center justify-center bg-white rounded-full shadow-lg transition-shadow duration-300 hover:shadow-yellow-400 mb-2">
+                    <img src="img/logo.png" alt="Logo OVA" class="w-5/6 h-5/6 object-contain" loading="lazy">
+                </div>
+                 <select id="mobile-nav" class="w-full mt-2 p-2 border rounded-md bg-white shadow-sm">
+                    <option value="introduccion">🚀 Introducción</option>
+                    <option value="objetivos">🎯 Objetivos</option>
+                    <option value="contenido">📚 Contenido</option>
+                    <option value="actividades">✍️ Actividades Prácticas</option>
+                    <option value="evaluacion">✔️ Evaluación</option>
+                    <option value="recursos">📖 Recursos</option>
+                    <option value="bibliografia">📚 Bibliografía</option>
+                </select>
+            </div>
+
+          <!-- Introducción -->
+            <div id="introduccion" class="content-pane active">
+                <h2 class="text-2xl sm:text-3xl font-bold text-yellow-800 mb-4">Excel Intermedio 📊</h2>
+                <div class="mt-4 mb-6 p-4 bg-white border border-yellow-300 rounded-lg shadow-sm flex flex-col items-center">
+                    <div class="image-container w-full h-32 sm:h-48 md:h-64 xl:h-80 bg-gradient-to-br from-yellow-100 to-yellow-200 rounded flex items-center justify-center overflow-hidden" onclick="openModal(this)">
+                        <img src="img/WhatsApp Image 2026-04-09 at 12.38.47 PM.jpeg" alt="Excel - Análisis de datos" class="w-full h-full object-cover">
+                        <div class="zoom-icon">🔍</div>
+                    </div>
+                </div>
+                <p class="text-lg text-slate-700 leading-relaxed mb-4">
+                    Excel Intermedio te permitirá dominar herramientas avanzadas para optimizar la organización y el análisis de datos complejos. 📈✨
+                </p>
+                <p class="text-lg text-slate-700 leading-relaxed mb-4">
+                    En este curso aprenderás fórmulas de búsqueda y unión de texto, formato condicional para identificar visualmente tendencias, funciones lógicas y estadísticas para reportes precisos, y tablas dinámicas para sintetizar grandes volúmenes de información de manera automatizada.
+                </p>
+            <div class="speech-controls mb-4 p-3 bg-yellow-100 rounded-lg flex items-center flex-wrap gap-2" data-target="introduccion">
+    <button class="play-btn bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+        <span class="mr-1">▶️</span> Leer
+    </button>
+    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+        <span class="mr-1">⏸️</span> Pausar
+    </button>
+    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+        <span class="mr-1">⏹️</span> Detener
+    </button>
+    <div class="flex items-center ml-2">
+        <label for="speech-rate-introduccion" class="text-sm text-yellow-800 mr-2">Velocidad:</label>
+        <input type="range" class="speech-rate" id="speech-rate-introduccion" min="0.5" max="2" step="0.1" value="1" class="w-24">
+    </div>
+</div>
+                <div class="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800">
+                    <strong>💡 Atajos de teclado:</strong> Presiona <kbd class="bg-white px-2 py-1 rounded border">Espacio</kbd> para reproducir/pausar, <kbd class="bg-white px-2 py-1 rounded border">Tab</kbd> para detener
+                </div>
+            </div>
+
+            <!-- Objetivos -->
+            <div id="objetivos" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-yellow-800 mb-6">Objetivos de aprendizaje</h2>
+                <div class="speech-controls mb-4 p-3 bg-yellow-100 rounded-lg flex items-center flex-wrap gap-2" data-target="objetivos">
+                    <button class="play-btn bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-objetivos" class="text-sm text-yellow-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-objetivos" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                <ul class="space-y-4">
+                    <li class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                        <span class="text-yellow-700 mr-3 text-2xl">🧠</span>
+                        <span>Comprender el uso de archivos CSV y la función "Texto en columnas" para importar datos correctamente.</span>
+                    </li>
+                    <li class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                        <span class="text-yellow-700 mr-3 text-2xl">🔗</span>
+                        <span>Domina la función CONCATENAR y el operador & para unir texto de múltiples celdas.</span>
+                    </li>
+                    <li class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                        <span class="text-yellow-700 mr-3 text-2xl">🔍</span>
+                        <span>Aprender a usar BUSCARV para buscar y recuperar datos de otras tablas.</span>
+                    </li>
+                    <li class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                        <span class="text-yellow-700 mr-3 text-2xl">🎨</span>
+                        <span>Aplicar formato condicional para identificar visualmente tendencias y valores importantes.</span>
+                    </li>
+                    <li class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                        <span class="text-yellow-700 mr-3 text-2xl">📊</span>
+                        <span>Utilizar funciones lógicas (SI, Y, O) y estadísticas para análisis avanzados.</span>
+                    </li>
+                    <li class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                        <span class="text-yellow-700 mr-3 text-2xl">📈</span>
+                        <span>Crear tablas dinámicas para sintetizar grandes volúmenes de información de manera automatizada.</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Contenido -->
+            <div id="contenido" class="content-pane">
+                <div class="speech-controls mb-4 p-3 bg-yellow-100 rounded-lg flex items-center flex-wrap gap-2" data-target="contenido">
+                    <button class="play-btn bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-contenido" class="text-sm text-yellow-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-contenido" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                
+                <div class="w-full max-w-8xl mx-auto">
+                    <!-- CSV y Texto en columnas -->
+                    <div class="mb-4">
+                        <button type="button" class="w-full flex justify-between items-center p-4 bg-yellow-100 border border-yellow-300 rounded-t-lg focus:outline-none font-bold text-yellow-800 text-lg accordion-btn mb-2" data-target="#panel-csv">
+                            CSV y Texto en columnas<span class="ml-2">➕</span>
+                        </button>
+                    </div>
+                    <div id="panel-csv" class="accordion-panel hidden bg-white border border-t-0 border-yellow-300 rounded-b-lg p-4 mb-6">
+                        <div class="space-y-6 text-slate-700 leading-relaxed">
+                            <div>
+                                <p class="mb-4"><strong>CSV (Comma Separated Values):</strong> Son archivos de texto plano donde los datos están separados por comas. Excel los abre directamente, pero a veces es necesario usar "Texto en columnas" si no se separan automáticamente.</p>
+                            </div>
+                            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-yellow-800 mb-2">📝 Cómo usar Texto en columnas</h4>
+                                <ol class="list-decimal pl-5 space-y-2">
+                                    <li>Selecciona la columna con los datos que deseas separar</li>
+                                    <li>Ve a la pestaña <strong>Datos</strong></li>
+                                    <li>Haz clic en <strong>Texto en columnas</strong></li>
+                                    <li>Elige <strong>Delimitado</strong> o <strong>Ancho fijo</strong> según tus datos</li>
+                                    <li>Selecciona el delimitador (coma, punto y coma, tabulación, etc.)</li>
+                                    <li>Finaliza y los datos se separarán en columnas distintas</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CONCATENAR -->
+                    <div class="mb-4">
+                        <button type="button" class="w-full flex justify-between items-start p-4 bg-yellow-100 border border-yellow-300 rounded-t-lg focus:outline-none font-bold text-yellow-800 text-lg accordion-btn mb-2 text-left" data-target="#panel-concatenar">
+                            CONCATENAR y el operador &<span class="ml-2">➕</span>
+                        </button>
+                    </div>
+                    <div id="panel-concatenar" class="accordion-panel hidden bg-white border border-t-0 border-yellow-300 rounded-b-lg p-4 mb-6">
+                        <div class="text-slate-700 leading-relaxed space-y-6">
+                            <p class="mb-2"><strong>CONCATENAR:</strong> Une el contenido de dos o más celdas en una sola.</p>
+                            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-yellow-800 mb-2">🔗 Sintaxis</h4>
+                                <ul class="list-disc pl-5 space-y-1">
+                                    <li><code>=CONCATENAR(A1, " ", B1)</code> - Une A1, un espacio y B1</li>
+                                    <li><code>=A1 & " " & B1</code> - Forma más corta usando el operador &</li>
+                                </ul>
+                            </div>
+                            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-blue-800 mb-2">💡 Ejemplo práctico</h4>
+                                <p>Si tienes "Juan" en A1 y "Pérez" en B1:</p>
+                                <p><code>=A1 & " " & B1</code> devuelve "Juan Pérez"</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BUSCARV -->
+                    <div class="mb-4">
+                        <button type="button" class="w-full flex justify-between items-start p-4 bg-yellow-100 border border-yellow-300 rounded-t-lg focus:outline-none font-bold text-yellow-800 text-lg accordion-btn mb-2 text-left" data-target="#panel-buscarv">
+                            BUSCARV<span class="ml-2">➕</span>
+                        </button>
+                    </div>
+                    <div id="panel-buscarv" class="accordion-panel hidden bg-white border border-t-0 border-yellow-300 rounded-b-lg p-4 mb-6">
+                        <div class="text-slate-700 leading-relaxed space-y-6">
+                            <p class="mb-2"><strong>BUSCARV:</strong> Busca un valor en la primera columna de una tabla y devuelve un valor en la misma fila desde otra columna.</p>
+                            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-yellow-800 mb-2">🔍 Sintaxis</h4>
+                                <p><code>=BUSCARV(valor_buscado, rango_tabla, num_columna, [coincidencia])</code></p>
+                                <ul class="list-disc pl-5 mt-2 space-y-1">
+                                    <li><strong>valor_buscado:</strong> El valor que quieres buscar</li>
+                                    <li><strong>rango_tabla:</strong> La tabla donde buscar (debe incluir la columna de búsqueda)</li>
+                                    <li><strong>num_columna:</strong> Número de columna desde la cual devolver el valor</li>
+                                    <li><strong>coincidencia:</strong> VERDADERO (aproximada) o FALSO (exacta)</li>
+                                </ul>
+                            </div>
+                            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-blue-800 mb-2">💡 Ejemplo práctico</h4>
+                                <p>Si quieres buscar el precio de un producto por su ID:</p>
+                                <p><code>=BUSCARV(A2, Precios!A:B, 2, FALSO)</code></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Formato Condicional -->
+                    <div class="mb-4">
+                        <button type="button" class="w-full flex justify-between items-start p-4 bg-yellow-100 border border-yellow-300 rounded-t-lg focus:outline-none font-bold text-yellow-800 text-lg accordion-btn mb-2 text-left" data-target="#panel-formato">
+                            Formato Condicional<span class="ml-2">➕</span>
+                    </button>
+                    </div>
+                    <div id="panel-formato" class="accordion-panel hidden bg-white border border-t-0 border-yellow-300 rounded-b-lg p-4 mb-6">
+                        <div class="text-slate-700 leading-relaxed space-y-6">
+                            <p class="mb-2">El formato condicional permite aplicar formato automáticamente a celdas que cumplen ciertas condiciones, ayudando a identificar visualmente tendencias, valores altos/bajos o datos importantes.</p>
+                            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-yellow-800 mb-2">🎨 Tipos de reglas comunes</h4>
+                                <ul class="list-disc pl-5 space-y-1">
+                                    <li><strong>Resaltar reglas de celdas:</strong> Valores mayores que, menores que, entre, iguales a</li>
+                                    <li><strong>Reglas superior/inferior:</strong> Los 10 primeros, 10% inferior, etc.</li>
+                                    <li><strong>Barras de datos:</strong> Barras visuales dentro de las celdas</li>
+                                    <li><strong>Escalas de color:</strong> Gradientes de 2 o 3 colores</li>
+                                    <li><strong>Conjunto de iconos:</strong> Flechas, semáforos, banderas, etc.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Funciones Lógicas -->
+                    <div class="mb-4">
+                        <button type="button" class="w-full flex justify-between items-start p-4 bg-yellow-100 border border-yellow-300 rounded-t-lg focus:outline-none font-bold text-yellow-800 text-lg accordion-btn mb-2 text-left" data-target="#panel-logicas">
+                            Funciones Lógicas y Estadísticas<span class="ml-2">➕</span>
+                        </button>
+                    </div>
+                    <div id="panel-logicas" class="accordion-panel hidden bg-white border border-t-0 border-yellow-300 rounded-b-lg p-4 mb-6">
+                        <div class="text-slate-700 leading-relaxed space-y-6">
+                            <h4 class="font-bold text-yellow-800 mb-2">🧠 Funciones Lógicas</h4>
+                            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg mb-4">
+                                <ul class="list-disc pl-5 space-y-1">
+                                    <li><strong>SI:</strong> <code>=SI(condición, valor_si_verdadero, valor_si_falso)</code></li>
+                                    <li><strong>Y:</strong> <code>=Y(condición1, condición2)</code> - Devuelve VERDADERO si todas son verdaderas</li>
+                                    <li><strong>O:</strong> <code>=O(condición1, condición2)</code> - Devuelve VERDADERO si alguna es verdadera</li>
+                                    <li><strong>SI.ERROR:</strong> <code>=SI.ERROR(fórmula, valor_si_error)</code> - Maneja errores</li>
+                                </ul>
+                            </div>
+                            <h4 class="font-bold text-yellow-800 mb-2">📊 Funciones Estadísticas</h4>
+                            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+                                <ul class="list-disc pl-5 space-y-1">
+                                    <li><strong>PROMEDIO:</strong> Calcula el promedio de un rango</li>
+                                    <li><strong>MEDIANA:</strong> Encuentra el valor central</li>
+                                    <li><strong>MODA:</strong> Encuentra el valor más frecuente</li>
+                                    <li><strong>DESVEST:</strong> Desviación estándar</li>
+                                    <li><strong>CONTAR.SI:</strong> Cuenta celdas que cumplen una condición</li>
+                                    <li><strong>SUMAR.SI:</strong> Suma celdas que cumplen una condición</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tablas Dinámicas -->
+                    <div class="mb-4">
+                        <button type="button" class="w-full flex justify-between items-start p-4 bg-yellow-100 border border-yellow-300 rounded-t-lg focus:outline-none font-bold text-yellow-800 text-lg accordion-btn mb-2 text-left" data-target="#panel-dinamicas">
+                            Tablas Dinámicas<span class="ml-2">➕</span>
+                        </button>
+                    </div>
+                    <div id="panel-dinamicas" class="accordion-panel hidden bg-white border border-t-0 border-yellow-300 rounded-b-lg p-4 mb-6">
+                        <div class="text-slate-700 leading-relaxed space-y-6">
+                            <p class="mb-2">Las tablas dinámicas son el recurso más potente de Excel para sintetizar grandes volúmenes de información de manera automatizada. Permiten resumir, analizar y explorar datos de forma interactiva.</p>
+                            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-yellow-800 mb-2">📈 Cómo crear una tabla dinámica</h4>
+                                <ol class="list-decimal pl-5 space-y-2">
+                                    <li>Selecciona el rango de datos que deseas analizar</li>
+                                    <li>Ve a <strong>Insertar</strong> → <strong>Tabla dinámica</strong></li>
+                                    <li>Elige dónde colocar la tabla (nueva hoja o existente)</li>
+                                    <li>Arrastra campos a las áreas: Filtros, Columnas, Filas y Valores</li>
+                                    <li>Personaliza el formato y los cálculos según necesites</li>
+                                </ol>
+                            </div>
+                            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-blue-800 mb-2">💡 Áreas de una tabla dinámica</h4>
+                                <ul class="list-disc pl-5 space-y-1">
+                                    <li><strong>Filtros:</strong> Filtra toda la tabla</li>
+                                    <li><strong>Columnas:</strong> Categorías en la parte superior</li>
+                                    <li><strong>Filas:</strong> Categorías en el lado izquierdo</li>
+                                    <li><strong>Valores:</strong> Datos a calcular (suma, promedio, conteo)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actividades Prácticas -->
+            <div id="actividades" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-yellow-800 mb-6">Actividades prácticas</h2>
+                <div class="speech-controls mb-4 p-3 bg-yellow-100 rounded-lg flex items-center flex-wrap gap-2" data-target="actividades">
+                    <button class="play-btn bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-actividades" class="text-sm text-yellow-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-actividades" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                
+                <div class="space-y-8">
+                    <!-- Simulación 1: CONCATENAR -->
+                    <div class="bg-white border-l-4 border-yellow-500 rounded-lg shadow-sm p-6">
+                        <h3 class="text-xl font-bold text-yellow-700 mb-2">🔗 Simulación 1: CONCATENAR</h3>
+                        <p class="mb-4"><span class="font-semibold">Instrucciones:</span> Selecciona la fórmula correcta para unir el nombre (A1) y apellido (B1) con un espacio en medio.</p>
+                        
+                        <div class="bg-slate-50 p-4 rounded-lg mb-4">
+                            <p class="text-sm text-slate-600 mb-3">Si A1 = "Juan" y B1 = "Pérez", ¿cuál fórmula da "Juan Pérez"?</p>
+                            <div class="space-y-2">
+                                <label class="flex items-center p-3 bg-white border rounded-md cursor-pointer hover:bg-yellow-50 transition-colors">
+                                    <input type="radio" name="concat-answer" value="wrong1" class="mr-3">
+                                    <span class="font-mono">=A1 + B1</span>
+                                </label>
+                                <label class="flex items-center p-3 bg-white border rounded-md cursor-pointer hover:bg-yellow-50 transition-colors">
+                                    <input type="radio" name="concat-answer" value="wrong2" class="mr-3">
+                                    <span class="font-mono">=A1 & B1</span>
+                                </label>
+                                <label class="flex items-center p-3 bg-white border rounded-md cursor-pointer hover:bg-yellow-50 transition-colors">
+                                    <input type="radio" name="concat-answer" value="correct" class="mr-3">
+                                    <span class="font-mono">=A1 & " " & B1</span>
+                                </label>
+                                <label class="flex items-center p-3 bg-white border rounded-md cursor-pointer hover:bg-yellow-50 transition-colors">
+                                    <input type="radio" name="concat-answer" value="wrong3" class="mr-3">
+                                    <span class="font-mono">=CONCATENAR(A1, B1)</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 flex gap-2">
+                            <button id="check-concat-btn" class="bg-yellow-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-yellow-700 transition-colors">
+                                Verificar respuesta
+                            </button>
+                            <button id="reset-concat-btn" class="bg-slate-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-slate-600 transition-colors">
+                                Reiniciar
+                            </button>
+                        </div>
+                        <div id="concat-result" class="mt-4 font-medium"></div>
+                        <div id="explicacion-concat" class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg hidden">
+                            <h4 class="font-bold text-blue-800 mb-2">📖 Explicación:</h4>
+                            <p class="text-slate-700">La respuesta correcta es <code class="bg-white px-2 py-1 rounded">=A1 & " " & B1</code></p>
+                            <p class="text-slate-700 mt-2">El operador & une texto, y " " agrega un espacio entre las celdas.</p>
+                        </div>
+                    </div>
+
+                    <!-- Simulación 2: BUSCARV -->
+                    <div class="bg-white border-l-4 border-green-500 rounded-lg shadow-sm p-6">
+                        <h3 class="text-xl font-bold text-yellow-700 mb-2">🔍 Simulación 2: BUSCARV</h3>
+                        <p class="mb-4"><span class="font-semibold">Instrucciones:</span> Selecciona la fórmula correcta para buscar el precio del producto con ID en A2.</p>
+                        
+                        <div class="bg-slate-50 p-4 rounded-lg mb-4">
+                            <p class="text-sm text-slate-600 mb-3">Tabla de precios en hoja "Precios" (columnas A:C):</p>
+                            <table class="w-full border-collapse border border-slate-300 text-sm mb-4">
+                                <thead>
+                                    <tr class="bg-yellow-100">
+                                        <th class="border border-slate-300 p-2">ID (A)</th>
+                                        <th class="border border-slate-300 p-2">Producto (B)</th>
+                                        <th class="border border-slate-300 p-2">Precio (C)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td class="border border-slate-300 p-2">P001</td><td class="border border-slate-300 p-2">Laptop</td><td class="border border-slate-300 p-2">$1200</td></tr>
+                                    <tr><td class="border border-slate-300 p-2">P002</td><td class="border border-slate-300 p-2">Mouse</td><td class="border border-slate-300 p-2">$25</td></tr>
+                                </tbody>
+                            </table>
+                            <p class="text-sm text-slate-600 mb-3">Si A2 contiene "P001", ¿cuál fórmula devuelve el precio ($1200)?</p>
+                            <div class="space-y-2">
+                                <label class="flex items-center p-3 bg-white border rounded-md cursor-pointer hover:bg-green-50 transition-colors">
+                                    <input type="radio" name="buscarv-answer" value="wrong1" class="mr-3">
+                                    <span class="font-mono">=BUSCARV(A2, Precios!A:B, 2, FALSO)</span>
+                                </label>
+                                <label class="flex items-center p-3 bg-white border rounded-md cursor-pointer hover:bg-green-50 transition-colors">
+                                    <input type="radio" name="buscarv-answer" value="correct" class="mr-3">
+                                    <span class="font-mono">=BUSCARV(A2, Precios!A:C, 3, FALSO)</span>
+                                </label>
+                                <label class="flex items-center p-3 bg-white border rounded-md cursor-pointer hover:bg-green-50 transition-colors">
+                                    <input type="radio" name="buscarv-answer" value="wrong2" class="mr-3">
+                                    <span class="font-mono">=BUSCARV(A2, Precios!A:C, 2, VERDADERO)</span>
+                                </label>
+                                <label class="flex items-center p-3 bg-white border rounded-md cursor-pointer hover:bg-green-50 transition-colors">
+                                    <input type="radio" name="buscarv-answer" value="wrong3" class="mr-3">
+                                    <span class="font-mono">=BUSCARV("P001", Precios!A:C, 3, FALSO)</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 flex gap-2">
+                            <button id="check-buscarv-btn" class="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 transition-colors">
+                                Verificar respuesta
+                            </button>
+                            <button id="reset-buscarv-btn" class="bg-slate-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-slate-600 transition-colors">
+                                Reiniciar
+                            </button>
+                        </div>
+                        <div id="buscarv-result" class="mt-4 font-medium"></div>
+                        <div id="explicacion-buscarv" class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg hidden">
+                            <h4 class="font-bold text-blue-800 mb-2">📖 Explicación:</h4>
+                            <p class="text-slate-700">La respuesta correcta es <code class="bg-white px-2 py-1 rounded">=BUSCARV(A2, Precios!A:C, 3, FALSO)</code></p>
+                            <ul class="list-disc pl-5 mt-2 text-slate-700">
+                                <li><strong>A2:</strong> Celda con el ID a buscar</li>
+                                <li><strong>Precios!A:C:</strong> Rango que incluye ID, producto y precio</li>
+                                <li><strong>3:</strong> Columna del precio (tercera columna)</li>
+                                <li><strong>FALSO:</strong> Coincidencia exacta</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Evaluación -->
+            <div id="evaluacion" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-yellow-800 mb-6">Evaluación</h2>
+                <div class="speech-controls mb-4 p-3 bg-yellow-100 rounded-lg flex items-center flex-wrap gap-2" data-target="evaluacion">
+                    <button class="play-btn bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-evaluacion" class="text-sm text-yellow-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-evaluacion" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <p class="text-slate-600 mb-6">Comprueba lo que has aprendido sobre Power BI. Selecciona la respuesta correcta para cada pregunta.</p>
+                    <div id="quiz-container"></div>
+                    <button id="submit-quiz-btn" class="mt-6 bg-yellow-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-yellow-700 transition-colors">Finalizar evaluación</button>
+                    <div id="quiz-result" class="mt-4 text-lg font-bold"></div>
+                </div>
+            </div>
+
+            <!-- Recursos -->
+            <div id="recursos" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-yellow-800 mb-6">Recursos para profundizar</h2>
+                <div class="speech-controls mb-4 p-3 bg-yellow-100 rounded-lg flex items-center flex-wrap gap-2" data-target="recursos">
+                    <button class="play-btn bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-recursos" class="text-sm text-yellow-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-recursos" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                <p class="text-slate-700 leading-relaxed mb-6">Para ampliar tu conocimiento sobre Excel Intermedio, te recomendamos explorar los siguientes enlaces y documentos:</p>
+                <ul class="space-y-4">
+                    <li class="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow border-l-4 border-yellow-500 flex flex-col sm:flex-row sm:items-center justify-between">
+                        <div>
+                            <h3 class="font-bold text-yellow-700">1. Microsoft Learn - Excel Intermedio:</h3>
+                            <a href="https://www.youtube.com/watch?v=_Yx9sx7JMqE" target="_blank" class="underline text-slate-700 hover:text-yellow-700">Ir al recurso</a>
+                        </div>
+                    </li>
+                    <li class="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow border-l-4 border-yellow-500 flex flex-col sm:flex-row sm:items-center justify-between">
+                        <div>
+                            <h3 class="font-bold text-yellow-700">2. Documentación oficial de Excel:</h3>
+                            <a href="https://support.microsoft.com/es-es/excel" target="_blank" class="underline text-slate-700 hover:text-yellow-700">Ir al recurso</a>
+                        </div>
+                    </li>
+                    <li class="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow border-l-4 border-yellow-500 flex flex-col sm:flex-row sm:items-center justify-between">
+                        <div>
+                            <h3 class="font-bold text-yellow-700">3. Guía de funciones de Excel:</h3>
+                            <a href="https://support.microsoft.com/es-es/office/funciones-de-excel-por-categoria-5f91aef4-eebd-4713-832c-6951c761c9ad" target="_blank" class="underline text-slate-700 hover:text-yellow-700">Ir al recurso</a>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Bibliografía -->
+            <div id="bibliografia" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-yellow-800 mb-6">Bibliografía</h2>
+                <div class="speech-controls mb-4 p-3 bg-yellow-100 rounded-lg flex items-center flex-wrap gap-2" data-target="bibliografia">
+                    <button class="play-btn bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-bibliografia" class="text-sm text-yellow-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-bibliografia" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                <div class="space-y-6">
+                <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow border-l-4 border-yellow-500">
+                    <span class="block text-slate-700">FRANCISCO LUIS ARRIETA ALVAREZ. <i> 2.2 CONDICIONAL Y NUMEROS</i>
+                          <a href="https://www.youtube.com/watch?v=_Yx9sx7JMqE" class="text-yellow-700 underline break-all" target="_blank">https://www.youtube.com/watch?v=_Yx9sx7JMqE</a>
+                    </span>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow border-l-4 border-yellow-500">
+                    <span class="block text-slate-700">
+                        Microsoft. (2023). <i>Excel Documentation</i>. Microsoft Learn.<br>
+                        <a href="https://support.microsoft.com/es-es/excel" class="text-yellow-700 underline break-all" target="_blank">https://support.microsoft.com/es-es/excel</a>
+                    </span>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow border-l-4 border-yellow-500">
+                    <span class="block text-slate-700">
+                        Alexander, M., & Kusleika, D. (2022). <i>Excel 2021 Formulas and Functions</i>. Wiley.
+                    </span>
+                </div>
+            </div>
+            
+            <!-- Footer/Credits -->
+            <footer class="mt-12 pt-6 border-t-2 border-slate-200 text-center">
+                <p class="text-slate-600 font-medium">Creado por:</p>
+                <p class="text-yellow-800 font-bold text-lg">Centro de Innovación en TIC para el apoyo de la Docencia CINTIA</p>
+                <p class="text-slate-500 text-sm">Universidad de Córdoba</p>
+            </footer>
+        </main>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const sidebarLinks = document.querySelectorAll('.sidebar-link');
+    const contentPanes = document.querySelectorAll('.content-pane');
+    const mobileNav = document.getElementById('mobile-nav');
+
+    function switchPane(targetId) {
+        contentPanes.forEach(pane => {
+            pane.classList.remove('active');
+        });
+        const targetPane = document.getElementById(targetId);
+        if (targetPane) {
+            targetPane.classList.add('active');
+        }
+
+        sidebarLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.dataset.target === targetId) {
+                link.classList.add('active');
+            }
+        });
+        
+        if (mobileNav.value !== targetId) {
+            mobileNav.value = targetId;
+        }
+    }
+
+    sidebarLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const targetId = e.currentTarget.dataset.target;
+            switchPane(targetId);
+        });
+    });
+
+    mobileNav.addEventListener('change', (e) => {
+        switchPane(e.target.value);
+    });
+
+    // --- Acordeón ---
+    document.querySelectorAll('.accordion-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const panel = document.querySelector(this.getAttribute('data-target'));
+            const isOpen = panel.classList.contains('block');
+            document.querySelectorAll('.accordion-panel').forEach(p => p.classList.add('hidden'));
+            document.querySelectorAll('.accordion-panel').forEach(p => p.classList.remove('block'));
+            
+            if (!isOpen) {
+                panel.classList.remove('hidden');
+                panel.classList.add('block');
+                this.querySelector('span').textContent = '➖';
+                
+                setTimeout(() => {
+                    this.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+            } else {
+                this.querySelector('span').textContent = '➕';
+            }
+            
+            document.querySelectorAll('.accordion-btn').forEach(otherBtn => {
+                if (otherBtn !== this) {
+                    otherBtn.querySelector('span').textContent = '➕';
+                }
+            });
+        });
+    });
+
+    // --- Evaluación Quiz ---
+    const evaluationData = [
+        { 
+            question: "¿Qué función de Excel se usa para unir el contenido de dos o más celdas en una sola?", 
+            options: ["UNIR", "CONCATENAR", "MEZCLAR", "COMBINAR"], 
+            answer: "CONCATENAR" 
+        },
+        { 
+            question: "¿Qué función busca un valor en la primera columna de una tabla y devuelve un valor de otra columna?", 
+            options: ["ENCONTRAR", "BUSCARV", "LOCALIZAR", "INDICE"], 
+            answer: "BUSCARV" 
+        },
+        { 
+            question: "¿Qué herramienta de Excel permite separar datos que están en una sola columna en múltiples columnas?", 
+            options: ["Dividir celdas", "Texto en columnas", "Separar datos", "Dividir contenido"], 
+            answer: "Texto en columnas" 
+        },
+        { 
+            question: "¿Cuál es el propósito principal de las tablas dinámicas en Excel?", 
+            options: ["Crear gráficos", "Sintetizar y analizar grandes volúmenes de datos", "Formatear celdas", "Importar datos"], 
+            answer: "Sintetizar y analizar grandes volúmenes de datos" 
+        },
+        { 
+            question: "¿Qué función lógica devuelve VERDADERO si todas las condiciones son verdaderas?", 
+            options: ["O", "Y", "SI", "NO"], 
+            answer: "Y" 
+        }
+    ];
+
+    const evaluationContainer = document.getElementById('quiz-container');
+    if (evaluationContainer) {
+        evaluationData.forEach((item, index) => {
+            const questionDiv = document.createElement('div');
+            questionDiv.className = 'p-4 border rounded-lg mb-4';
+            
+            let optionsHtml = item.options.map(opt => `<option value="${opt}">${opt}</option>`).join('');
+
+            questionDiv.innerHTML = `
+                <p class="font-medium text-slate-700 mb-3">${index + 1}. ${item.question}</p>
+                <select class="evaluation-select w-full p-3 border rounded-md bg-white text-slate-700" data-answer="${item.answer}">
+                    <option value="">Selecciona la respuesta correcta...</option>
+                    ${optionsHtml}
+                </select>
+            `;
+            evaluationContainer.appendChild(questionDiv);
+        });
+    }
+
+    const submitQuizBtn = document.getElementById('submit-quiz-btn');
+    if (submitQuizBtn) {
+        submitQuizBtn.addEventListener('click', () => {
+            const selects = document.querySelectorAll('.evaluation-select');
+            let correctAnswers = 0;
+            
+            selects.forEach((select) => {
+                let feedbackDiv = select.parentNode.querySelector('.evaluation-feedback');
+                if (!feedbackDiv) {
+                    feedbackDiv = document.createElement('div');
+                    feedbackDiv.className = 'evaluation-feedback mt-2 text-sm';
+                    select.parentNode.appendChild(feedbackDiv);
+                }
+                
+                if (select.value === select.dataset.answer) {
+                    correctAnswers++;
+                    select.classList.add('border-green-500', 'bg-green-50');
+                    select.classList.remove('border-red-500', 'bg-red-50');
+                    feedbackDiv.innerHTML = `<span class="text-green-600 font-medium">✓ Correcto</span>`;
+                } else {
+                    select.classList.add('border-red-500', 'bg-red-50');
+                    select.classList.remove('border-green-500', 'bg-green-50');
+                    feedbackDiv.innerHTML = `<span class="text-red-600 font-medium">✗ Incorrecto. La respuesta correcta es: ${select.dataset.answer}</span>`;
+                }
+            });
+            
+            const resultDiv = document.getElementById('quiz-result');
+            resultDiv.textContent = `Puntuación: ${correctAnswers}/${evaluationData.length}`;
+            resultDiv.className = correctAnswers === evaluationData.length ? 'mt-4 text-lg font-bold text-green-700' : 'mt-4 text-lg font-bold text-red-700';
+        });
+    }
+
+    // --- Simulación CONCATENAR ---
+    const checkConcatBtn = document.getElementById('check-concat-btn');
+    const resetConcatBtn = document.getElementById('reset-concat-btn');
+    const concatResultDiv = document.getElementById('concat-result');
+    const explicacionConcatDiv = document.getElementById('explicacion-concat');
+
+    if (checkConcatBtn) {
+        checkConcatBtn.addEventListener('click', function() {
+            const selected = document.querySelector('input[name="concat-answer"]:checked');
+            
+            if (!selected) {
+                concatResultDiv.innerHTML = '<span class="text-yellow-700 text-lg">⚠️ Por favor selecciona una opción.</span>';
+                concatResultDiv.className = 'mt-4 font-medium text-yellow-700';
+                explicacionConcatDiv.classList.add('hidden');
+                return;
+            }
+            
+            const answer = selected.value;
+            
+            if (answer === 'correct') {
+                concatResultDiv.innerHTML = '<span class="text-green-700 text-xl">🎉 ¡Correcto! La fórmula une A1 y B1 con un espacio.</span>';
+                concatResultDiv.className = 'mt-4 font-medium text-green-700';
+                explicacionConcatDiv.classList.remove('hidden');
+            } else {
+                concatResultDiv.innerHTML = '<span class="text-red-700 text-lg">❌ Incorrecto. Intenta de nuevo.</span>';
+                concatResultDiv.className = 'mt-4 font-medium text-red-700';
+                explicacionConcatDiv.classList.add('hidden');
+            }
+        });
+    }
+
+    if (resetConcatBtn) {
+        resetConcatBtn.addEventListener('click', function() {
+            const radios = document.querySelectorAll('input[name="concat-answer"]');
+            radios.forEach(radio => radio.checked = false);
+            concatResultDiv.innerHTML = '';
+            explicacionConcatDiv.classList.add('hidden');
+        });
+    }
+
+    // --- Simulación BUSCARV ---
+    const checkBuscarvBtn = document.getElementById('check-buscarv-btn');
+    const resetBuscarvBtn = document.getElementById('reset-buscarv-btn');
+    const buscarvResultDiv = document.getElementById('buscarv-result');
+    const explicacionBuscarvDiv = document.getElementById('explicacion-buscarv');
+
+    if (checkBuscarvBtn) {
+        checkBuscarvBtn.addEventListener('click', function() {
+            const selected = document.querySelector('input[name="buscarv-answer"]:checked');
+            
+            if (!selected) {
+                buscarvResultDiv.innerHTML = '<span class="text-yellow-700 text-lg">⚠️ Por favor selecciona una opción.</span>';
+                buscarvResultDiv.className = 'mt-4 font-medium text-yellow-700';
+                explicacionBuscarvDiv.classList.add('hidden');
+                return;
+            }
+            
+            const answer = selected.value;
+            
+            if (answer === 'correct') {
+                buscarvResultDiv.innerHTML = '<span class="text-green-700 text-xl">🎉 ¡Correcto! La fórmula busca en A:C y devuelve la columna 3 (precio).</span>';
+                buscarvResultDiv.className = 'mt-4 font-medium text-green-700';
+                explicacionBuscarvDiv.classList.remove('hidden');
+            } else {
+                buscarvResultDiv.innerHTML = '<span class="text-red-700 text-lg">❌ Incorrecto. Intenta de nuevo.</span>';
+                buscarvResultDiv.className = 'mt-4 font-medium text-red-700';
+                explicacionBuscarvDiv.classList.add('hidden');
+            }
+        });
+    }
+
+    if (resetBuscarvBtn) {
+        resetBuscarvBtn.addEventListener('click', function() {
+            const radios = document.querySelectorAll('input[name="buscarv-answer"]');
+            radios.forEach(radio => radio.checked = false);
+            buscarvResultDiv.innerHTML = '';
+            explicacionBuscarvDiv.classList.add('hidden');
+        });
+    }
+
+    // --- Síntesis de voz ---
+    const synth = window.speechSynthesis;
+    let voices = [];
+    let activeReaders = {};
+    let paulinaVoice = null;
+    let currentActiveSection = null;
+    
+    function loadVoices() {
+        voices = synth.getVoices();
+        paulinaVoice = voices.find(voice => voice.name.includes('Paulina'));
+        
+        if (!paulinaVoice) {
+            paulinaVoice = voices.find(voice => voice.lang.startsWith('es'));
+            if (!paulinaVoice && voices.length > 0) {
+                paulinaVoice = voices[0];
+            }
+        }
+    }
+    
+    if (synth.onvoiceschanged !== undefined) {
+        synth.onvoiceschanged = loadVoices;
+    }
+    loadVoices();
+    
+    function getSectionText(sectionId) {
+        if (sectionId.startsWith('#')) {
+            sectionId = sectionId.substring(1);
+        }
+        
+        const section = document.getElementById(sectionId);
+        if (!section) return '';
+        
+        const textElements = section.querySelectorAll('p, li, .text-slate-700, h1, h2, h3, h4, h5, h6');
+        let text = '';
+        
+        if (textElements.length === 0) {
+            text = section.textContent.trim();
+        } else {
+            const allElements = [];
+            textElements.forEach(el => allElements.push({element: el, isHeading: /^H[1-6]$/.test(el.tagName)}));
+            
+            allElements.sort((a, b) => {
+                const position = a.element.compareDocumentPosition(b.element);
+                return position & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
+            });
+            
+            allElements.forEach(item => {
+                const content = item.element.textContent.trim();
+                if (item.isHeading) {
+                    text += content + '. . . ';
+                } else {
+                    text += content + ' ';
+                }
+            });
+        }
+        
+        return text.trim();
+    }
+    
+    function updateButtonStates(controlsElement, isPlaying) {
+        const playBtn = controlsElement.querySelector('.play-btn');
+        const pauseBtn = controlsElement.querySelector('.pause-btn');
+        const stopBtn = controlsElement.querySelector('.stop-btn');
+        
+        if (playBtn) playBtn.disabled = isPlaying;
+        if (pauseBtn) pauseBtn.disabled = !isPlaying;
+        if (stopBtn) stopBtn.disabled = !isPlaying;
+    }
+    
+    function playSection(sectionId, controlsElement) {
+        const reader = activeReaders[sectionId];
+        
+        if (reader && reader.isPaused) {
+            synth.resume();
+            reader.isPaused = false;
+            updateButtonStates(controlsElement, true);
+            return;
+        }
+        
+        stopAllSections();
+        
+        const textToRead = getSectionText(sectionId);
+        if (!textToRead) return;
+        
+        const rateControl = controlsElement.querySelector('.speech-rate');
+        const utterance = new SpeechSynthesisUtterance(textToRead);
+        utterance.lang = 'es-ES';
+        utterance.rate = parseFloat(rateControl.value);
+        
+        if (paulinaVoice) {
+            utterance.voice = paulinaVoice;
+        }
+        
+        utterance.onend = function() {
+            updateButtonStates(controlsElement, false);
+            delete activeReaders[sectionId];
+            currentActiveSection = null;
+        };
+        
+        utterance.onerror = function(event) {
+            updateButtonStates(controlsElement, false);
+            delete activeReaders[sectionId];
+            currentActiveSection = null;
+        };
+        
+        activeReaders[sectionId] = {
+            utterance: utterance,
+            isPaused: false,
+            textToRead: textToRead,
+            controls: controlsElement
+        };
+        
+        currentActiveSection = sectionId;
+        
+        synth.speak(utterance);
+        updateButtonStates(controlsElement, true);
+    }
+    
+    function pauseSection(sectionId) {
+        const reader = activeReaders[sectionId];
+        if (reader && !reader.isPaused && synth.speaking) {
+            synth.pause();
+            reader.isPaused = true;
+            updateButtonStates(reader.controls, true);
+            reader.controls.querySelector('.play-btn').disabled = false;
+        }
+    }
+    
+    function stopSection(sectionId) {
+        const reader = activeReaders[sectionId];
+        if (reader) {
+            synth.cancel();
+            updateButtonStates(reader.controls, false);
+            delete activeReaders[sectionId];
+            if (currentActiveSection === sectionId) {
+                currentActiveSection = null;
+            }
+        }
+    }
+    
+    function stopAllSections() {
+        synth.cancel();
+        Object.keys(activeReaders).forEach(sectionId => {
+            const reader = activeReaders[sectionId];
+            if (reader && reader.controls) {
+                updateButtonStates(reader.controls, false);
+            }
+        });
+        activeReaders = {};
+        currentActiveSection = null;
+    }
+    
+    document.addEventListener('keydown', function(event) {
+        if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+            return;
+        }
+        
+        if (event.code === 'Space') {
+            event.preventDefault();
+            
+            const visibleSection = document.querySelector('.content-pane.active');
+            if (!visibleSection) return;
+            
+            const sectionId = visibleSection.id;
+            const controls = visibleSection.querySelector('.speech-controls');
+            
+            if (!controls) return;
+            
+            const reader = activeReaders[sectionId];
+            
+            if (reader && reader.isPaused) {
+                playSection(sectionId, controls);
+            } else if (reader && synth.speaking) {
+                pauseSection(sectionId);
+            } else {
+                playSection(sectionId, controls);
+            }
+        }
+        
+        if (event.code === 'Tab' && !event.shiftKey) {
+            if (currentActiveSection) {
+                event.preventDefault();
+                stopSection(currentActiveSection);
+            }
+        }
+    });
+    
+    document.querySelectorAll('.speech-controls').forEach(controls => {
+        const sectionId = controls.getAttribute('data-target');
+        const playBtn = controls.querySelector('.play-btn');
+        const pauseBtn = controls.querySelector('.pause-btn');
+        const stopBtn = controls.querySelector('.stop-btn');
+        const rateControl = controls.querySelector('.speech-rate');
+        
+        if (!sectionId || !playBtn || !pauseBtn || !stopBtn || !rateControl) return;
+        
+        playBtn.addEventListener('click', () => playSection(sectionId, controls));
+        pauseBtn.addEventListener('click', () => pauseSection(sectionId));
+        stopBtn.addEventListener('click', () => stopSection(sectionId));
+        
+        rateControl.addEventListener('change', function() {
+            const reader = activeReaders[sectionId];
+            if (reader && synth.speaking) {
+                const wasPlaying = !reader.isPaused;
+                stopSection(sectionId);
+                if (wasPlaying) {
+                    setTimeout(() => playSection(sectionId, controls), 100);
+                }
+            }
+        });
+    });
+});
+</script>
+
+</body>
+</html>

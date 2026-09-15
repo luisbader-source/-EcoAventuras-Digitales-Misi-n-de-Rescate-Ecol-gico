@@ -1,0 +1,1435 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OVA: Planos ángulos y movimineto de la cámara</title>
+    <script src="https://cdn.tailwindcss.com?_ver=3.4.1"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Verdes y Blancos Institucionales -->
+    <!-- Application Structure Plan: Se diseña un Objeto Virtual de Aprendizaje (OVA) con una disposición de dos columnas. Un menú lateral fijo a la izquierda permite la navegación entre las secciones pedagógicas (Introducción, Objetivos, etc.). El área de contenido principal a la derecha se actualiza dinámicamente con JavaScript para mostrar la sección seleccionada. Esta estructura es ideal para un aprendizaje guiado y organizado, permitiendo al usuario explorar el contenido de forma secuencial o no lineal. -->
+    <!-- Visualization & Content Choices: 1. Navegación -> Menú lateral con estado activo (HTML/JS) y ahora con iconos para mejorar la usabilidad. Justificación: Estructura clásica y efectiva para un OVA. 2. Fundamentos Teóricos -> Contenido textual con tarjetas destacadas con iconos. Justificación: Facilita la lectura y resalta conceptos clave. 3. Actividades Prácticas -> Cuestionario interactivo. Justificación: Fomenta la participación activa. 4. Evaluación -> Quiz de opción múltiple con retroalimentación. Justificación: Permite la autoevaluación del aprendizaje. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+        .sidebar-link {
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+        .sidebar-link.active, .sidebar-link:hover {
+            background-color: #e6f4ea;
+            color: #166534; /* green-800 */
+            border-left-color: #22c55e; /* green-500 */
+        }
+        .content-pane {
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        .content-pane.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .quiz-option:hover {
+            background-color: #f0fdf4; /* green-50 */
+        }
+        .quiz-option.selected {
+            background-color: #dcfce7; /* green-100 */
+            border-color: #22c55e; /* green-500 */
+        }
+        .type-card {
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .type-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        
+        /* Estilos para el popup de imágenes */
+        .image-container {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .expand-btn {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background-color: rgba(34, 197, 94, 0.8); /* green-500 con transparencia */
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+            z-index: 10;
+        }
+        
+        /* En dispositivos móviles, mostrar siempre el botón */
+        @media (max-width: 768px) {
+            .expand-btn {
+                opacity: 0.9;
+                width: 44px;
+                height: 44px;
+                font-size: 22px;
+                background-color: rgba(34, 197, 94, 0.9);
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+                animation: pulse 2s infinite;
+            }
+        }
+        
+        .image-container:hover .expand-btn {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+        
+        .image-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .image-modal.active {
+            display: flex;
+            opacity: 1;
+        }
+        
+        .modal-content {
+            max-width: 90%;
+            max-height: 90%;
+            animation: zoomIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+        }
+        
+        .modal-content img {
+            max-width: 100%;
+            max-height: 90vh;
+            border: 4px solid white;
+            border-radius: 4px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+        }
+        
+        /* Optimizaciones para dispositivos móviles */
+        @media (max-width: 768px) {
+            .modal-content {
+                max-width: 90%;
+                animation: slideUpFade 0.3s ease-out;
+                margin-right: 15px; /* Dar más espacio para el botón de cierre */
+            }
+            
+            .modal-content img {
+                border-width: 2px;
+            }
+            
+            .close-modal {
+                top: 10px;
+                right: 10px;
+                width: 36px;
+                height: 36px;
+                position: absolute;
+                z-index: 1010; /* Asegurar que esté por encima de todo */
+            }
+        }
+        
+        /* Animación especial para móviles */
+        @keyframes slideUpFade {
+            from { opacity: 0; transform: translateY(50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .close-modal {
+            position: absolute;
+            top: -20px;
+            right: -20px;
+            background-color: #ef4444; /* red-500 */
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        
+        @keyframes zoomIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+    </style>
+</head>
+<body class="bg-slate-50">
+
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white shadow-lg flex-shrink-0 hidden md:flex md:flex-col">
+            <div class="p-4">
+                <div style="width: 150px; height: 150px;" class="p-2 mx-auto flex items-center justify-center bg-white rounded-full shadow-lg border-2 border-green-500 transition-shadow duration-300 hover:shadow-green-400">
+                    <img src="img/logo.png" alt="Logo OVA" class="w-5/6 h-5/6 object-contain" loading="lazy">
+                </div>
+            </div>
+            <nav class="mt-6 flex-1">
+                <a href="#" class="sidebar-link active flex items-center py-3 px-6 font-medium text-slate-700" data-target="introduccion"><span class="mr-3 text-xl">🚀</span> Introducción</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="objetivos"><span class="mr-3 text-xl">🎯</span> Objetivos</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="contenido"><span class="mr-3 text-xl">📚</span> Contenido</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="actividades"><span class="mr-3 text-xl">✍️</span> Actividades</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="evaluacion"><span class="mr-3 text-xl">✔️</span> Evaluación</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="recursos"><span class="mr-3 text-xl">📖</span> Recursos</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="bibliografia"><span class="mr-3 text-xl">📚</span> Bibliografía</a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-4 sm:p-6 md:p-10 bg-gray-50">
+            <!-- Mobile Header -->
+            <div class="md:hidden mb-6 flex flex-col items-center">
+                <div style="width: 100px; height: 100px;" class="p-2 flex items-center justify-center bg-white rounded-full shadow-lg transition-shadow duration-300 hover:shadow-green-400 mb-2">
+                    <img src="img/logo.png" alt="Logo OVA" class="w-5/6 h-5/6 object-contain" loading="lazy">
+                </div>
+                 <select id="mobile-nav" class="w-full mt-2 p-2 border rounded-md bg-white shadow-sm">
+                    <option value="introduccion">🚀 Introducción</option>
+                    <option value="objetivos">🎯 Objetivos</option>
+                    <option value="contenido">📚 Contenido</option>
+                    <option value="actividades">✍️ Actividades Prácticas</option>
+                    <option value="evaluacion">✔️ Evaluación</option>
+                    <option value="recursos">📖 Recursos</option>
+                        <option value="bibliografia">📚 Bibliografía</option>
+                </select>
+            </div>
+            
+
+          <!-- Introducción -->
+            <div id="introduccion" class="content-pane active">
+                <h2 class="text-2xl sm:text-3xl font-bold text-green-800 mb-4">Planos ángulos y movimineto de la cámara </h2>
+                <div class="mt-4 mb-6 p-4 bg-white border border-green-300 rounded-lg shadow-sm flex flex-col items-center">
+                    <div class="w-full h-32 sm:h-48 md:h-64 xl:h-80 bg-white rounded flex items-center justify-center overflow-hidden image-container">
+                        <img src="img/planos.jpg" alt="Gráfica función polinómica creciente" class="max-w-full max-h-full object-contain" loading="lazy"/>
+                        <button class="expand-btn" data-img="img/planos.jpg">🔍</button>
+                    </div>
+                 
+                </div>
+                <p class="text-lg text-slate-700 leading-relaxed mb-4">
+                    Dominar el lenguaje visual es clave para transmitir <span class="font-bold text-green-700">emociones y mensajes con impacto🔎</span>. Los planos <span class="font-bold text-green-700">(como el general o el primer plano)</span> definen qué vemos y en qué contexto; los ángulos<span class="font-bold text-green-700">(picado, contrapicado)</span> influyen en la percepción de poder o vulnerabilidad de los personajes; y los movimientos <span class="font-bold text-green-700">(paneos, travellings)</span> guían la atención del espectador de forma dinámica. Juntos, estas herramientas no solo enriquecen la narrativa audiovisual, sino que transforman una simple escena en una experiencia immersiva y memorable. Aprender a utilizarlos eleva cualquier proyecto, desde cortometrajes hasta contenidos educativos o promocionales📹.
+                </p>
+            <div class="speech-controls mb-4 p-3 bg-green-100 rounded-lg flex items-center flex-wrap gap-2" data-target="introduccion">
+    <button class="play-btn bg-green-600 hover:bg-green-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+        <span class="mr-1">▶️</span> Leer
+    </button>
+    <button class="pause-btn bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+        <span class="mr-1">⏸️</span> Pausar
+    </button>
+    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+        <span class="mr-1">⏹️</span> Detener
+    </button>
+    <div class="flex items-center ml-2">
+        <label for="speech-rate-introduccion" class="text-sm text-green-800 mr-2">Velocidad:</label>
+        <input type="range" class="speech-rate" id="speech-rate-introduccion" min="0.5" max="2" step="0.1" value="1" class="w-24">
+    </div>
+</div>
+
+                <div class="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800">
+                    <strong>💡 Atajos de teclado:</strong> Presiona <kbd class="bg-white px-2 py-1 rounded border">Espacio</kbd> para reproducir/pausar, <kbd class="bg-white px-2 py-1 rounded border">Tab</kbd> para detener
+                </div>
+
+            </div>
+
+            <!-- Objetivos -->
+            <div id="objetivos" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-green-800 mb-6">Objetivos de aprendizaje</h2>
+                <div class="speech-controls mb-4 p-3 bg-green-100 rounded-lg flex items-center flex-wrap gap-2" data-target="objetivos">
+                    <button class="play-btn bg-green-600 hover:bg-green-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-objetivos" class="text-sm text-green-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-objetivos" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                <ul class="space-y-4">
+                    <li class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                        <span class="text-green-700 mr-3 text-2xl">🧠</span>
+                        <span>Al finalizar la sesión, el estudiante identificará y clasificará correctamente al menos 8 de los 10 planos cinematográficos principales (general, entero, americano, medio, primer plano, etc.) presentados en un ejercicio visual, utilizando una rúbrica proporcionada.</span>
+                    </li>
+                    <li class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                        <span class="text-green-700 mr-3 text-2xl">🔍</span>
+                        <span>Tras analizar 3 escenas de películas, el estudiante explicará por escrito el efecto emocional de 3 ángulos de cámara (picado, contrapicado, neutro) con un 100% de precisión en la terminología técnica, en un informe de 500 palabras.</span>
+                    </li>
+                    <li class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                        <span class="text-green-700 mr-3 text-2xl">📝</span>
+                        <span>En 2 horas, el estudiante grabará una escena de 30 segundos aplicando 3 movimientos de cámara (paneo, travelling, zoom) de manera técnicamente correcta y justificará su elección narrativa en un breve informe.</span>
+                    </li>
+                    <li class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                        <span class="text-green-700 mr-3 text-2xl">💻</span>
+                        <span>Al concluir el módulo, el estudiante diseñará un guion gráfico (storyboard) con 6 viñetas que integren al menos 3 planos, 2 ángulos y 2 movimientos de cámara, coherentes con una narrativa propuesta, y recibirá retroalimentación positiva en al menos el 80% de los criterios de evaluación</span>
+                    </li>
+
+                </ul>
+            </div>
+
+            <!-- Fundamentos Teóricos -->
+            <div id="contenido" class="content-pane">
+                <div class="speech-controls mb-4 p-3 bg-green-100 rounded-lg flex items-center flex-wrap gap-2" data-target="contenido">
+                    <button class="play-btn bg-green-600 hover:bg-green-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-contenido" class="text-sm text-green-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-contenido" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                <!-- Acordeón de temas -->
+                
+                <div class="w-full max-w-8xl mx-auto">
+                    <div class="mb-4">
+                        <button type="button" class="w-full flex justify-between items-center p-4 bg-green-100 border border-green-300 rounded-t-lg focus:outline-none font-bold text-green-800 text-lg accordion-btn mb-2" data-target="#panel-ecuaciones">
+                            Tipos de planos<span class="ml-2">➕</span>
+                        </button>
+                    </div>
+                    <div id="panel-ecuaciones" class="accordion-panel hidden bg-white   border border-t-0 border-green-300 rounded-b-lg p-4 mb-6">
+                        <!-- Contenido tipos de planos-->
+                        <div class="space-y-8 text-slate-700 leading-relaxed">
+                            <div>
+                                <p class="mb-4"> 
+                                    En este tema exploraremos <strong>los planos, ángulos y movimientos de cámara</strong> en la composición visual. Estos elementos son fundamentales para transmitir <strong>emociones y contar historias a través de la imagen.</strong> Aprenderemos cómo utilizarlos de manera efectiva para crear impacto visual en nuestras producciones audiovisuales.                      
+                                </p>
+                            </div>
+                            <div>
+                                <div class="mt-4 mb-6 p-4 bg-white border border-green-300 rounded-lg shadow-sm flex flex-col items-center">
+                                    <div class="w-full h-32 sm:h-48 md:h-64 xl:h-80 bg-white rounded flex items-center justify-center overflow-hidden image-container">
+                                        <img src="img/planocontrapicado.jpg" alt="Solución gráfica ejemplo" class="max-w-full max-h-full object-contain expandable-image" style="object-fit:contain;" loading="lazy" />
+                                        <button class="expand-btn" data-img="img/planocontrapicado.jpg">🔍</button>
+                                    </div>
+                                </div>
+                                <h3 class="text-xl font-bold text-green-700 mb-2"></h3>
+                                <p class="mb-4">
+                                    Los planos son las diferentes distancias entre la cámara y el sujeto o escenario. Podemos utilizar <strong>planos generales</strong> para mostrar el contexto, <strong>planos medios</strong> para resaltar la interacción entre personajes y <strong>planos cerrados</strong> para enfocar en detalles. Cada tipo de plano transmite diferentes sensaciones y nos ayuda a contar la historia de manera más efectiva.<p></p>
+                                </div>
+                                    <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-green-800 mb-2">Tipos de planos</h4>
+                                <div class="mt-4 mb-6 p-4 bg-white border border-green-300 rounded-lg shadow-sm flex flex-col items-center">
+                                    <div class="w-full h-32 sm:h-48 md:h-64 xl:h-80 bg-white rounded flex items-center justify-center overflow-hidden image-container">
+                                        <img src="img/Tiposdeplanos.jpg" alt="Solución gráfica ejemplo" class="max-w-full max-h-full object-contain expandable-image" style="object-fit:contain;" loading="lazy" />
+                                        <button class="expand-btn" data-img="img/Tiposdeplanos.jpg">🔍</button>
+                                    </div>
+                                </div>
+                                <h4 class="font-bold text-green-800 mb-2">Plano general:</h4>
+
+                                <p class="mb-2">Se usa para visualizar completamente a nuestro modelo y abarca todo los elementos de una escena, es decir, que aparece todo el cuerpo de pies a cabeza, sin ningún tipo de recorte.</p>
+                                <blockquote class="italic text-green-700 mb-2">“Se utiliza en los inicios de las tomas para dar un contexto de ubicación”
+                                <div class="mt-4 mb-6 p-4 bg-white border border-green-300 rounded-lg shadow-sm flex flex-col items-center">
+                                    <div class="w-full h-32 sm:h-48 md:h-64 xl:h-80 bg-white rounded flex items-center justify-center overflow-hidden image-container">
+                                        <img src="img/planogeneral.jpeg" alt="Solución gráfica ejemplo" class="max-w-full max-h-full object-contain expandable-image" style="object-fit:contain;" loading="lazy" />
+                                        <button class="expand-btn" data-img="img/planogeneral.jpeg">🔍</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-green-800 mb-2">Plano americano</h4>
+                                <p class="mb-2">Este plano nació en la época de las películas de westerns pues se ocupaba que en las escenas de duelos se pudieran apreciar las pistolas de lo vaqueros. El plano Americano se toma de las rodillas hacia arriba.</p>
+
+                                <div class="mt-4 mb-6 p-4 bg-white border border-green-300 rounded-lg shadow-sm flex flex-col items-center">
+                                    <div class="w-full h-32 sm:h-48 md:h-64 xl:h-80 bg-white rounded flex items-center justify-center overflow-hidden image-container">
+                                        <img src="img/planoamericano1.jpg" alt="Solución gráfica ejemplo" class="max-w-full max-h-full object-contain expandable-image" style="object-fit:contain;" loading="lazy" />
+                                        <button class="expand-btn" data-img="img/planoamericano1.jpg">🔍</button>
+                                    </div>
+                                </div>
+                            </div>
+                                 <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-green-800 mb-2">Plano medio</h4>
+                                <p class="mb-2">El plano medio cubre hasta la cintura, recogiendo la línea de corte entre el ombligo hasta casi la entrepierna. En
+                                caso de estar sentado el sujeto la tolerancia baja hasta aproximadamente la mitad del muslo. Este tipo de encuadre se suele utilizer para resaltar la belleza del cuerpo humano, por lo que es un tipo de plano muy utilizado en fotografía de moda.</p>
+
+                                <div class="mt-4 mb-6 p-4 bg-white border border-green-300      rounded-lg shadow-sm flex flex-col items-center">
+                                    <div class="w-full h-32 sm:h-48 md:h-64 xl:h-80 bg-white rounded flex items-center justify-center overflow-hidden image-container">
+                                        <img src="img/planomedio.webp" alt="Solución gráfica ejemplo" class="max-w-full max-h-full object-contain expandable-image" style="object-fit:contain;" loading="lazy" />
+                                        <button class="expand-btn" data-img="img/planomedio.webp">🔍</button>
+                                    
+                                    </div>
+                                </div>
+                            </div>
+
+                           
+                            <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-green-800 mb-2">Primer plano</h4>
+                                <p class="mb-2">Es un plano del rostro incluyendo los hombros o parte de ellos. En este plano, ya se alcanza un grado muy elevado de intimidad. Con él se pretenden realzar los rasgos del rostro,
+                                la mirada, la expresión, los gestos…es el retrato del rostro propiamente dicho. Posee una elevada identificación emocional con el espectador..</p>
+
+                                <div class="mt-4 mb-6 p-4 bg-white border border-green-300 rounded-lg shadow-sm flex flex-col items-center">
+                                    <div class="w-full h-32 sm:h-48 md:h-64 xl:h-80 bg-white rounded flex items-center justify-center overflow-hidden image-container">
+                                        <img src="img/primerplano.jpg" alt="Solución gráfica ejemplo" class="max-w-full max-h-full object-contain expandable-image" style="object-fit:contain;" loading="lazy" />
+                                        <button class="expand-btn" data-img="img/primerplano.jpg">🔍</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                             <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-green-800 mb-2">Plano de detalle</h4>
+                                <p class="mb-2">Solo muestra en su máxima expression a un objeto. En esta parte se concentra la máxima capacidad expresiva. sirve para enfatizar algún element de esa realidad. Destaca algún detalle que de otra forma pasaría desapercibido y hace sentir al
+                                espectador tener más interés. Y permite ver una figura, persona u objeto de más cerca para mayorfijación.</p>
+
+                                <div class="mt-4 mb-6 p-4 bg-white border border-green-300 rounded-lg shadow-sm flex flex-col items-center">
+                                    <div class="w-full h-32 sm:h-48 md:h-64 xl:h-80 bg-white rounded flex items-center justify-center overflow-hidden image-container">
+                                        <img src="img/planomediocorto.avif" alt="Solución gráfica ejemplo" class="max-w-full max-h-full object-contain expandable-image" style="object-fit:contain;" loading="lazy" />
+                                        <button class="expand-btn" data-img="img/planomediocorto.avif">🔍</button>
+                                    </div>
+                                </div>
+                            </div>
+
+
+
+
+                        </div>
+                        
+                    </div>
+
+                    
+                    <div class="mb-4">
+                        <button type="button" class="w-full flex justify-between items-start p-4 bg-green-100 border border-green-300 rounded-t-lg focus:outline-none font-bold text-green-800 text-lg accordion-btn mb-2 text-left" data-target="#panel-desigualdades">
+                            Ángulo<span class="ml-2">➕</span>
+                        </button>
+                    </div>
+                    <div id="panel-desigualdades" class="accordion-panel hidden bg-white border border-t-0 border-green-300 rounded-b-lg p-4 mb-6">
+                        <div class="text-slate-700 leading-relaxed space-y-6">
+                            <div>
+                                <p class="mb-2">Los <strong>ángulos de cámara </strong>  nos permiten cambiar la perspectiva y generar distintas sensaciones en el espectador. Podemos utilizar ángulos
+                                picados para transmitir poder o superioridad, ángulos contrapicados para generar vulnerabilidad o inferioridad, y ángulos a nivel de los ojos para establecer una conexión
+                                directa con el personaje. La elección del ángulo
+                                adecuado es clave para comunicar nuestra
+                                intención visual.</p>
+                               
+                                <div class="mt-4 mb-6 p-4 bg-white border border-green-300 rounded-lg shadow-sm flex flex-col items-center">
+                                    <div class="w-full h-32 sm:h-48 md:h-64 xl:h-80 bg-white rounded flex items-center justify-center overflow-hidden image-container">
+                                        <img src="img/angulos.jpg" alt="Solución ejercicio 1" class="max-w-full max-h-full object-contain expandable-image" loading="lazy">
+                                        <button class="expand-btn" data-img="img/angulos.jpg">🔍</button>
+                                    </div>
+                                </div>
+                            </div>
+                              <h4 class="font-bold text-green-800 mb-2">Ángulo cenital</h4>
+                            <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                <p>El ángulo cenit o toma cenital en fotografía implica la colocación totalmente perpendicular desde arriba hacia abajo de la cámara. Se trata de una muy inusual, que ofrece una perspectiva muy poco vista. Es uno de los ángulos que puede dotar de una gran creatividad a la imagen</p>
+                                <div class="mt-4 mb-6 p-4 bg-white border border-green-300 rounded-lg shadow-sm flex flex-col items-center">
+                                    <div class="w-full h-32 sm:h-48 md:h-64 xl:h-80 bg-white rounded flex items-center justify-center overflow-hidden image-container">
+                                        <img src="img/angulocenital.jpg" alt="Solución ejercicio 1" class="max-w-full max-h-full object-contain expandable-image" loading="lazy">
+                                        <button class="expand-btn" data-img="img/angulocenital.jpg">🔍</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-green-700 mb-2">Ángulo normal</h3>
+                                <p>Este tipo de ángulo se produce cuando la cámara se sitúa
+                                   en un plano superior al objeto fotografiado. ¿Y qué implicaciones tiene que la cámara esté por encima del
+                                    objeto o sujeto? Pues precisamente esta posición superior
+                                    conlleva una situación de inferioridad, vulnerabilidad o
+                                    debilidad por parte del objeto o sujeto que aparece
+                                    dentro de la fotografía.</p> 
+                                <div class="mt-4 mb-6 p-4 bg-white border border-green-300 rounded-lg shadow-sm flex flex-col items-center">
+                                    <div class="w-full h-32 sm:h-48 md:h-64 xl:h-80 bg-white rounded flex items-center justify-center overflow-hidden image-container">
+                                        <img src="img/angulonormal.jpg" alt="Solución ejercicio 1" class="max-w-full max-h-full object-contain expandable-image" loading="lazy">
+                                        <button class="expand-btn" data-img="img/angulonormal.jpg">🔍</button>
+                                    </div>
+                                </div>
+                            </div>
+                             <h4 class="font-bold text-green-800 mb-2">Ángulo contrapicado</h4>
+                            <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                <p>Si el ángulo picado se consigue situando la cámara por encima del sujeto, el contrapicado lo logramos situando la cámara en una <strong>posición inferior al objeto a fotografiar.</strong> Y al contrario de lo que ocurría con el ángulo picado, con el contrapicado dotaremos al objeto o sujeto fotografiado de mayor importancia, superioridad, majestuosidad y, sobre todo, de una posición dominante frente al observador.</p>
+                                <div class="mt-4 mb-6 p-4 bg-white border border-green-300 rounded-lg shadow-sm flex flex-col items-center">
+                                    <div class="w-full h-32 sm:h-48 md:h-64 xl:h-80 bg-white rounded flex items-center justify-center overflow-hidden image-container">
+                                        <img src="img/angulocenital.jpg" alt="Solución ejercicio 1" class="max-w-full max-h-full object-contain expandable-image" loading="lazy">
+                                        <button class="expand-btn" data-img="img/angulocenital.jpg">🔍</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            
+
+                        
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <button type="button" class="w-full flex justify-between items-start p-4 bg-green-100 border border-green-300 rounded-t-lg focus:outline-none font-bold text-green-800 text-lg accordion-btn mb-2 text-left" data-target="#panel-movimientos">
+                            Movimientos de Cámara<span class="ml-2">➕</span>
+                        </button>
+                    </div>
+                    <div id="panel-movimientos" class="accordion-panel hidden bg-white border border-t-0 border-green-300 rounded-b-lg p-4 mb-6">
+                        <div class="text-slate-700 leading-relaxed space-y-6">
+                            <div>
+                                <p class="mb-2">Los <strong>movimientos de cámara</strong> añaden dinamismo y fluidez a la narrativa audiovisual. Cada movimiento tiene un propósito específico: seguir la acción, revelar información, crear tensión o guiar la atención del espectador. El dominio de estos movimientos es esencial para crear un lenguaje visual sofisticado y envolvente.</p>
+                                <div class="mt-4 mb-6 p-4 bg-white border border-green-300 rounded-lg shadow-sm flex flex-col items-center">
+                                    <div class="w-full h-32 sm:h-48 md:h-64 xl:h-80 bg-white rounded flex items-center justify-center overflow-hidden image-container">
+                                        <img src="img/movimientos.gif" alt="Movimientos de cámara" class="max-w-full max-h-full object-contain expandable-image" loading="lazy">
+                                        <button class="expand-btn" data-img="img/movimientos.gif">🔍</button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-green-800 mb-2">Paneo (Pan)</h4>
+                                <p>Movimiento horizontal de la cámara sobre su eje. Se utiliza para seguir la acción, mostrar el entorno o crear conexiones entre elementos de la escena. Un paneo lento puede generar contemplación, mientras que uno rápido puede crear dinamismo o desorientación.</p>
+                                 <div class="mt-4 mb-6 p-4 bg-white border border-green-300 rounded-lg shadow-sm flex flex-col items-center">
+                                    <div class="w-full h-32 sm:h-48 md:h-64 xl:h-80 bg-white rounded flex items-center justify-center overflow-hidden image-container">
+                                        <img src="img/paneo.gif" alt="Movimientos de cámara" class="max-w-full max-h-full object-contain expandable-image" loading="lazy">
+                                        <button class="expand-btn" data-img="img/paneo.gif">🔍</button>
+                                    </div>
+                                </div>
+                                
+                            </div>
+                            
+                            <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-green-800 mb-2">Tilt</h4>
+                                <p>Movimiento vertical de la cámara sobre su eje. Permite revelar información de abajo hacia arriba o viceversa. Es muy efectivo para mostrar la magnitud de edificios, crear suspenso o seguir movimientos verticales de los personajes.</p>
+                                <div class="mt-4 mb-6 p-4 bg-white border border-green-300 rounded-lg shadow-sm flex flex-col items-center">
+                                    <div class="w-full h-32 sm:h-48 md:h-64 xl:h-80 bg-white rounded flex items-center justify-center overflow-hidden image-container">
+                                        <img src="img/3_Tilt_COMP_2.webp" alt="Movimientos de cámara" class="max-w-full max-h-full object-contain expandable-image" loading="lazy">
+                                        <button class="expand-btn" data-img="img/3_Tilt_COMP_2.webp">🔍</button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-green-800 mb-2">Travelling</h4>
+                                <p>La cámara se desplaza físicamente en el espacio, ya sea sobre rieles, con steadicam o a mano. Puede ser lateral, frontal o circular. Este movimiento sumerge al espectador en la acción y crea una sensación de movimiento muy natural y envolvente.</p>
+                                 <div class="mt-4 mb-6 p-4 bg-white border border-green-300 rounded-lg shadow-sm flex flex-col items-center">
+                                    <div class="w-full h-32 sm:h-48 md:h-64 xl:h-80 bg-white rounded flex items-center justify-center overflow-hidden image-container">
+                                        <img src="img/steadicam.gif" alt="Movimientos de cámara" class="max-w-full max-h-full object-contain expandable-image" loading="lazy">
+                                        <button class="expand-btn" data-img="img/steadicam.gif">🔍</button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-green-800 mb-2">Zoom</h4>
+                                <p>Acercamiento o alejamiento óptico sin mover la cámara físicamente. El zoom in enfatiza detalles o emociones, mientras que el zoom out revela contexto. Aunque es un recurso técnico, debe usarse con propósito narrativo para evitar que se sienta artificial.</p>
+                                <div class="w-full h-32 sm:h-48 md:h-64 xl:h-80 bg-white rounded flex items-center justify-center overflow-hidden image-container">
+                                        <img src="img/zoom.gif" alt="Movimientos de cámara" class="max-w-full max-h-full object-contain expandable-image" loading="lazy">
+                                        <button class="expand-btn" data-img="img/zoom.gif">🔍</button>
+                                    </div>
+                               
+                            </div>                        
+                        
+                        </div>
+                    </div>
+
+                    
+                </div>
+                
+            </div>
+
+                        
+
+
+
+
+
+            
+
+            <!-- Actividades Prácticas -->
+            <div id="actividades" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-green-800 mb-6">Actividades prácticas</h2>
+                <div class="speech-controls mb-4 p-3 bg-green-100 rounded-lg flex items-center flex-wrap gap-2" data-target="actividades">
+                    <button class="play-btn bg-green-600 hover:bg-green-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+
+
+                        <label for="speech-rate-actividades" class="text-sm text-green-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-actividades" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                <div class="space-y-8">
+                    <!-- Ejercicio 1 -->
+                    <div class="bg-white border-l-4 border-green-500 rounded-lg shadow-sm p-6">
+                        <h3 class="text-xl font-bold text-green-700 mb-2">🎬 Ejercicio 1: Identificación de planos</h3>
+                        <p class="mb-2"><span class="font-semibold">Situación:</span> 
+                            Observa las siguientes descripciones y clasifica cada una según el tipo de plano cinematográfico correspondiente:</p>
+                        
+                        <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg mb-4">
+                            <p class="mb-2"><strong>1.</strong> Una imagen donde solo se ven los ojos y la frente de un personaje.</p>
+                            <p class="mb-2"><strong>2.</strong> Una toma que muestra a un personaje de cabeza a pies con fondo visible.</p> 
+                            <p class="mb-2"><strong>3.</strong> Una foto donde se ve a un personaje desde la cintura hacia arriba.</p>
+                        </div>
+                        
+                        <p class="mb-2"><span class="font-semibold">Instrucciones:</span> Escribe los tres tipos de planos separados por comas (ejemplo: plano detalle, plano general, plano medio)</p>
+                        <div class="mt-2 mb-2 p-3 bg-green-50 border border-green-200 rounded flex items-center">
+                            <input type="text" class="activity-input w-full p-2 border rounded-md bg-white" placeholder="Respuesta: tipo1, tipo2, tipo3" data-answer="plano detalle, plano general, plano medio">
+                        </div>
+                    </div>
+                    <!-- Ejercicio 2 -->
+                    <div class="bg-white border-l-4 border-blue-500 rounded-lg shadow-sm p-6">
+                        <h3 class="text-xl font-bold text-green-700 mb-2">📐 Ejercicio 2: Ángulos de cámara</h3>
+                        <p class="mb-2"><span class="font-semibold">Situación:</span> 
+                            Eres director de fotografía y necesitas elegir el ángulo correcto para transmitir diferentes emociones.</p>
+                        
+                        <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg mb-4">
+                            <p class="mb-2"><strong>Escenario:</strong> Quieres que el personaje principal se vea poderoso y dominante en la escena final.</p>
+                            <p class="mb-2"><strong>Opciones:</strong></p>
+                            <ul class="list-disc pl-6">
+                                <li>A) Ángulo picado (cámara arriba, mirando hacia abajo)</li>
+                                <li>B) Ángulo contrapicado (cámara abajo, mirando hacia arriba)</li>
+                                <li>C) Ángulo neutro (cámara a la altura de los ojos)</li>
+                            </ul>
+                        </div>
+                        
+                        <p class="mb-2"><span class="font-semibold">Instrucciones:</span> Escribe la letra de la opción correcta</p>
+                        <div class="mt-2 mb-2 p-3 bg-green-50 border border-green-200 rounded flex items-center">
+                            <input type="text" class="activity-input w-full p-2 border rounded-md bg-white" placeholder="Respuesta: A, B o C" data-answer="B">
+                        </div>
+                    </div>
+                    <!-- Ejercicio 3 -->
+                    <div class="bg-white border-l-4 border-purple-500 rounded-lg shadow-sm p-6">
+                        <h3 class="text-xl font-bold text-green-700 mb-2">🎥 Ejercicio 3: Movimientos de cámara</h3>
+                        <p class="mb-2"><span class="font-semibold">Situación:</span> 
+                            Estás filmando una escena donde un personaje camina por un largo pasillo. Quieres seguir su movimiento de manera fluida.</p>
+                        
+                        <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg mb-4">
+                            <p class="mb-2"><strong>¿Qué movimiento de cámara es el más apropiado?</strong></p>
+                            <ul class="list-disc pl-6">
+                                <li><strong>Paneo:</strong> Movimiento horizontal de la cámara</li>
+                                <li><strong>Tilt:</strong> Movimiento vertical de la cámara</li>
+                                <li><strong>Travelling:</strong> La cámara se desplaza físicamente siguiendo al sujeto</li>
+                                <li><strong>Zoom:</strong> Acercamiento o alejamiento óptico</li>
+                            </ul>
+                        </div>
+                        
+                        <p class="mb-2"><span class="font-semibold">Instrucciones:</span> Escribe el nombre del movimiento más apropiado</p>
+                        <div class="mt-2 mb-2 p-3 bg-green-50 border border-green-200 rounded flex items-center">
+                            <input type="text" class="activity-input w-full p-2 border rounded-md bg-white" placeholder="Respuesta: nombre del movimiento" data-answer="travelling">
+                        </div>
+                    </div>
+                </div>
+                <button id="check-activity-btn" class="mt-6 bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 transition-colors">Verificar respuestas</button>
+                <div id="activity-result" class="mt-4 font-medium"></div>
+            </div>
+
+            <!-- Evaluación -->
+            <div id="evaluacion" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-green-800 mb-6">Evaluación</h2>
+                <div class="speech-controls mb-4 p-3 bg-green-100 rounded-lg flex items-center flex-wrap gap-2" data-target="evaluacion">
+                    <button class="play-btn bg-green-600 hover:bg-green-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-evaluacion" class="text-sm text-green-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-evaluacion" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <p class="text-slate-600 mb-6">Comprueba lo que has aprendido. Selecciona la respuesta correcta para cada pregunta.</p>
+                    <div id="quiz-container"></div>
+                    <button id="submit-quiz-btn" class="mt-6 bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 transition-colors">Finalizar evaluación</button>
+                    <div id="quiz-result" class="mt-4 text-lg font-bold"></div>
+                </div>
+            </div>
+
+            <!-- Recursos -->
+            <div id="recursos" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-green-800 mb-6">Recursos para profundizar</h2>
+                <div class="speech-controls mb-4 p-3 bg-green-100 rounded-lg flex items-center flex-wrap gap-2" data-target="recursos">
+                    <button class="play-btn bg-green-600 hover:bg-green-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-recursos" class="text-sm text-green-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-recursos" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                <p class="text-slate-700 leading-relaxed mb-6">Para ampliar tu conocimiento sobre los sistemas de ecuaciones lineales, te recomendamos explorar los siguientes enlaces y documentos:</p>
+                <ul class="space-y-4">
+                    <!-- Recurso 1 -->
+                    <li class="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow border-l-4 border-green-500 flex flex-col sm:flex-row sm:items-center justify-between">
+                        <div>
+                            <h3 class="font-bold text-green-700">1. Khan Academy - Arte y Narrativa Visual::</h3>
+                            <a href="https://es.khanacademy.org/humanities/hass-storytelling/storytelling-pixar-in-a-box" target="_blank" class="underline text-slate-700 hover:text-green-700">Ir al recurso</a>
+                        </div>
+                        <div class="mt-4 sm:mt-0 sm:ml-6 flex-shrink-0">
+                            <div class="bg-green-50 border border-green-300 rounded flex items-center justify-center" style="width:2cm;height:2cm;">
+                                <img src="img/qrcode_es.khanacademy.org.png" alt="Solución ejercicio 1" class="max-w-full max-h-full object-contain" loading="lazy">
+                            </div>
+                        </div>
+                    </li>
+                    <!-- Recurso 2 -->
+                    <li class="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow border-l-4 border-green-500 flex flex-col sm:flex-row sm:items-center justify-between">
+                        <div>
+                            <h3 class="font-bold text-green-700">Encuadres, puntos de vista, movimientos de cámara y maquinaria</h3>
+                            <a href="https://despazio.net/activos/textos/planos-movimientos.pdf" target="_blank" class="underline text-slate-700 hover:text-green-700">Ir al recurso</a>
+                        </div>
+                        <div class="mt-4 sm:mt-0 sm:ml-6 flex-shrink-0">
+                            <div class="bg-green-50 border border-green-300 rounded flex items-center justify-center" style="width:2cm;height:2cm;">
+                                <img src="img/qrcode_despazio.net.png" alt="Solución ejercicio 1" class="max-w-full max-h-full object-contain" loading="lazy">
+                            </div>
+                        </div>
+                    </li>
+                    <!-- Recurso 3 -->
+                    <li class="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow border-l-4 border-green-500 flex flex-col sm:flex-row sm:items-center justify-between">
+                        <div>
+                            <h3 class="font-bold text-green-700">¿Cuáles son los planos y ángulos de cámara?</h3>
+                            <a href="https://ieperiodismo.com/planos-y-angulos-de-camara-tipos/" target="_blank" class="underline text-slate-700 hover:text-green-700">Ir al recurso</a>
+                        </div>
+                        <div class="mt-4 sm:mt-0 sm:ml-6 flex-shrink-0">
+                            <div class="bg-green-50 border border-green-300 rounded flex items-center justify-center" style="width:2cm;height:2cm;">
+                                <img src="img/qrcode_ieperiodismo.com.png" alt="Solución ejercicio 1" class="max-w-full max-h-full object-contain" loading="lazy">
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Bibliografía -->
+            <div id="bibliografia" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-green-800 mb-6">Bibliografía</h2>
+                <div class="speech-controls mb-4 p-3 bg-green-100 rounded-lg flex items-center flex-wrap gap-2" data-target="bibliografia">
+                    <button class="play-btn bg-green-600 hover:bg-green-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-bibliografia" class="text-sm text-green-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-bibliografia" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                <div class="space-y-6">
+                <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow border-l-4 border-green-500">
+                    <span class="block text-slate-700">
+                        Khan Academy - Arte Narrativo. <i>🌐 Curso Online</i>.<br>
+                        <a href="https://es.khanacademy.org/humanities/hass-storytelling" class="text-green-700 underline break-all" target="_blank">*Módulos 2-5: Composición y angulaciones.*</a>
+                    </span>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow border-l-4 border-green-500">
+                    <span class="block text-slate-700">
+                        Godino, J. D., & Batanero, C. (1994). <i>Didáctica de las Matemáticas</i>. Editorial Universidad de Granada.
+                    </span>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow border-l-4 border-green-500">
+                    <span class="block text-slate-700">
+                        UNESCO – OREALC. (2005). <i>Educación Matemática en Contextos Rurales Latinoamericanos: Proyecto Regional</i>.<br>
+                        <a href="https://unesdoc.unesco.org/ark:/48223/pf0000143685" class="text-green-700 underline break-all" target="_blank">https://unesdoc.unesco.org/ark:/48223/pf0000143685</a>
+                    </span>
+                </div>
+            </div>
+            
+            <!-- Footer/Credits -->
+            <footer class="mt-12 pt-6 border-t-2 border-slate-200 text-center">
+                <p class="text-slate-600 font-medium">Creado por:</p>
+                <p class="text-green-800 font-bold text-lg">Centro de Innovación en TIC para el apoyo de la Docencia CINTIA</p>
+                <p class="text-slate-500 text-sm">Universidad de Córdoba</p>
+            </footer>
+        </main>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const sidebarLinks = document.querySelectorAll('.sidebar-link');
+    const contentPanes = document.querySelectorAll('.content-pane');
+    const mobileNav = document.getElementById('mobile-nav');
+
+    function switchPane(targetId) {
+        contentPanes.forEach(pane => {
+            pane.classList.remove('active');
+        });
+        const targetPane = document.getElementById(targetId);
+        if (targetPane) {
+            targetPane.classList.add('active');
+        }
+
+        sidebarLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.dataset.target === targetId) {
+                link.classList.add('active');
+            }
+        });
+        
+        if (mobileNav.value !== targetId) {
+            mobileNav.value = targetId;
+        }
+    }
+
+    sidebarLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const targetId = e.currentTarget.dataset.target;
+            switchPane(targetId);
+        });
+    });
+
+    mobileNav.addEventListener('change', (e) => {
+        switchPane(e.target.value);
+    });
+
+    // --- Actividad Práctica ---
+    const activityData = [
+        { 
+            question: "Un video tutorial que muestra cómo resolver una ecuación.", 
+            options: ["Interactividad", "Finalidad Educativa", "Reusabilidad"], 
+            answer: "Finalidad Educativa" 
+        },
+        { 
+            question: "Un quiz en línea que da retroalimentación inmediata.", 
+            options: ["Interactividad", "Adaptabilidad", "Formato Digital"], 
+            answer: "Interactividad" 
+        },
+        { 
+            question: "Una simulación de un laboratorio de química que se puede usar en bachillerato y universidad.", 
+            options: ["Reusabilidad", "Accesibilidad", "Intencionalidad Educativa"], 
+            answer: "Reusabilidad" 
+        }
+    ];
+
+    const activityContainer = document.getElementById('activity-container');
+    if (activityContainer) {
+        activityData.forEach((item, index) => {
+            const questionDiv = document.createElement('div');
+            questionDiv.className = 'p-4 border rounded-lg';
+            
+            let optionsHtml = item.options.map(opt => `<option value="${opt}">${opt}</option>`).join('');
+
+            questionDiv.innerHTML = `
+                <p class="font-medium text-slate-700 mb-2">${index + 1}. ${item.question}</p>
+                <select class="activity-select w-full p-2 border rounded-md bg-white" data-answer="${item.answer}">
+                    <option value="">Selecciona una característica...</option>
+                    ${optionsHtml}
+                </select>
+            `;
+            activityContainer.appendChild(questionDiv);
+        });
+    }
+
+    const checkActivityBtn = document.getElementById('check-activity-btn');
+    if (checkActivityBtn) {
+        checkActivityBtn.addEventListener('click', () => {
+            const selects = document.querySelectorAll('.activity-select');
+            let correctAnswers = 0;
+            selects.forEach(select => {
+                if (select.value === select.dataset.answer) {
+                    correctAnswers++;
+                    select.classList.add('border-green-500');
+                    select.classList.remove('border-red-500');
+                } else {
+                    select.classList.add('border-red-500');
+                    select.classList.remove('border-green-500');
+                }
+            });
+            const resultDiv = document.getElementById('activity-result');
+            resultDiv.textContent = `Obtuviste ${correctAnswers} de ${activityData.length} respuestas correctas.`;
+            resultDiv.className = correctAnswers === activityData.length ? 'mt-4 font-medium text-green-700' : 'mt-4 font-medium text-red-700';
+        });
+    }
+
+    // --- Evaluación Quiz ---
+    const evaluationData = [
+        { 
+            question: "Una toma que muestra solo los ojos y parte de la frente del actor.", 
+            options: ["Plano General", "Primer Plano", "Plano Medio", "Plano Detalle"], 
+            answer: "Plano Detalle" 
+        },
+        { 
+            question: "Ángulo de cámara que hace ver al personaje vulnerable y pequeño.", 
+            options: ["Ángulo Picado", "Ángulo Contrapicado", "Ángulo Neutro", "Ángulo Holandés"], 
+            answer: "Ángulo Picado" 
+        },
+        { 
+            question: "Movimiento donde la cámara gira horizontalmente sobre su eje.", 
+            options: ["Tilt", "Paneo", "Travelling", "Zoom"], 
+            answer: "Paneo" 
+        },
+        { 
+            question: "Plano que muestra al personaje desde las rodillas hacia arriba.", 
+            options: ["Plano Americano", "Plano Medio", "Plano General", "Primer Plano"], 
+            answer: "Plano Americano" 
+        },
+        { 
+            question: "Técnica para crear sensación de movimiento siguiendo al sujeto físicamente.", 
+            options: ["Zoom In", "Paneo", "Travelling", "Tilt"], 
+            answer: "Travelling" 
+        }
+    ];
+
+    const evaluationContainer = document.getElementById('quiz-container');
+    if (evaluationContainer) {
+        evaluationData.forEach((item, index) => {
+            const questionDiv = document.createElement('div');
+            questionDiv.className = 'p-4 border rounded-lg mb-4';
+            
+            let optionsHtml = item.options.map(opt => `<option value="${opt}">${opt}</option>`).join('');
+
+            questionDiv.innerHTML = `
+                <p class="font-medium text-slate-700 mb-3">${index + 1}. ${item.question}</p>
+                <select class="evaluation-select w-full p-3 border rounded-md bg-white text-slate-700" data-answer="${item.answer}">
+                    <option value="">Selecciona la respuesta correcta...</option>
+                    ${optionsHtml}
+                </select>
+            `;
+            evaluationContainer.appendChild(questionDiv);
+        });
+    }
+
+    const submitQuizBtn = document.getElementById('submit-quiz-btn');
+    if (submitQuizBtn) {
+        submitQuizBtn.addEventListener('click', () => {
+            const selects = document.querySelectorAll('.evaluation-select');
+            let correctAnswers = 0;
+            const feedbacks = [
+                'Correcto: El plano detalle muestra solo una pequeña parte del rostro como los ojos.',
+                'Correcto: El ángulo picado (desde arriba) hace ver al personaje vulnerable.',
+                'Correcto: El paneo es el movimiento horizontal de la cámara sobre su eje.',
+                'Correcto: El plano americano muestra desde las rodillas hacia arriba.',
+                'Correcto: El travelling desplaza físicamente la cámara siguiendo al sujeto.'
+            ];
+            const wrongFeedbacks = [
+                'Incorrecto. El plano detalle muestra solo una pequeña parte como los ojos.',
+                'Incorrecto. El ángulo picado (desde arriba) hace ver vulnerable al personaje.',
+                'Incorrecto. El paneo es el movimiento horizontal de la cámara.',
+                'Incorrecto. El plano americano muestra desde las rodillas hacia arriba.',
+                'Incorrecto. El travelling desplaza físicamente la cámara siguiendo al sujeto.'
+            ];
+            
+            selects.forEach((select, index) => {
+                let feedbackDiv = select.parentNode.querySelector('.evaluation-feedback');
+                if (!feedbackDiv) {
+                    feedbackDiv = document.createElement('div');
+                    feedbackDiv.className = 'evaluation-feedback mt-2 text-sm';
+                    select.parentNode.appendChild(feedbackDiv);
+                }
+                
+                if (select.value === select.dataset.answer) {
+                    correctAnswers++;
+                    select.classList.add('border-green-500', 'bg-green-50');
+                    select.classList.remove('border-red-500', 'bg-red-50');
+                    feedbackDiv.innerHTML = `<span class="text-green-600 font-medium">✓ ${feedbacks[index]}</span>`;
+                } else {
+                    select.classList.add('border-red-500', 'bg-red-50');
+                    select.classList.remove('border-green-500', 'bg-green-50');
+                    feedbackDiv.innerHTML = `<span class="text-red-600 font-medium">✗ ${wrongFeedbacks[index]}</span>`;
+                }
+            });
+            
+            const resultDiv = document.getElementById('quiz-result');
+            resultDiv.textContent = `Puntuación: ${correctAnswers}/${evaluationData.length}`;
+            resultDiv.className = correctAnswers === evaluationData.length ? 'mt-4 text-lg font-bold text-green-700' : 'mt-4 text-lg font-bold text-red-700';
+        });
+    }
+});
+</script>
+
+
+<script>
+    // JS para verificación de actividades
+    document.addEventListener('DOMContentLoaded', function() {
+        const checkBtn = document.getElementById('check-activity-btn');
+        if (checkBtn) {
+            checkBtn.addEventListener('click', function() {
+                const inputs = document.querySelectorAll('.activity-input');
+                let correctas = 0;
+                let feedback = [];
+                
+                inputs.forEach((input, idx) => {
+                    const userAnswer = input.value.trim().toLowerCase();
+                    const correctAnswer = input.getAttribute('data-answer');
+                    
+                    if (!correctAnswer) {
+                        feedback.push(`Ejercicio ${idx+1}: ⚠️ Sin respuesta definida`);
+                        return;
+                    }
+                    
+                    // Normalizar respuestas para comparación flexible
+                    const normalizedCorrect = correctAnswer.toLowerCase().trim();
+                    const normalizedUser = userAnswer.toLowerCase().trim();
+                    
+                    // Verificar respuestas con flexibilidad para términos cinematográficos
+                    let isCorrect = false;
+                    
+                    if (idx === 0) { // Ejercicio 1: Planos
+                        const correctPlanes = normalizedCorrect.split(',').map(p => p.trim());
+                        const userPlanes = normalizedUser.split(',').map(p => p.trim());
+                        isCorrect = correctPlanes.length === userPlanes.length && 
+                                   correctPlanes.every((plane, i) => {
+                                       const userPlane = userPlanes[i] || '';
+                                       return userPlane.includes('detalle') && plane.includes('detalle') ||
+                                              userPlane.includes('general') && plane.includes('general') ||
+                                              userPlane.includes('medio') && plane.includes('medio');
+                                   });
+                    } else if (idx === 1) { // Ejercicio 2: Ángulos
+                        isCorrect = normalizedUser === 'b' || normalizedUser.includes('contrapicado');
+                    } else if (idx === 2) { // Ejercicio 3: Movimientos
+                        isCorrect = normalizedUser.includes('travelling') || normalizedUser.includes('traveling');
+                    }
+                    
+                    if (isCorrect) {
+                        input.classList.remove('border-red-500');
+                        input.classList.add('border-green-500');
+                        correctas++;
+                        feedback.push(`Ejercicio ${idx+1}: ✔️ Correcto`);
+                    } else {
+                        input.classList.remove('border-green-500');
+                        input.classList.add('border-red-500');
+                        feedback.push(`Ejercicio ${idx+1}: ❌ Incorrecto`);
+                    }
+                });
+                
+                const resultDiv = document.getElementById('activity-result');
+                resultDiv.innerHTML = `<strong>Respuestas correctas: ${correctas} de 3</strong><br>` + feedback.join('<br>');
+                resultDiv.className = correctas === 3 ? 'mt-4 font-medium text-green-700' : 'mt-4 font-medium text-red-700';
+            });
+        }
+    });
+</script>
+
+<script>
+    // JS para acordeón con desplazamiento automático
+    document.querySelectorAll('.accordion-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const panel = document.querySelector(this.getAttribute('data-target'));
+            const isOpen = panel.classList.contains('block');
+            document.querySelectorAll('.accordion-panel').forEach(p => p.classList.add('hidden'));
+            document.querySelectorAll('.accordion-panel').forEach(p => p.classList.remove('block'));
+            
+            if (!isOpen) {
+                panel.classList.remove('hidden');
+                panel.classList.add('block');
+                // Cambiar el símbolo del botón
+                this.querySelector('span').textContent = '➖';
+                
+                // Desplazamiento suave hacia el botón del acordeón desplegado
+                setTimeout(() => {
+                    this.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100); // Pequeño retraso para asegurar que el panel esté visible
+            } else {
+                // Cambiar el símbolo del botón
+                this.querySelector('span').textContent = '➕';
+            }
+            
+            // Actualizar todos los demás botones
+            document.querySelectorAll('.accordion-btn').forEach(otherBtn => {
+                if (otherBtn !== this) {
+                    otherBtn.querySelector('span').textContent = '➕';
+                }
+            });
+        });
+    });
+</script>
+
+<script>
+    // JS para modal de imagen
+    document.addEventListener('DOMContentLoaded', function() {
+        const modal = document.getElementById('imageModal');
+        const modalImg = document.getElementById('modalImage');
+        const closeBtn = document.getElementById('closeModal');
+        const expandBtns = document.querySelectorAll('.expand-btn');
+        
+        // Abrir modal al hacer clic en el botón de expandir
+        expandBtns.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault(); // Prevenir comportamiento por defecto
+                e.stopPropagation(); // Evitar propagación del evento
+                
+                const imgSrc = this.getAttribute('data-img');
+                modalImg.src = imgSrc;
+                modal.classList.add('active');
+                document.body.style.overflow = 'hidden'; // Evitar scroll en el fondo
+                
+                // Agregar feedback táctil en dispositivos móviles si está disponible
+                if (window.navigator && window.navigator.vibrate) {
+                    window.navigator.vibrate(50); // Vibración sutil de 50ms
+                }
+            });
+        });
+        
+        // Cerrar modal al hacer clic en el botón de cerrar
+        closeBtn.addEventListener('click', function() {
+            modal.classList.remove('active');
+            document.body.style.overflow = ''; // Restaurar scroll
+        });
+        
+        // Cerrar modal al hacer clic fuera de la imagen
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.classList.remove('active');
+                document.body.style.overflow = ''; // Restaurar scroll
+            }
+        });
+        
+        // Cerrar modal con la tecla ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modal.classList.contains('active')) {
+                modal.classList.remove('active');
+                document.body.style.overflow = ''; // Restaurar scroll
+            }
+        });
+    });
+</script>
+
+    <!-- Modal para ampliar imágenes -->    
+    <div id="imageModal" class="image-modal">
+        <div class="modal-content">
+            <img id="modalImage" src="" alt="Imagen ampliada">
+            <button class="close-modal" id="closeModal">&times;</button>
+        </div>
+    </div>
+</body>:
+
+<script>
+    // SCRIPT DE SÍNTESIS DE VOZ MEJORADO
+    document.addEventListener('DOMContentLoaded', function() {
+        
+        // VARIABLES GLOBALES
+        const synth = window.speechSynthesis;
+        let voices = [];
+        let activeReaders = {}; // Almacena los lectores activos por sección
+        let paulinaVoice = null; // Variable para almacenar la voz de Paulina
+        let currentActiveSection = null; // Sección actualmente activa
+        
+        // GESTIÓN DE VOCES
+        function loadVoices() {
+            voices = synth.getVoices();
+            console.log('Voces disponibles:', voices.length);
+            
+            // Buscar la voz de Paulina (es-MX)
+            paulinaVoice = voices.find(voice => voice.name.includes('Paulina'));
+            
+            // Si no se encuentra Paulina, buscar cualquier voz en español
+            if (!paulinaVoice) {
+                paulinaVoice = voices.find(voice => voice.lang.startsWith('es'));
+                if (paulinaVoice) {
+                    console.log('Usando voz en español alternativa:', paulinaVoice.name);
+                } else {
+                    console.warn('No se encontró ninguna voz en español, usando voz predeterminada');
+                    if (voices.length > 0) {
+                        paulinaVoice = voices[0];
+                        console.log('Usando voz predeterminada:', paulinaVoice.name);
+                    }
+                }
+            } else {
+                console.log('Voz Paulina encontrada:', paulinaVoice.name);
+            }
+        }
+        
+        // Cargar voces cuando estén disponibles
+        if (synth.onvoiceschanged !== undefined) {
+            synth.onvoiceschanged = loadVoices;
+        }
+        loadVoices();
+        
+        // EXTRACCIÓN DE TEXTO
+        function getSectionText(sectionId) {
+            // Limpiar el ID de la sección
+            if (sectionId.startsWith('#')) {
+                sectionId = sectionId.substring(1);
+            }
+            
+            const section = document.getElementById(sectionId);
+            if (!section) {
+                console.error('No se encontró la sección:', sectionId);
+                return '';
+            }
+            
+            console.log('Obteniendo texto de la sección:', sectionId);
+            
+            // Obtener elementos de texto
+            const textElements = section.querySelectorAll('p, li, .text-slate-700, h1, h2, h3, h4, h5, h6');
+            let text = '';
+            
+            if (textElements.length === 0) {
+                // Si no se encuentran elementos específicos, usar todo el texto
+                text = section.textContent.trim();
+                console.log('Usando texto completo de la sección');
+            } else {
+                // Procesar elementos manteniendo el orden del DOM
+                // Esto permite mantener una estructura lógica en la lectura
+                
+                // Crear un array con todos los elementos para ordenarlos por posición en el DOM
+                const allElements = [];
+                textElements.forEach(el => allElements.push({element: el, isHeading: /^H[1-6]$/.test(el.tagName)}));
+                
+                // Ordenar elementos por su posición en el documento
+                allElements.sort((a, b) => {
+                    const position = a.element.compareDocumentPosition(b.element);
+                    return position & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
+                });
+                
+                // Procesar cada elemento añadiendo pausas después de los títulos
+                allElements.forEach(item => {
+                    const content = item.element.textContent.trim();
+                    if (item.isHeading) {
+                        // Añadir el título seguido de una pausa (usando puntos)
+                        text += content + '. . . ';
+                    } else {
+                        // Añadir el contenido normal
+                        text += content + ' ';
+                    }
+                });
+                
+                console.log('Elementos de texto procesados:', textElements.length);
+            }
+            
+            return text.trim();
+        }
+        
+        // GESTIÓN DE ESTADOS DE BOTONES
+        function updateButtonStates(controlsElement, isPlaying) {
+            const playBtn = controlsElement.querySelector('.play-btn');
+            const pauseBtn = controlsElement.querySelector('.pause-btn');
+            const stopBtn = controlsElement.querySelector('.stop-btn');
+            
+            if (playBtn) playBtn.disabled = isPlaying;
+            if (pauseBtn) pauseBtn.disabled = !isPlaying;
+            if (stopBtn) stopBtn.disabled = !isPlaying;
+        }
+        
+        // FUNCIONES DE CONTROL DE REPRODUCCIÓN
+        function playSection(sectionId, controlsElement) {
+            const reader = activeReaders[sectionId];
+            
+            // Si hay un lector pausado, reanudarlo
+            if (reader && reader.isPaused) {
+                console.log('Reanudando lectura pausada');
+                synth.resume();
+                reader.isPaused = false;
+                updateButtonStates(controlsElement, true);
+                return;
+            }
+            
+            // Detener cualquier lectura anterior
+            stopAllSections();
+            
+            // Obtener el texto a leer
+            const textToRead = getSectionText(sectionId);
+            if (!textToRead) {
+                console.error('No se encontró texto para leer');
+                return;
+            }
+            
+            console.log('Iniciando lectura, longitud del texto:', textToRead.length);
+            
+            // Configurar el utterance
+            const rateControl = controlsElement.querySelector('.speech-rate');
+            const utterance = new SpeechSynthesisUtterance(textToRead);
+            utterance.lang = 'es-ES';
+            utterance.rate = parseFloat(rateControl.value);
+            
+            if (paulinaVoice) {
+                utterance.voice = paulinaVoice;
+            }
+            
+            // Eventos del utterance
+            utterance.onend = function() {
+                console.log('Lectura finalizada');
+                updateButtonStates(controlsElement, false);
+                delete activeReaders[sectionId];
+                currentActiveSection = null;
+            };
+            
+            utterance.onerror = function(event) {
+                console.error('Error en síntesis de voz:', event.error);
+                updateButtonStates(controlsElement, false);
+                delete activeReaders[sectionId];
+                currentActiveSection = null;
+            };
+            
+            // Guardar referencia
+            activeReaders[sectionId] = {
+                utterance: utterance,
+                isPaused: false,
+                textToRead: textToRead,
+                controls: controlsElement
+            };
+            
+            currentActiveSection = sectionId;
+            
+            // Iniciar lectura
+            synth.speak(utterance);
+            updateButtonStates(controlsElement, true);
+        }
+        
+        function pauseSection(sectionId) {
+            const reader = activeReaders[sectionId];
+            if (reader && !reader.isPaused && synth.speaking) {
+                console.log('Pausando lectura');
+                synth.pause();
+                reader.isPaused = true;
+                updateButtonStates(reader.controls, true);
+                reader.controls.querySelector('.play-btn').disabled = false;
+            }
+        }
+        
+        function stopSection(sectionId) {
+            const reader = activeReaders[sectionId];
+            if (reader) {
+                console.log('Deteniendo lectura');
+                synth.cancel();
+                updateButtonStates(reader.controls, false);
+                delete activeReaders[sectionId];
+                if (currentActiveSection === sectionId) {
+                    currentActiveSection = null;
+                }
+            }
+        }
+        
+        function stopAllSections() {
+            synth.cancel();
+            Object.keys(activeReaders).forEach(sectionId => {
+                const reader = activeReaders[sectionId];
+                if (reader && reader.controls) {
+                    updateButtonStates(reader.controls, false);
+                }
+            });
+            activeReaders = {};
+            currentActiveSection = null;
+        }
+        
+        // ATAJOS DE TECLADO
+        document.addEventListener('keydown', function(event) {
+            // Evitar activar atajos si el usuario está escribiendo en un input
+            if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+                return;
+            }
+            
+            // ESPACIO: Play/Pause
+            if (event.code === 'Space') {
+                event.preventDefault();
+                
+                // Buscar la sección visible actualmente
+                const visibleSection = document.querySelector('.content-pane.active');
+                if (!visibleSection) return;
+                
+                const sectionId = visibleSection.id;
+                const controls = visibleSection.querySelector('.speech-controls');
+                
+                if (!controls) return;
+                
+                const reader = activeReaders[sectionId];
+                
+                if (reader && reader.isPaused) {
+                    // Reanudar
+                    playSection(sectionId, controls);
+                } else if (reader && synth.speaking) {
+                    // Pausar
+                    pauseSection(sectionId);
+                } else {
+                    // Iniciar
+                    playSection(sectionId, controls);
+                }
+                
+                console.log('Atajo de teclado: Espacio - Play/Pause');
+            }
+            
+            // TAB: Stop
+            if (event.code === 'Tab' && !event.shiftKey) {
+                if (currentActiveSection) {
+                    event.preventDefault();
+                    stopSection(currentActiveSection);
+                    console.log('Atajo de teclado: Tab - Stop');
+                }
+            }
+        });
+        
+        // CONFIGURACIÓN DE CONTROLES
+        document.querySelectorAll('.speech-controls').forEach(controls => {
+            const sectionId = controls.getAttribute('data-target');
+            const playBtn = controls.querySelector('.play-btn');
+            const pauseBtn = controls.querySelector('.pause-btn');
+            const stopBtn = controls.querySelector('.stop-btn');
+            const rateControl = controls.querySelector('.speech-rate');
+            
+            if (!sectionId || !playBtn || !pauseBtn || !stopBtn || !rateControl) {
+                console.error('Faltan elementos necesarios para el control de voz');
+                return;
+            }
+            
+            console.log('Configurando controles para sección:', sectionId);
+            
+            // Botón Play
+            playBtn.addEventListener('click', () => playSection(sectionId, controls));
+            
+            // Botón Pause
+            pauseBtn.addEventListener('click', () => pauseSection(sectionId));
+            
+            // Botón Stop
+            stopBtn.addEventListener('click', () => stopSection(sectionId));
+            
+            // Control de velocidad
+            rateControl.addEventListener('change', function() {
+                const reader = activeReaders[sectionId];
+                if (reader && synth.speaking) {
+                    // Reiniciar con nueva velocidad
+                    const wasPlaying = !reader.isPaused;
+                    stopSection(sectionId);
+                    if (wasPlaying) {
+                        setTimeout(() => playSection(sectionId, controls), 100);
+                    }
+                }
+            });
+        });
+        
+        console.log('Sistema de síntesis de voz inicializado');
+        console.log('Atajos: Espacio = Play/Pause, Tab = Stop');
+    });
+</script>
+
+</body>
+</html>

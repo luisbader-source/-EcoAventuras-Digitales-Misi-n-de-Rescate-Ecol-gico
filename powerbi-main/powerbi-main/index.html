@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OVA: Introducción a Power BI</title>
+    <script src="https://cdn.tailwindcss.com?_ver=3.4.1"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+        .sidebar-link {
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+        .sidebar-link.active, .sidebar-link:hover {
+            background-color: #e6f4ea;
+            color: #166534;
+            border-left-color: #f2c94c;
+        }
+        .content-pane {
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        .content-pane.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .step-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .step-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .step-card.selected {
+            border-color: #f2c94c;
+            background-color: #fefce8;
+        }
+        .step-card.correct {
+            border-color: #22c55e;
+            background-color: #dcfce7;
+        }
+        .step-card.incorrect {
+            border-color: #ef4444;
+            background-color: #fef2f2;
+        }
+        .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #e5e7eb;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #f2c94c, #f59e0b);
+            transition: width 0.3s ease;
+        }
+        .drag-item {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            border-radius: 8px;
+            padding: 12px 16px;
+            cursor: grab;
+            margin: 8px;
+            display: inline-block;
+            transition: all 0.3s;
+        }
+        .drag-item:hover {
+            background: #fde68a;
+            transform: scale(1.05);
+        }
+        .drag-item.dragging {
+            opacity: 0.5;
+        }
+        .drop-zone {
+            background: #f9fafb;
+            border: 2px dashed #d1d5db;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 100px;
+            margin: 10px 0;
+            transition: all 0.3s;
+        }
+        .drop-zone.drag-over {
+            background: #fef3c7;
+            border-color: #f59e0b;
+        }
+        .drop-zone.correct {
+            background: #dcfce7;
+            border-color: #22c55e;
+        }
+        .drop-zone.incorrect {
+            background: #fef2f2;
+            border-color: #ef4444;
+        }
+        .dax-editor {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            min-height: 100px;
+            border: 2px solid #334155;
+            width: 100%;
+        }
+        .dax-editor:focus {
+            outline: none;
+            border-color: #f59e0b;
+        }
+        .image-container {
+            position: relative;
+            cursor: pointer;
+        }
+        .zoom-icon {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .image-container:hover .zoom-icon {
+            opacity: 1;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            animation: fadeIn 0.3s ease;
+        }
+        .modal-content {
+            position: relative;
+            margin: auto;
+            padding: 20px;
+            width: 90%;
+            max-width: 1000px;
+            max-height: 90vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .modal-content img {
+            max-width: 100%;
+            max-height: 90vh;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+        .close-modal {
+            position: absolute;
+            top: -20px;
+            right: -20px;
+            background-color: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50">
+
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white shadow-lg flex-shrink-0 hidden md:flex md:flex-col">
+            <div class="p-4">
+                <div style="width: 150px; height: 150px;" class="p-2 mx-auto flex items-center justify-center bg-white rounded-full shadow-lg border-2 border-yellow-500 transition-shadow duration-300 hover:shadow-yellow-400">
+                    <img src="img/logo.png" alt="Logo OVA" class="w-5/6 h-5/6 object-contain" loading="lazy">
+                </div>
+            </div>
+            <nav class="mt-6 flex-1">
+                <a href="#" class="sidebar-link active flex items-center py-3 px-6 font-medium text-slate-700" data-target="introduccion"><span class="mr-3 text-xl">🚀</span> Introducción</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="objetivos"><span class="mr-3 text-xl">🎯</span> Objetivos</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="contenido"><span class="mr-3 text-xl">📚</span> Contenido</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="actividades"><span class="mr-3 text-xl">✍️</span> Actividades</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="evaluacion"><span class="mr-3 text-xl">✔️</span> Evaluación</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="recursos"><span class="mr-3 text-xl">📖</span> Recursos</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="bibliografia"><span class="mr-3 text-xl">📚</span> Bibliografía</a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-4 sm:p-6 md:p-10 bg-gray-50">
+            <!-- Mobile Header -->
+            <div class="md:hidden mb-6 flex flex-col items-center">
+                <div style="width: 100px; height: 100px;" class="p-2 flex items-center justify-center bg-white rounded-full shadow-lg transition-shadow duration-300 hover:shadow-yellow-400 mb-2">
+                    <img src="img/logo.png" alt="Logo OVA" class="w-5/6 h-5/6 object-contain" loading="lazy">
+                </div>
+                 <select id="mobile-nav" class="w-full mt-2 p-2 border rounded-md bg-white shadow-sm">
+                    <option value="introduccion">🚀 Introducción</option>
+                    <option value="objetivos">🎯 Objetivos</option>
+                    <option value="contenido">📚 Contenido</option>
+                    <option value="actividades">✍️ Actividades Prácticas</option>
+                    <option value="evaluacion">✔️ Evaluación</option>
+                    <option value="recursos">📖 Recursos</option>
+                    <option value="bibliografia">📚 Bibliografía</option>
+                </select>
+            </div>
+
+          <!-- Introducción -->
+            <div id="introduccion" class="content-pane active">
+                <h2 class="text-2xl sm:text-3xl font-bold text-yellow-800 mb-4">Introducción a Power BI 📊</h2>
+                <div class="mt-4 mb-6 p-4 bg-white border border-yellow-300 rounded-lg shadow-sm flex flex-col items-center">
+                    <div class="image-container w-full h-32 sm:h-48 md:h-64 xl:h-80 bg-gradient-to-br from-yellow-100 to-yellow-200 rounded flex items-center justify-center overflow-hidden" onclick="openModal(this)">
+                        <img src="img/crear-visualizacion-3d-dinamica-pagina-inicio-que-integre-informes-power-bi-mejorar-atractivo-estetico-compromiso-usuario-generado-ia_1331154-2260.avif" alt="Power BI - Análisis de datos" class="w-full h-full object-cover">
+                        <div class="zoom-icon">🔍</div>
+                    </div>
+                </div>
+                <p class="text-lg text-slate-700 leading-relaxed mb-4">
+                    Power BI es una herramienta de <span class="font-bold text-yellow-700">dashboards</span> desarrollada por Microsoft que permite transformar datos en información valiosa a través de visualizaciones interactivas. 📈✨
+                </p>
+                <p class="text-lg text-slate-700 leading-relaxed mb-4">
+                    En este curso aprenderás desde los conceptos básicos hasta la creación de reportes interactivos, dominando Power Query para transformar datos y las mejores prácticas para crear visualizaciones efectivas que impulsen la toma de decisiones basada en datos.
+                </p>
+            <div class="speech-controls mb-4 p-3 bg-yellow-100 rounded-lg flex items-center flex-wrap gap-2" data-target="introduccion">
+    <button class="play-btn bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+        <span class="mr-1">▶️</span> Leer
+    </button>
+    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+        <span class="mr-1">⏸️</span> Pausar
+    </button>
+    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+        <span class="mr-1">⏹️</span> Detener
+    </button>
+    <div class="flex items-center ml-2">
+        <label for="speech-rate-introduccion" class="text-sm text-yellow-800 mr-2">Velocidad:</label>
+        <input type="range" class="speech-rate" id="speech-rate-introduccion" min="0.5" max="2" step="0.1" value="1" class="w-24">
+    </div>
+</div>
+                <div class="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800">
+                    <strong>💡 Atajos de teclado:</strong> Presiona <kbd class="bg-white px-2 py-1 rounded border">Espacio</kbd> para reproducir/pausar, <kbd class="bg-white px-2 py-1 rounded border">Tab</kbd> para detener
+                </div>
+            </div>
+
+            <!-- Objetivos -->
+            <div id="objetivos" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-yellow-800 mb-6">Objetivos de aprendizaje</h2>
+                <div class="speech-controls mb-4 p-3 bg-yellow-100 rounded-lg flex items-center flex-wrap gap-2" data-target="objetivos">
+                    <button class="play-btn bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-objetivos" class="text-sm text-yellow-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-objetivos" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                <ul class="space-y-4">
+                    <li class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                        <span class="text-yellow-700 mr-3 text-2xl">🧠</span>
+                        <span>Comprender qué es Power BI y sus componentes principales: Power BI Desktop, Power BI Service y Power BI Mobile.</span>
+                    </li>
+                    <li class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                        <span class="text-yellow-700 mr-3 text-2xl">🔍</span>
+                        <span>Aprender a conectar diferentes fuentes de datos y realizar transformaciones básicas usando Power Query.</span>
+                    </li>
+                    <li class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                        <span class="text-yellow-700 mr-3 text-2xl">📊</span>
+                        <span>Diseñar visualizaciones interactivas y dashboards efectivos para el análisis de datos.</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Contenido -->
+            <div id="contenido" class="content-pane">
+                <div class="speech-controls mb-4 p-3 bg-yellow-100 rounded-lg flex items-center flex-wrap gap-2" data-target="contenido">
+                    <button class="play-btn bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-contenido" class="text-sm text-yellow-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-contenido" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                
+                <div class="w-full max-w-8xl mx-auto">
+                    <!-- ¿Qué es Power BI? -->
+                    <div class="mb-4">
+                        <button type="button" class="w-full flex justify-between items-center p-4 bg-yellow-100 border border-yellow-300 rounded-t-lg focus:outline-none font-bold text-yellow-800 text-lg accordion-btn mb-2" data-target="#panel-que-es">
+                            ¿Qué es Power BI?<span class="ml-2">➕</span>
+                        </button>
+                    </div>
+                    <div id="panel-que-es" class="accordion-panel hidden bg-white border border-t-0 border-yellow-300 rounded-b-lg p-4 mb-6">
+                        <div class="space-y-8 text-slate-700 leading-relaxed">
+                            <div>
+                                <p class="mb-4">Power BI es una suite de <strong>herramientas de Business Intelligence</strong> de Microsoft que permite conectarse a múltiples fuentes de datos, transformarlos, modelarlos y crear visualizaciones interactivas.</p>
+                                <p class="mb-4">Es una solución completa que va desde el análisis de datos hasta la compartición de insights en tiempo real, permitiendo a las organizaciones tomar decisiones basadas en datos.</p>
+                            </div>
+                            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-yellow-800 mb-2">📦 Componentes principales</h4>
+                                <ul class="list-disc pl-5 space-y-2">
+                                    <li><strong>Power BI Desktop:</strong> Herramienta gratuita para crear reportes y modelos de datos</li>
+                                    <li><strong>Power BI Service:</strong> Servicio en la nube para compartir y colaborar</li>
+                                    <li><strong>Power BI Mobile:</strong> Aplicaciones móviles para ver reportes en cualquier lugar</li>
+                                    <li><strong>Power BI Gateway:</strong> Puerta de enlace para conectar fuentes de datos on-premise</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Fuentes de datos -->
+                    <div class="mb-4">
+                        <button type="button" class="w-full flex justify-between items-start p-4 bg-yellow-100 border border-yellow-300 rounded-t-lg focus:outline-none font-bold text-yellow-800 text-lg accordion-btn mb-2 text-left" data-target="#panel-fuentes">
+                            Fuentes de datos y Power Query<span class="ml-2">➕</span>
+                        </button>
+                    </div>
+                    <div id="panel-fuentes" class="accordion-panel hidden bg-white border border-t-0 border-yellow-300 rounded-b-lg p-4 mb-6">
+                        <div class="text-slate-700 leading-relaxed space-y-6">
+                            <p class="mb-2">Power BI puede conectarse a más de 100 fuentes de datos diferentes:</p>
+                            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-yellow-800 mb-2">🔘 Fuentes comunes</h4>
+                                <ul class="list-disc pl-5 space-y-1">
+                                    <li><strong>Excel:</strong> Archivos .xlsx, .csv</li>
+                                    <li><strong>Bases de datos:</strong> SQL Server, Oracle, PostgreSQL</li>
+                                    <li><strong>Servicios en la nube:</strong> Azure, Salesforce, Google Analytics</li>
+                                    <li><strong>Web:</strong> APIs, páginas web, JSON, XML</li>
+                                </ul>
+                            </div>
+                            <h4 class="font-bold text-yellow-800 mb-2">⚡ Power Query</h4>
+                            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+                                <p>Power Query es el motor de transformación de datos de Power BI. Permite:</p>
+                                <ul class="list-disc pl-5 mt-2 space-y-1">
+                                    <li>Limpiar y dar formato a los datos</li>
+                                    <li>Filtrar, ordenar y agrupar información</li>
+                                    <li>Combinar múltiples fuentes de datos</li>
+                                    <li>Crear consultas reproducibles y automatizadas</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Visualizaciones -->
+                    <div class="mb-4">
+                        <button type="button" class="w-full flex justify-between items-start p-4 bg-yellow-100 border border-yellow-300 rounded-t-lg focus:outline-none font-bold text-yellow-800 text-lg accordion-btn mb-2 text-left" data-target="#panel-visualizaciones">
+                            Visualizaciones en Power BI<span class="ml-2">➕</span>
+                        </button>
+                    </div>
+                    <div id="panel-visualizaciones" class="accordion-panel hidden bg-white border border-t-0 border-yellow-300 rounded-b-lg p-4 mb-6">
+                        <div class="text-slate-700 leading-relaxed space-y-6">
+                            <h4 class="font-bold text-yellow-800 mb-2">📊 Tipos de visualizaciones</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="bg-white border-2 border-yellow-200 rounded-lg p-4 text-center">
+                                    <div class="text-3xl mb-2">📊</div>
+                                    <h5 class="font-bold text-yellow-700">Gráficos de barras/columnas</h5>
+                                    <p class="text-sm text-slate-600">Comparar categorías y valores</p>
+                                </div>
+                                <div class="bg-white border-2 border-yellow-200 rounded-lg p-4 text-center">
+                                    <div class="text-3xl mb-2">🥧</div>
+                                    <h5 class="font-bold text-yellow-700">Gráficos circulares</h5>
+                                    <p class="text-sm text-slate-600">Mostrar proporciones de un total</p>
+                                </div>
+                                <div class="bg-white border-2 border-yellow-200 rounded-lg p-4 text-center">
+                                    <div class="text-3xl mb-2">📈</div>
+                                    <h5 class="font-bold text-yellow-700">Gráficos de líneas</h5>
+                                    <p class="text-sm text-slate-600">Evolución temporal y tendencias</p>
+                                </div>
+                                <div class="bg-white border-2 border-yellow-200 rounded-lg p-4 text-center">
+                                    <div class="text-3xl mb-2">🗺️</div>
+                                    <h5 class="font-bold text-yellow-700">Mapas</h5>
+                                    <p class="text-sm text-slate-600">Datos geográficos y ubicaciones</p>
+                                </div>
+                                <div class="bg-white border-2 border-yellow-200 rounded-lg p-4 text-center">
+                                    <div class="text-3xl mb-2">📋</div>
+                                    <h5 class="font-bold text-yellow-700">Tablas y matrices</h5>
+                                    <p class="text-sm text-slate-600">Datos detallados en formato tabular</p>
+                                </div>
+                                <div class="bg-white border-2 border-yellow-200 rounded-lg p-4 text-center">
+                                    <div class="text-3xl mb-2">🎯</div>
+                                    <h5 class="font-bold text-yellow-700">Tarjetas KPI</h5>
+                                    <p class="text-sm text-slate-600">Indicadores clave de rendimiento</p>
+                                </div>
+                                <div class="bg-white border-2 border-yellow-200 rounded-lg p-4 text-center">
+                                    <div class="text-3xl mb-2">📉</div>
+                                    <h5 class="font-bold text-yellow-700">Gráficos de área</h5>
+                                    <p class="text-sm text-slate-600">Mostrar volumen a lo largo del tiempo</p>
+                                </div>
+                                <div class="bg-white border-2 border-yellow-200 rounded-lg p-4 text-center">
+                                    <div class="text-3xl mb-2">🔵</div>
+                                    <h5 class="font-bold text-yellow-700">Gráficos de dispersión</h5>
+                                    <p class="text-sm text-slate-600">Relación entre dos variables</p>
+                                </div>
+                                <div class="bg-white border-2 border-yellow-200 rounded-lg p-4 text-center">
+                                    <div class="text-3xl mb-2">🌊</div>
+                                    <h5 class="font-bold text-yellow-700">Gráficos de cascada</h5>
+                                    <p class="text-sm text-slate-600">Análisis de cambios positivos/negativos</p>
+                                </div>
+                                <div class="bg-white border-2 border-yellow-200 rounded-lg p-4 text-center">
+                                    <div class="text-3xl mb-2">🎪</div>
+                                    <h5 class="font-bold text-yellow-700">Gráficos de embudo</h5>
+                                    <p class="text-sm text-slate-600">Proceso de conversión etapas</p>
+                                </div>
+                                <div class="bg-white border-2 border-yellow-200 rounded-lg p-4 text-center">
+                                    <div class="text-3xl mb-2">🍩</div>
+                                    <h5 class="font-bold text-yellow-700">Gráficos de dona</h5>
+                                    <p class="text-sm text-slate-600">Proporciones con centro vacío</p>
+                                </div>
+                                <div class="bg-white border-2 border-yellow-200 rounded-lg p-4 text-center">
+                                    <div class="text-3xl mb-2">🎨</div>
+                                    <h5 class="font-bold text-yellow-700">Gráficos de radar</h5>
+                                    <p class="text-sm text-slate-600">Comparar múltiples dimensiones</p>
+                                </div>
+                                <div class="bg-white border-2 border-yellow-200 rounded-lg p-4 text-center">
+                                    <div class="text-3xl mb-2">🌳</div>
+                                    <h5 class="font-bold text-yellow-700">Gráficos de árbol</h5>
+                                    <p class="text-sm text-slate-600">Datos jerárquicos y proporciones</p>
+                                </div>
+                                <div class="bg-white border-2 border-yellow-200 rounded-lg p-4 text-center">
+                                    <div class="text-3xl mb-2">⚡</div>
+                                    <h5 class="font-bold text-yellow-700">Gráficos de gauge</h5>
+                                    <p class="text-sm text-slate-600">Medidores y velocímetros</p>
+                                </div>
+                                <div class="bg-white border-2 border-yellow-200 rounded-lg p-4 text-center">
+                                    <div class="text-3xl mb-2">📇</div>
+                                    <h5 class="font-bold text-yellow-700">Gráficos de tarjetas</h5>
+                                    <p class="text-sm text-slate-600">Mostrar métricas individuales</p>
+                                </div>
+                                <div class="bg-white border-2 border-yellow-200 rounded-lg p-4 text-center">
+                                    <div class="text-3xl mb-2">🔄</div>
+                                    <h5 class="font-bold text-yellow-700">Gráficos combinados</h5>
+                                    <p class="text-sm text-slate-600">Mezclar diferentes tipos de gráficos</p>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-6 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-yellow-800 mb-2">💡 Recomendaciones para elegir visualizaciones</h4>
+                                <ul class="list-disc pl-5 space-y-1">
+                                    <li><strong>Comparar categorías:</strong> Barras o columnas</li>
+                                    <li><strong>Mostrar partes de un todo:</strong> Circular o dona</li>
+                                    <li><strong>Evolución temporal:</strong> Líneas o área</li>
+                                    <li><strong>Distribución geográfica:</strong> Mapas</li>
+                                    <li><strong>Relación entre variables:</strong> Dispersión</li>
+                                    <li><strong>Datos detallados:</strong> Tablas o matrices</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actividades Prácticas -->
+            <div id="actividades" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-yellow-800 mb-6">Actividades prácticas</h2>
+                <div class="speech-controls mb-4 p-3 bg-yellow-100 rounded-lg flex items-center flex-wrap gap-2" data-target="actividades">
+                    <button class="play-btn bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-actividades" class="text-sm text-yellow-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-actividades" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                
+                <div class="space-y-8">
+                    <!-- Simulación 1: Orden del flujo de trabajo en Power BI -->
+                    <div class="bg-white border-l-4 border-yellow-500 rounded-lg shadow-sm p-6">
+                        <h3 class="text-xl font-bold text-yellow-700 mb-2">📊 Simulación 1: Flujo de trabajo en Power BI</h3>
+                        <p class="mb-4"><span class="font-semibold">Instrucciones:</span> Ordena los pasos correctos para crear un reporte en Power BI Desktop.</p>
+                        
+                        <div class="mb-6">
+                            <div class="flex justify-between text-sm text-slate-600 mb-2">
+                                <span>Progreso</span>
+                                <span id="progress-text-1">0/3 pasos</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progress-fill-1" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <div id="powerbi-simulador" class="space-y-3">
+                            <p class="text-sm text-slate-600 mb-3">Haz clic en los pasos en el orden correcto:</p>
+                            
+                            <div class="step-card border-2 border-slate-200 rounded-lg p-4" data-step="1" data-correct-order="1">
+                                <div class="flex items-center gap-4">
+                                    <div class="step-number bg-slate-200 text-slate-600" id="num-1">?</div>
+                                    <div>
+                                        <h4 class="font-semibold text-slate-800">Conectar a fuentes de datos</h4>
+                                        <p class="text-sm text-slate-600">Importar datos desde Excel, SQL u otras fuentes</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="step-card border-2 border-slate-200 rounded-lg p-4" data-step="2" data-correct-order="2">
+                                <div class="flex items-center gap-4">
+                                    <div class="step-number bg-slate-200 text-slate-600" id="num-2">?</div>
+                                    <div>
+                                        <h4 class="font-semibold text-slate-800">Transformar datos con Power Query</h4>
+                                        <p class="text-sm text-slate-600">Limpiar, filtrar y dar formato a los datos</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="step-card border-2 border-slate-200 rounded-lg p-4" data-step="3" data-correct-order="3">
+                                <div class="flex items-center gap-4">
+                                    <div class="step-number bg-slate-200 text-slate-600" id="num-3">?</div>
+                                    <div>
+                                        <h4 class="font-semibold text-slate-800">Crear visualizaciones</h4>
+                                        <p class="text-sm text-slate-600">Diseñar gráficos y reportes interactivos</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 flex gap-2">
+                            <button id="check-powerbi-btn" class="bg-yellow-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-yellow-700 transition-colors" disabled>
+                                Verificar orden
+                            </button>
+                            <button id="reset-powerbi-btn" class="bg-slate-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-slate-600 transition-colors">
+                                Reiniciar
+                            </button>
+                        </div>
+                        <div id="powerbi-result" class="mt-4 font-medium"></div>
+                        <div id="explicacion-powerbi" class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg hidden">
+                            <h4 class="font-bold text-blue-800 mb-2">📖 Flujo de trabajo de Power BI:</h4>
+                            <ol class="list-decimal pl-5 text-slate-700 space-y-1">
+                                <li><strong>Conectar fuentes:</strong> Importa datos desde múltiples orígenes</li>
+                                <li><strong>Transformar:</strong> Usa Power Query para limpiar y preparar datos</li>
+                                <li><strong>Visualizar:</strong> Diseña reportes interactivos y dashboards</li>
+                            </ol>
+                        </div>
+                    </div>
+
+                    <!-- Simulación 2: Selección de visualización -->
+                    <div class="bg-white border-l-4 border-green-500 rounded-lg shadow-sm p-6">
+                        <h3 class="text-xl font-bold text-yellow-700 mb-2">📊 Simulación 2: Selección de visualización</h3>
+                        <p class="mb-4"><span class="font-semibold">Instrucciones:</span> Selecciona el tipo de visualización más apropiado para cada escenario.</p>
+                        
+                        <div class="space-y-4">
+                            <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                <p class="font-bold text-green-800 mb-2">Escenario 1: Comparar ventas por mes durante un año</p>
+                                <select class="w-full p-2 border rounded-md bg-white" id="viz-select-1" data-answer="Gráfico de columnas">
+                                    <option value="">Selecciona la visualización...</option>
+                                    <option value="Gráfico circular">Gráfico circular</option>
+                                    <option value="Gráfico de columnas">Gráfico de columnas</option>
+                                    <option value="Mapa">Mapa</option>
+                                    <option value="Tarjeta KPI">Tarjeta KPI</option>
+                                </select>
+                            </div>
+
+                            <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                <p class="font-bold text-green-800 mb-2">Escenario 2: Mostrar la proporción de ventas por categoría de producto</p>
+                                <select class="w-full p-2 border rounded-md bg-white" id="viz-select-2" data-answer="Gráfico circular">
+                                    <option value="">Selecciona la visualización...</option>
+                                    <option value="Gráfico circular">Gráfico circular</option>
+                                    <option value="Gráfico de columnas">Gráfico de columnas</option>
+                                    <option value="Mapa">Mapa</option>
+                                    <option value="Tarjeta KPI">Tarjeta KPI</option>
+                                </select>
+                            </div>
+
+                            <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                <p class="font-bold text-green-800 mb-2">Escenario 3: Mostrar ventas por ubicación geográfica</p>
+                                <select class="w-full p-2 border rounded-md bg-white" id="viz-select-3" data-answer="Mapa">
+                                    <option value="">Selecciona la visualización...</option>
+                                    <option value="Gráfico circular">Gráfico circular</option>
+                                    <option value="Gráfico de columnas">Gráfico de columnas</option>
+                                    <option value="Mapa">Mapa</option>
+                                    <option value="Tarjeta KPI">Tarjeta KPI</option>
+                                </select>
+                            </div>
+
+                            <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                <p class="font-bold text-green-800 mb-2">Escenario 4: Mostrar el total de ventas actual</p>
+                                <select class="w-full p-2 border rounded-md bg-white" id="viz-select-4" data-answer="Tarjeta KPI">
+                                    <option value="">Selecciona la visualización...</option>
+                                    <option value="Gráfico circular">Gráfico circular</option>
+                                    <option value="Gráfico de columnas">Gráfico de columnas</option>
+                                    <option value="Mapa">Mapa</option>
+                                    <option value="Tarjeta KPI">Tarjeta KPI</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 flex gap-2">
+                            <button id="check-viz-btn" class="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 transition-colors">
+                                Verificar selecciones
+                            </button>
+                            <button id="reset-viz-btn" class="bg-slate-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-slate-600 transition-colors">
+                                Reiniciar
+                            </button>
+                        </div>
+                        <div id="viz-result" class="mt-4 font-medium"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Evaluación -->
+            <div id="evaluacion" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-yellow-800 mb-6">Evaluación</h2>
+                <div class="speech-controls mb-4 p-3 bg-yellow-100 rounded-lg flex items-center flex-wrap gap-2" data-target="evaluacion">
+                    <button class="play-btn bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-evaluacion" class="text-sm text-yellow-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-evaluacion" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <p class="text-slate-600 mb-6">Comprueba lo que has aprendido sobre Power BI. Selecciona la respuesta correcta para cada pregunta.</p>
+                    <div id="quiz-container"></div>
+                    <button id="submit-quiz-btn" class="mt-6 bg-yellow-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-yellow-700 transition-colors">Finalizar evaluación</button>
+                    <div id="quiz-result" class="mt-4 text-lg font-bold"></div>
+                </div>
+            </div>
+
+            <!-- Recursos -->
+            <div id="recursos" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-yellow-800 mb-6">Recursos para profundizar</h2>
+                <div class="speech-controls mb-4 p-3 bg-yellow-100 rounded-lg flex items-center flex-wrap gap-2" data-target="recursos">
+                    <button class="play-btn bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-recursos" class="text-sm text-yellow-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-recursos" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                <p class="text-slate-700 leading-relaxed mb-6">Para ampliar tu conocimiento sobre Power BI, te recomendamos explorar los siguientes enlaces y documentos:</p>
+                <ul class="space-y-4">
+                    <li class="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow border-l-4 border-yellow-500 flex flex-col sm:flex-row sm:items-center justify-between">
+                        <div>
+                            <h3 class="font-bold text-yellow-700">1. Microsoft Learn - Introducción a Power BI:</h3>
+                            <a href="https://learn.microsoft.com/es-es/power-bi/fundamentals/" target="_blank" class="underline text-slate-700 hover:text-yellow-700">Ir al recurso</a>
+                        </div>
+                    </li>
+                    <li class="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow border-l-4 border-yellow-500 flex flex-col sm:flex-row sm:items-center justify-between">
+                        <div>
+                            <h3 class="font-bold text-yellow-700">2. Documentación oficial de Power BI:</h3>
+                            <a href="https://learn.microsoft.com/es-es/power-bi/" target="_blank" class="underline text-slate-700 hover:text-yellow-700">Ir al recurso</a>
+                        </div>
+                    </li>
+                    <li class="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow border-l-4 border-yellow-500 flex flex-col sm:flex-row sm:items-center justify-between">
+                        <div>
+                            <h3 class="font-bold text-yellow-700">3. Guía de DAX:</h3>
+                            <a href="https://learn.microsoft.com/es-es/dax/" target="_blank" class="underline text-slate-700 hover:text-yellow-700">Ir al recurso</a>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Bibliografía -->
+            <div id="bibliografia" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-yellow-800 mb-6">Bibliografía</h2>
+                <div class="speech-controls mb-4 p-3 bg-yellow-100 rounded-lg flex items-center flex-wrap gap-2" data-target="bibliografia">
+                    <button class="play-btn bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-bibliografia" class="text-sm text-yellow-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-bibliografia" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                <div class="space-y-6">
+                <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow border-l-4 border-yellow-500">
+                    <span class="block text-slate-700">
+                        Ferrari, A., & Russo, M. (2020). <i>The Definitive Guide to DAX</i>. Microsoft Press.
+                    </span>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow border-l-4 border-yellow-500">
+                    <span class="block text-slate-700">
+                        Microsoft. (2023). <i>Power BI Documentation</i>. Microsoft Learn.<br>
+                        <a href="https://learn.microsoft.com/es-es/power-bi/" class="text-yellow-700 underline break-all" target="_blank">https://learn.microsoft.com/es-es/power-bi/</a>
+                    </span>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow border-l-4 border-yellow-500">
+                    <span class="block text-slate-700">
+                        Patrick, G. (2022). <i>Power BI for Beginners</i>. Packt Publishing.
+                    </span>
+                </div>
+            </div>
+            
+            <!-- Footer/Credits -->
+            <footer class="mt-12 pt-6 border-t-2 border-slate-200 text-center">
+                <p class="text-slate-600 font-medium">Creado por:</p>
+                <p class="text-yellow-800 font-bold text-lg">Centro de Innovación en TIC para el apoyo de la Docencia CINTIA</p>
+                <p class="text-slate-500 text-sm">Universidad de Córdoba</p>
+            </footer>
+        </main>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const sidebarLinks = document.querySelectorAll('.sidebar-link');
+    const contentPanes = document.querySelectorAll('.content-pane');
+    const mobileNav = document.getElementById('mobile-nav');
+
+    function switchPane(targetId) {
+        contentPanes.forEach(pane => {
+            pane.classList.remove('active');
+        });
+        const targetPane = document.getElementById(targetId);
+        if (targetPane) {
+            targetPane.classList.add('active');
+        }
+
+        sidebarLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.dataset.target === targetId) {
+                link.classList.add('active');
+            }
+        });
+        
+        if (mobileNav.value !== targetId) {
+            mobileNav.value = targetId;
+        }
+    }
+
+    sidebarLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const targetId = e.currentTarget.dataset.target;
+            switchPane(targetId);
+        });
+    });
+
+    mobileNav.addEventListener('change', (e) => {
+        switchPane(e.target.value);
+    });
+
+    // --- Acordeón ---
+    document.querySelectorAll('.accordion-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const panel = document.querySelector(this.getAttribute('data-target'));
+            const isOpen = panel.classList.contains('block');
+            document.querySelectorAll('.accordion-panel').forEach(p => p.classList.add('hidden'));
+            document.querySelectorAll('.accordion-panel').forEach(p => p.classList.remove('block'));
+            
+            if (!isOpen) {
+                panel.classList.remove('hidden');
+                panel.classList.add('block');
+                this.querySelector('span').textContent = '➖';
+                
+                setTimeout(() => {
+                    this.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+            } else {
+                this.querySelector('span').textContent = '➕';
+            }
+            
+            document.querySelectorAll('.accordion-btn').forEach(otherBtn => {
+                if (otherBtn !== this) {
+                    otherBtn.querySelector('span').textContent = '➕';
+                }
+            });
+        });
+    });
+
+    // --- Evaluación Quiz ---
+    const evaluationData = [
+        { 
+            question: "¿Cuál es el componente de Power BI utilizado para crear reportes y modelos de datos localmente?", 
+            options: ["Power BI Service", "Power BI Desktop", "Power BI Mobile", "Power BI Gateway"], 
+            answer: "Power BI Desktop" 
+        },
+        { 
+            question: "¿Qué componente de Power BI se utiliza para transformar y limpiar los datos?", 
+            options: ["Power Pivot", "Power Query", "Power View", "Power Map"], 
+            answer: "Power Query" 
+        },
+        { 
+            question: "¿Cuál es el propósito principal de Power BI?", 
+            options: ["Crear presentaciones", "Business Intelligence y análisis de datos", "Desarrollo de software", "Gestión de proyectos"], 
+            answer: "Business Intelligence y análisis de datos" 
+        },
+        { 
+            question: "¿Qué tipo de visualización es más adecuado para mostrar la proporción de ventas por categoría?", 
+            options: ["Gráfico de barras", "Gráfico circular", "Gráfico de líneas", "Mapa"], 
+            answer: "Gráfico circular" 
+        }
+    ];
+
+    const evaluationContainer = document.getElementById('quiz-container');
+    if (evaluationContainer) {
+        evaluationData.forEach((item, index) => {
+            const questionDiv = document.createElement('div');
+            questionDiv.className = 'p-4 border rounded-lg mb-4';
+            
+            let optionsHtml = item.options.map(opt => `<option value="${opt}">${opt}</option>`).join('');
+
+            questionDiv.innerHTML = `
+                <p class="font-medium text-slate-700 mb-3">${index + 1}. ${item.question}</p>
+                <select class="evaluation-select w-full p-3 border rounded-md bg-white text-slate-700" data-answer="${item.answer}">
+                    <option value="">Selecciona la respuesta correcta...</option>
+                    ${optionsHtml}
+                </select>
+            `;
+            evaluationContainer.appendChild(questionDiv);
+        });
+    }
+
+    const submitQuizBtn = document.getElementById('submit-quiz-btn');
+    if (submitQuizBtn) {
+        submitQuizBtn.addEventListener('click', () => {
+            const selects = document.querySelectorAll('.evaluation-select');
+            let correctAnswers = 0;
+            
+            selects.forEach((select) => {
+                let feedbackDiv = select.parentNode.querySelector('.evaluation-feedback');
+                if (!feedbackDiv) {
+                    feedbackDiv = document.createElement('div');
+                    feedbackDiv.className = 'evaluation-feedback mt-2 text-sm';
+                    select.parentNode.appendChild(feedbackDiv);
+                }
+                
+                if (select.value === select.dataset.answer) {
+                    correctAnswers++;
+                    select.classList.add('border-green-500', 'bg-green-50');
+                    select.classList.remove('border-red-500', 'bg-red-50');
+                    feedbackDiv.innerHTML = `<span class="text-green-600 font-medium">✓ Correcto</span>`;
+                } else {
+                    select.classList.add('border-red-500', 'bg-red-50');
+                    select.classList.remove('border-green-500', 'bg-green-50');
+                    feedbackDiv.innerHTML = `<span class="text-red-600 font-medium">✗ Incorrecto. La respuesta correcta es: ${select.dataset.answer}</span>`;
+                }
+            });
+            
+            const resultDiv = document.getElementById('quiz-result');
+            resultDiv.textContent = `Puntuación: ${correctAnswers}/${evaluationData.length}`;
+            resultDiv.className = correctAnswers === evaluationData.length ? 'mt-4 text-lg font-bold text-green-700' : 'mt-4 text-lg font-bold text-red-700';
+        });
+    }
+
+    // --- Simulación Power BI - Flujo de trabajo ---
+    const stepCards = document.querySelectorAll('#powerbi-simulador .step-card');
+    const checkPowerbiBtn = document.getElementById('check-powerbi-btn');
+    const resetPowerbiBtn = document.getElementById('reset-powerbi-btn');
+    const powerbiResultDiv = document.getElementById('powerbi-result');
+    const explicacionPowerbiDiv = document.getElementById('explicacion-powerbi');
+    const progressFill1 = document.getElementById('progress-fill-1');
+    const progressText1 = document.getElementById('progress-text-1');
+    
+    let selectedSteps = [];
+    let currentOrder = 0;
+    
+    stepCards.forEach(card => {
+        card.addEventListener('click', function() {
+            const stepId = this.getAttribute('data-step');
+            
+            if (selectedSteps.includes(stepId)) {
+                selectedSteps = selectedSteps.filter(id => id !== stepId);
+                this.classList.remove('selected');
+                document.getElementById('num-' + stepId).textContent = '?';
+                document.getElementById('num-' + stepId).className = 'step-number bg-slate-200 text-slate-600';
+            } else if (selectedSteps.length < 3) {
+                selectedSteps.push(stepId);
+                currentOrder++;
+                this.classList.add('selected');
+                document.getElementById('num-' + stepId).textContent = currentOrder;
+                document.getElementById('num-' + stepId).className = 'step-number bg-yellow-500 text-white';
+            }
+            
+            const progress = (selectedSteps.length / 3) * 100;
+            progressFill1.style.width = progress + '%';
+            progressText1.textContent = selectedSteps.length + '/3 pasos';
+            
+            checkPowerbiBtn.disabled = selectedSteps.length !== 3;
+        });
+    });
+    
+    if (checkPowerbiBtn) {
+        checkPowerbiBtn.addEventListener('click', function() {
+            let correctCount = 0;
+            
+            stepCards.forEach(card => {
+                const stepId = card.getAttribute('data-step');
+                const correctOrder = parseInt(card.getAttribute('data-correct-order'));
+                const userOrder = selectedSteps.indexOf(stepId) + 1;
+                
+                card.classList.remove('selected');
+                
+                if (userOrder === correctOrder) {
+                    card.classList.add('correct');
+                    correctCount++;
+                    document.getElementById('num-' + stepId).className = 'step-number bg-green-500 text-white';
+                } else {
+                    card.classList.add('incorrect');
+                    document.getElementById('num-' + stepId).className = 'step-number bg-red-500 text-white';
+                    document.getElementById('num-' + stepId).textContent = correctOrder;
+                }
+            });
+            
+            if (correctCount === 3) {
+                powerbiResultDiv.innerHTML = '<span class="text-green-700 text-xl">🎉 ¡Excelente! Has completado correctamente todos los pasos del flujo de trabajo de Power BI.</span>';
+                powerbiResultDiv.className = 'mt-4 font-medium';
+                explicacionPowerbiDiv.classList.remove('hidden');
+            } else {
+                powerbiResultDiv.innerHTML = `<span class="text-yellow-700 text-lg">⚠️ Tienes ${correctCount} de 3 pasos en la posición correcta. Revisa el orden e intenta de nuevo.</span>`;
+                powerbiResultDiv.className = 'mt-4 font-medium';
+            }
+        });
+    }
+    
+    if (resetPowerbiBtn) {
+        resetPowerbiBtn.addEventListener('click', function() {
+            selectedSteps = [];
+            currentOrder = 0;
+            
+            stepCards.forEach(card => {
+                card.classList.remove('selected', 'correct', 'incorrect');
+                const stepId = card.getAttribute('data-step');
+                document.getElementById('num-' + stepId).textContent = '?';
+                document.getElementById('num-' + stepId).className = 'step-number bg-slate-200 text-slate-600';
+            });
+            
+            progressFill1.style.width = '0%';
+            progressText1.textContent = '0/3 pasos';
+            powerbiResultDiv.innerHTML = '';
+            explicacionPowerbiDiv.classList.add('hidden');
+            checkPowerbiBtn.disabled = true;
+        });
+    }
+
+    // --- Simulación Visualización ---
+    const checkVizBtn = document.getElementById('check-viz-btn');
+    const resetVizBtn = document.getElementById('reset-viz-btn');
+    const vizResultDiv = document.getElementById('viz-result');
+    
+    if (checkVizBtn) {
+        checkVizBtn.addEventListener('click', function() {
+            const vizSelects = document.querySelectorAll('[id^="viz-select-"]');
+            let correctCount = 0;
+            
+            vizSelects.forEach(select => {
+                if (select.value === select.dataset.answer) {
+                    select.classList.add('border-green-500', 'bg-green-50');
+                    select.classList.remove('border-red-500', 'bg-red-50');
+                    correctCount++;
+                } else {
+                    select.classList.add('border-red-500', 'bg-red-50');
+                    select.classList.remove('border-green-500', 'bg-green-50');
+                }
+            });
+            
+            if (correctCount === 4) {
+                vizResultDiv.innerHTML = '<span class="text-green-700 text-xl">🎉 ¡Excelente! Has seleccionado correctamente todas las visualizaciones.</span>';
+                vizResultDiv.className = 'mt-4 font-medium text-green-700';
+            } else {
+                vizResultDiv.innerHTML = `<span class="text-yellow-700 text-lg">⚠️ Tienes ${correctCount} de 4 selecciones correctas. Intenta de nuevo.</span>`;
+                vizResultDiv.className = 'mt-4 font-medium text-yellow-700';
+            }
+        });
+    }
+    
+    if (resetVizBtn) {
+        resetVizBtn.addEventListener('click', function() {
+            const vizSelects = document.querySelectorAll('[id^="viz-select-"]');
+            vizSelects.forEach(select => {
+                select.value = '';
+                select.classList.remove('border-green-500', 'bg-green-50', 'border-red-500', 'bg-red-50');
+            });
+            vizResultDiv.innerHTML = '';
+        });
+    }
+
+    // --- Síntesis de voz ---
+    const synth = window.speechSynthesis;
+    let voices = [];
+    let activeReaders = {};
+    let paulinaVoice = null;
+    let currentActiveSection = null;
+    
+    function loadVoices() {
+        voices = synth.getVoices();
+        paulinaVoice = voices.find(voice => voice.name.includes('Paulina'));
+        
+        if (!paulinaVoice) {
+            paulinaVoice = voices.find(voice => voice.lang.startsWith('es'));
+            if (!paulinaVoice && voices.length > 0) {
+                paulinaVoice = voices[0];
+            }
+        }
+    }
+    
+    if (synth.onvoiceschanged !== undefined) {
+        synth.onvoiceschanged = loadVoices;
+    }
+    loadVoices();
+    
+    function getSectionText(sectionId) {
+        if (sectionId.startsWith('#')) {
+            sectionId = sectionId.substring(1);
+        }
+        
+        const section = document.getElementById(sectionId);
+        if (!section) return '';
+        
+        const textElements = section.querySelectorAll('p, li, .text-slate-700, h1, h2, h3, h4, h5, h6');
+        let text = '';
+        
+        if (textElements.length === 0) {
+            text = section.textContent.trim();
+        } else {
+            const allElements = [];
+            textElements.forEach(el => allElements.push({element: el, isHeading: /^H[1-6]$/.test(el.tagName)}));
+            
+            allElements.sort((a, b) => {
+                const position = a.element.compareDocumentPosition(b.element);
+                return position & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
+            });
+            
+            allElements.forEach(item => {
+                const content = item.element.textContent.trim();
+                if (item.isHeading) {
+                    text += content + '. . . ';
+                } else {
+                    text += content + ' ';
+                }
+            });
+        }
+        
+        return text.trim();
+    }
+    
+    function updateButtonStates(controlsElement, isPlaying) {
+        const playBtn = controlsElement.querySelector('.play-btn');
+        const pauseBtn = controlsElement.querySelector('.pause-btn');
+        const stopBtn = controlsElement.querySelector('.stop-btn');
+        
+        if (playBtn) playBtn.disabled = isPlaying;
+        if (pauseBtn) pauseBtn.disabled = !isPlaying;
+        if (stopBtn) stopBtn.disabled = !isPlaying;
+    }
+    
+    function playSection(sectionId, controlsElement) {
+        const reader = activeReaders[sectionId];
+        
+        if (reader && reader.isPaused) {
+            synth.resume();
+            reader.isPaused = false;
+            updateButtonStates(controlsElement, true);
+            return;
+        }
+        
+        stopAllSections();
+        
+        const textToRead = getSectionText(sectionId);
+        if (!textToRead) return;
+        
+        const rateControl = controlsElement.querySelector('.speech-rate');
+        const utterance = new SpeechSynthesisUtterance(textToRead);
+        utterance.lang = 'es-ES';
+        utterance.rate = parseFloat(rateControl.value);
+        
+        if (paulinaVoice) {
+            utterance.voice = paulinaVoice;
+        }
+        
+        utterance.onend = function() {
+            updateButtonStates(controlsElement, false);
+            delete activeReaders[sectionId];
+            currentActiveSection = null;
+        };
+        
+        utterance.onerror = function(event) {
+            updateButtonStates(controlsElement, false);
+            delete activeReaders[sectionId];
+            currentActiveSection = null;
+        };
+        
+        activeReaders[sectionId] = {
+            utterance: utterance,
+            isPaused: false,
+            textToRead: textToRead,
+            controls: controlsElement
+        };
+        
+        currentActiveSection = sectionId;
+        
+        synth.speak(utterance);
+        updateButtonStates(controlsElement, true);
+    }
+    
+    function pauseSection(sectionId) {
+        const reader = activeReaders[sectionId];
+        if (reader && !reader.isPaused && synth.speaking) {
+            synth.pause();
+            reader.isPaused = true;
+            updateButtonStates(reader.controls, true);
+            reader.controls.querySelector('.play-btn').disabled = false;
+        }
+    }
+    
+    function stopSection(sectionId) {
+        const reader = activeReaders[sectionId];
+        if (reader) {
+            synth.cancel();
+            updateButtonStates(reader.controls, false);
+            delete activeReaders[sectionId];
+            if (currentActiveSection === sectionId) {
+                currentActiveSection = null;
+            }
+        }
+    }
+    
+    function stopAllSections() {
+        synth.cancel();
+        Object.keys(activeReaders).forEach(sectionId => {
+            const reader = activeReaders[sectionId];
+            if (reader && reader.controls) {
+                updateButtonStates(reader.controls, false);
+            }
+        });
+        activeReaders = {};
+        currentActiveSection = null;
+    }
+    
+    document.addEventListener('keydown', function(event) {
+        if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+            return;
+        }
+        
+        if (event.code === 'Space') {
+            event.preventDefault();
+            
+            const visibleSection = document.querySelector('.content-pane.active');
+            if (!visibleSection) return;
+            
+            const sectionId = visibleSection.id;
+            const controls = visibleSection.querySelector('.speech-controls');
+            
+            if (!controls) return;
+            
+            const reader = activeReaders[sectionId];
+            
+            if (reader && reader.isPaused) {
+                playSection(sectionId, controls);
+            } else if (reader && synth.speaking) {
+                pauseSection(sectionId);
+            } else {
+                playSection(sectionId, controls);
+            }
+        }
+        
+        if (event.code === 'Tab' && !event.shiftKey) {
+            if (currentActiveSection) {
+                event.preventDefault();
+                stopSection(currentActiveSection);
+            }
+        }
+    });
+    
+    document.querySelectorAll('.speech-controls').forEach(controls => {
+        const sectionId = controls.getAttribute('data-target');
+        const playBtn = controls.querySelector('.play-btn');
+        const pauseBtn = controls.querySelector('.pause-btn');
+        const stopBtn = controls.querySelector('.stop-btn');
+        const rateControl = controls.querySelector('.speech-rate');
+        
+        if (!sectionId || !playBtn || !pauseBtn || !stopBtn || !rateControl) return;
+        
+        playBtn.addEventListener('click', () => playSection(sectionId, controls));
+        pauseBtn.addEventListener('click', () => pauseSection(sectionId));
+        stopBtn.addEventListener('click', () => stopSection(sectionId));
+        
+        rateControl.addEventListener('change', function() {
+            const reader = activeReaders[sectionId];
+            if (reader && synth.speaking) {
+                const wasPlaying = !reader.isPaused;
+                stopSection(sectionId);
+                if (wasPlaying) {
+                    setTimeout(() => playSection(sectionId, controls), 100);
+                }
+            }
+        });
+    });
+});
+</script>
+
+</body>
+</html>

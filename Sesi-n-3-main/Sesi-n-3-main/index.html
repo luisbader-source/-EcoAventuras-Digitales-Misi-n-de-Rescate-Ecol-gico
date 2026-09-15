@@ -1,0 +1,1789 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OVA: Diseño de Informes, Visualizaciones y Filtros - Power BI Sesión 2</title>
+    <script src="https://cdn.tailwindcss.com?_ver=3.4.1"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+        .sidebar-link {
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+        .sidebar-link.active, .sidebar-link:hover {
+            background-color: #e6f4ea;
+            color: #166534;
+            border-left-color: #f2c94c;
+        }
+        .content-pane {
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        .content-pane.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .step-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .step-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .step-card.selected {
+            border-color: #f2c94c;
+            background-color: #fefce8;
+        }
+        .step-card.correct {
+            border-color: #22c55e;
+            background-color: #dcfce7;
+        }
+        .step-card.incorrect {
+            border-color: #ef4444;
+            background-color: #fef2f2;
+        }
+        .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #e5e7eb;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #f2c94c, #f59e0b);
+            transition: width 0.3s ease;
+        }
+        .visual-item {
+            transition: all 0.3s ease;
+            cursor: grab;
+        }
+        .visual-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .visual-item.dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+        }
+        .drop-zone {
+            background: #f9fafb;
+            border: 2px dashed #d1d5db;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 150px;
+            margin: 10px 0;
+            transition: all 0.3s;
+        }
+        .drop-zone.drag-over {
+            background: #fef3c7;
+        }
+        .drop-zone.correct {
+            background: #dcfce7;
+            border-color: #22c55e;
+        }
+        .drop-zone.incorrect {
+            background: #fef2f2;
+            border-color: #ef4444;
+        }
+        .image-container {
+            position: relative;
+            cursor: pointer;
+        }
+        .zoom-icon {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .image-container:hover .zoom-icon {
+            opacity: 1;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            animation: fadeIn 0.3s ease;
+        }
+        .modal-content {
+            position: relative;
+            margin: auto;
+            padding: 20px;
+            width: 90%;
+            max-width: 1000px;
+            max-height: 90vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .modal-content img {
+            max-width: 100%;
+            max-height: 90vh;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+        .close-modal {
+            position: absolute;
+            top: -20px;
+            right: -20px;
+            background-color: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50">
+
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white shadow-lg flex-shrink-0 hidden md:flex md:flex-col">
+            <div class="p-4">
+                <div style="width: 150px; height: 150px;" class="p-2 mx-auto flex items-center justify-center bg-white rounded-full shadow-lg border-2 border-yellow-500 transition-shadow duration-300 hover:shadow-yellow-400">
+                    <img src="img/logo.png" alt="Logo OVA" class="w-5/6 h-5/6 object-contain" loading="lazy">
+                </div>
+            </div>
+            <nav class="mt-6 flex-1">
+                <a href="#" class="sidebar-link active flex items-center py-3 px-6 font-medium text-slate-700" data-target="introduccion"><span class="mr-3 text-xl">🚀</span> Introducción</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="objetivos"><span class="mr-3 text-xl">🎯</span> Objetivos</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="contenido"><span class="mr-3 text-xl">📚</span> Contenido</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="actividades"><span class="mr-3 text-xl">✍️</span> Actividades</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="evaluacion"><span class="mr-3 text-xl">✔️</span> Evaluación</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="recursos"><span class="mr-3 text-xl">📖</span> Recursos</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="bibliografia"><span class="mr-3 text-xl">📚</span> Bibliografía</a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-4 sm:p-6 md:p-10 bg-gray-50">
+            <!-- Mobile Header -->
+            <div class="md:hidden mb-6 flex flex-col items-center">
+                <div style="width: 100px; height: 100px;" class="p-2 flex items-center justify-center bg-white rounded-full shadow-lg transition-shadow duration-300 hover:shadow-yellow-400 mb-2">
+                    <img src="img/logo.png" alt="Logo OVA" class="w-5/6 h-5/6 object-contain" loading="lazy">
+                </div>
+                 <select id="mobile-nav" class="w-full mt-2 p-2 border rounded-md bg-white shadow-sm">
+                    <option value="introduccion">🚀 Introducción</option>
+                    <option value="objetivos">🎯 Objetivos</option>
+                    <option value="contenido">📚 Contenido</option>
+                    <option value="actividades">✍️ Actividades Prácticas</option>
+                    <option value="evaluacion">✔️ Evaluación</option>
+                    <option value="recursos">📖 Recursos</option>
+                    <option value="bibliografia">📚 Bibliografía</option>
+                </select>
+            </div>
+
+          <!-- Introducción -->
+            <div id="introduccion" class="content-pane active">
+                <h2 class="text-2xl sm:text-3xl font-bold text-yellow-800 mb-4">Diseño de Informes, Visualizaciones y Filtros �</h2>
+                <div class="mt-4 mb-6 p-4 bg-white border border-yellow-300 rounded-lg shadow-sm flex flex-col items-center">
+                    <div class="image-container w-full h-32 sm:h-48 md:h-64 xl:h-80 bg-gradient-to-br from-blue-100 to-indigo-200 rounded flex items-center justify-center overflow-hidden" onclick="openModal(this)">
+                        <img src="img/WhatsApp Image 2026-04-09 at 12.38.27 PM (1).jpeg" alt="Power BI Sesión 2" class="w-full h-full object-cover">
+                        <div class="zoom-icon">🔍</div>
+                    </div>
+                </div>
+                <p class="text-lg text-slate-700 leading-relaxed mb-4">
+                    Bienvenido a la <span class="font-bold text-yellow-700">Sesión 2</span> del curso de Power BI impartido por CINTIA Unicórdoba. En esta sesión nos enfocaremos en el <strong>diseño de informes</strong>, <strong>visualizaciones efectivas</strong> y <strong>filtros avanzados</strong>. 🎨✨
+                </p>
+                <p class="text-lg text-slate-700 leading-relaxed mb-4">
+                    Aprenderemos los principios fundamentales del diseño de informes, cómo seleccionar los visuales adecuados según el tipo de datos, y dominaremos los 5 niveles de filtrado que Power BI ofrece. El contenido está estructurado en 4 módulos que te convertirán en un experto en la creación de informes impactantes.
+                </p>
+            <div class="speech-controls mb-4 p-3 bg-yellow-100 rounded-lg flex items-center flex-wrap gap-2" data-target="introduccion">
+    <button class="play-btn bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+        <span class="mr-1">▶️</span> Leer
+    </button>
+    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+        <span class="mr-1">⏸️</span> Pausar
+    </button>
+    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+        <span class="mr-1">⏹️</span> Detener
+    </button>
+    <div class="flex items-center ml-2">
+        <label for="speech-rate-introduccion" class="text-sm text-yellow-800 mr-2">Velocidad:</label>
+        <input type="range" class="speech-rate" id="speech-rate-introduccion" min="0.5" max="2" step="0.1" value="1" class="w-24">
+    </div>
+</div>
+                <div class="mt-2 p-2 bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+                    <strong>💡 Atajos de teclado:</strong> Presiona <kbd class="bg-white px-2 py-1 rounded border">Espacio</kbd> para reproducir/pausar, <kbd class="bg-white px-2 py-1 rounded border">Tab</kbd> para detener
+                </div>
+            </div>
+
+            <!-- Objetivos -->
+            <div id="objetivos" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-yellow-800 mb-6">Objetivos de aprendizaje</h2>
+                <div class="speech-controls mb-4 p-3 bg-yellow-100 rounded-lg flex items-center flex-wrap gap-2" data-target="objetivos">
+                    <button class="play-btn bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-objetivos" class="text-sm text-yellow-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-objetivos" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                <ul class="space-y-4">
+                    <li class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                        <span class="text-yellow-700 mr-3 text-2xl">🎨</span>
+                        <span>Aplicar principios de diseño efectivos: ubicación, equilibrio, contraste, proximidad y repetición en informes.</span>
+                    </li>
+                    <li class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                        <span class="text-yellow-700 mr-3 text-2xl">📊</span>
+                        <span>Seleccionar el tipo de visual adecuado según los datos y el espacio disponible (categorías, temporales, proporcionales).</span>
+                    </li>
+                    <li class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                        <span class="text-yellow-700 mr-3 text-2xl">�</span>
+                        <span>Dominar los 5 niveles de filtrado: modelo, informe, página, visual y medida para un control preciso de datos.</span>
+                    </li>
+                    <li class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                        <span class="text-yellow-700 mr-3 text-2xl">🎛️</span>
+                        <span>Utilizar segmentadores efectivamente con diferentes tipos y diseños, incluyendo sincronización entre páginas.</span>
+                    </li>
+                    <li class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                        <span class="text-yellow-700 mr-3 text-2xl">💻</span>
+                        <span>Navegar eficientemente la interfaz de Power BI Desktop y crear visualizaciones interactivas con formato profesional.</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Contenido -->
+            <div id="contenido" class="content-pane">
+                <div class="speech-controls mb-4 p-3 bg-yellow-100 rounded-lg flex items-center flex-wrap gap-2" data-target="contenido">
+                    <button class="play-btn bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-contenido" class="text-sm text-yellow-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-contenido" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                
+                <div class="w-full max-w-8xl mx-auto">
+                    <!-- Módulo 01: Diseño del Informe -->
+                    <div class="mb-4">
+                        <button type="button" class="w-full flex justify-between items-center p-4 bg-yellow-100 border border-yellow-300 rounded-t-lg focus:outline-none font-bold text-yellow-800 text-lg accordion-btn mb-2" data-target="#panel-diseno">
+                            MÓDULO 01: Diseño del Informe Analítico<span class="ml-2">➕</span>
+                        </button>
+                    </div>
+                    <div id="panel-diseno" class="accordion-panel hidden bg-white border border-t-0 border-yellow-300 rounded-b-lg p-4 mb-6">
+                        <div class="space-y-8 text-slate-700 leading-relaxed">
+                            <div>
+                                <h4 class="font-bold text-yellow-800 mb-2">🎨 Principios de Diseño del Informe</h4>
+                                <p class="mb-4">La ciencia y el arte de comunicar datos visualmente requiere seguir principios fundamentales que guíen el ojo del lector de forma natural.</p>
+                                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg mb-4">
+                                    <p class="font-bold text-yellow-800 mb-2">💡 Principio clave: «Menos es más»</p>
+                                    <p class="text-sm">Simplicidad y claridad sobre cantidad de elementos. El diseño debe guiar al ojo del lector de forma natural.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-blue-800 mb-2">� Principios Fundamentales</h4>
+                                <ul class="list-disc pl-5 space-y-2">
+                                    <li><strong>Ubicación:</strong> Posición estratégica de elementos para jerarquía visual</li>
+                                    <li><strong>Equilibrio:</strong> Distribución armónica del peso visual</li>
+                                    <li><strong>Contraste:</strong> Diferenciación clara entre elementos importantes</li>
+                                    <li><strong>Proximidad:</strong> Agrupación de elementos relacionados</li>
+                                    <li><strong>Repetición:</strong> Consistencia en estilos y patrones</li>
+                                    <li><strong>Regla de los tercios:</strong> División del espacio en 9 partes iguales</li>
+                                    <li><strong>Proporción áurea:</strong> Relación matemática 1.618 para diseño estético</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-green-800 mb-2">🧩 Elementos del Informe (no de datos)</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <h5 class="font-semibold text-green-700">📝 Cuadro de Texto</h5>
+                                        <p class="text-sm mb-2">Añade texto enriquecido, títulos e hipervínculos. Puede incrustar valores dinámicos del modelo (se filtra con la página = actúa como visual).</p>
+                                        <p class="text-xs text-green-600">→ Narración Inteligente: resume datos automáticamente</p>
+                                    </div>
+                                    <div>
+                                        <h5 class="font-semibold text-green-700">🔘 Botones</h5>
+                                        <p class="text-sm mb-2">Acciones: navegar páginas, drill-through, marcadores, abrir URL, preguntas frecuentes o volver atrás. Hacen el informe más interactivo (tipo app).</p>
+                                    </div>
+                                    <div>
+                                        <h5 class="font-semibold text-green-700">⭐ Formas</h5>
+                                        <p class="text-sm mb-2">Decoración o comportamiento de botón. Formas básicas, flechas, corazones y más. Admiten texto y múltiples estilos visuales.</p>
+                                    </div>
+                                    <div>
+                                        <h5 class="font-semibold text-green-700">🖼️ Imágenes</h5>
+                                        <p class="text-sm mb-2">Cargar logo o ilustración (BMP, JPEG, GIF, TIFF, PNG). Pueden comportarse como botones. Ayudan a la identidad visual del informe.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Módulo 02: Selección de Objetos Visuales -->
+                    <div class="mb-4">
+                        <button type="button" class="w-full flex justify-between items-start p-4 bg-yellow-100 border border-yellow-300 rounded-t-lg focus:outline-none font-bold text-yellow-800 text-lg accordion-btn mb-2 text-left" data-target="#panel-visuales">
+                            MÓDULO 02: Selección de Objetos Visuales de Informe<span class="ml-2">➕</span>
+                        </button>
+                    </div>
+                    <div id="panel-visuales" class="accordion-panel hidden bg-white border border-t-0 border-yellow-300 rounded-b-lg p-4 mb-6">
+                        <div class="text-slate-700 leading-relaxed space-y-6">
+                            <h4 class="font-bold text-yellow-800 mb-2">� Tipos de Objetos Visuales en Power BI</h4>
+                            <p class="mb-4 bg-red-50 border-l-4 border-red-400 p-3 rounded-r-lg">
+                                <strong>⚠️ Importante:</strong> Seleccionar el tipo incorrecto puede dar lugar a representaciones incorrectas. Elige bien según el tipo de dato y el espacio.
+                            </p>
+                            
+                            <div class="bg-orange-50 border-l-4 border-orange-400 p-4 rounded-r-lg mb-4">
+                                <p class="font-bold text-orange-800 mb-2">💡 Nota clave:</p>
+                                <p class="text-sm">Ordena los gráficos de categoría por valor (↑ o ↓), no alfabéticamente. Usa líneas solo para datos temporales con flujo continuo — nunca para categorías.</p>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div class="bg-white border-2 border-blue-200 rounded-lg p-4">
+                                    <h5 class="font-bold text-blue-700 mb-2">📊 Visuales de Categoría</h5>
+                                    <ul class="text-sm text-slate-600 space-y-1">
+                                        <li>• Barras y columnas</li>
+                                        <li>• Gráficos de pastel</li>
+                                        <li>• Diagramas de árbol</li>
+                                        <li>• Gráficos de cascada</li>
+                                    </ul>
+                                </div>
+                                
+                                <div class="bg-white border-2 border-green-200 rounded-lg p-4">
+                                    <h5 class="font-bold text-green-700 mb-2">📈 Visuales Temporales</h5>
+                                    <ul class="text-sm text-slate-600 space-y-1">
+                                        <li>• Líneas (tendencias)</li>
+                                        <li>• Columnas temporales</li>
+                                        <li>• Áreas apiladas</li>
+                                        <li>• Series temporales</li>
+                                    </ul>
+                                </div>
+                                
+                                <div class="bg-white border-2 border-purple-200 rounded-lg p-4">
+                                    <h5 class="font-bold text-purple-700 mb-2">🥧 Visuales Proporcionales</h5>
+                                    <ul class="text-sm text-slate-600 space-y-1">
+                                        <li>• Pastel y dona</li>
+                                        <li>• Barras 100% apiladas</li>
+                                        <li>• Medidores y KPIs</li>
+                                        <li>• Tarjetas</li>
+                                    </ul>
+                                </div>
+                                
+                                <div class="bg-white border-2 border-orange-200 rounded-lg p-4">
+                                    <h5 class="font-bold text-orange-700 mb-2">🔢 Visuales Numéricos</h5>
+                                    <ul class="text-sm text-slate-600 space-y-1">
+                                        <li>• Tarjetas</li>
+                                        <li>• KPIs</li>
+                                        <li>• Medidores</li>
+                                        <li>• Indicadores</li>
+                                    </ul>
+                                </div>
+                                
+                                <div class="bg-white border-2 border-red-200 rounded-lg p-4">
+                                    <h5 class="font-bold text-red-700 mb-2">📋 Visuales de Cuadrícula</h5>
+                                    <ul class="text-sm text-slate-600 space-y-1">
+                                        <li>• Tablas</li>
+                                        <li>• Matrices</li>
+                                        <li>• Listas</li>
+                                        <li>• Detalles</li>
+                                    </ul>
+                                </div>
+                                
+                                <div class="bg-white border-2 border-indigo-200 rounded-lg p-4">
+                                    <h5 class="font-bold text-indigo-700 mb-2">🗺️ Visuales Geoespaciales</h5>
+                                    <ul class="text-sm text-slate-600 space-y-1">
+                                        <li>• Mapas de burbujas</li>
+                                        <li>• Mapas coropléticos</li>
+                                        <li>• Mapas de formas</li>
+                                        <li>• ArcGIS Maps</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-blue-800 mb-2">📋 Reglas Clave para Cada Tipo de Visual</h4>
+                                <div class="space-y-3">
+                                    <div class="bg-white p-3 rounded border-l-4 border-blue-300">
+                                        <h5 class="font-semibold text-blue-700">📊 Barras / Columnas</h5>
+                                        <ul class="text-sm space-y-1">
+                                            <li>• Ordena por valor descendente (salvo secuencia lógica)</li>
+                                            <li>• Evita leyendas de color con muchas categorías</li>
+                                            <li>• Nunca uses gráfico de líneas con eje X de categorías</li>
+                                        </ul>
+                                    </div>
+                                    <div class="bg-white p-3 rounded border-l-4 border-green-300">
+                                        <h5 class="font-semibold text-green-700">📈 Series Temporales</h5>
+                                        <ul class="text-sm space-y-1">
+                                            <li>• Usa siempre líneas o columnas con eje X = tiempo (izq→der)</li>
+                                            <li>• Con huecos de datos prefiere columnas (evita tendencias falsas)</li>
+                                            <li>• Puedes añadir previsión como opción de análisis</li>
+                                        </ul>
+                                    </div>
+                                    <div class="bg-white p-3 rounded border-l-4 border-purple-300">
+                                        <h5 class="font-semibold text-purple-700">🥧 Proporcionales</h5>
+                                        <ul class="text-sm space-y-1">
+                                            <li>• Barras/columnas 100% apiladas para múltiples dimensiones</li>
+                                            <li>• Solo valores todos positivos o todos negativos</li>
+                                            <li>• Área amplia → barras horizontales; estrecha → columnas</li>
+                                        </ul>
+                                    </div>
+                                    <div class="bg-white p-3 rounded border-l-4 border-orange-300">
+                                        <h5 class="font-semibold text-orange-700">�️ Geoespaciales</h5>
+                                        <ul class="text-sm space-y-1">
+                                            <li>• Datos por ciudad → Mapa de burbujas (puntos)</li>
+                                            <li>• Datos por estado/región → Mapa coroplético (relleno)</li>
+                                            <li>• Ocupan mucho espacio: evalúa si la ubicación es realmente relevante</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Módulo 03: Filtros y Segmentadores -->
+                    <div class="mb-4">
+                        <button type="button" class="w-full flex justify-between items-start p-4 bg-yellow-100 border border-yellow-300 rounded-t-lg focus:outline-none font-bold text-yellow-800 text-lg accordion-btn mb-2 text-left" data-target="#panel-filtros">
+                            MÓDULO 03: Filtros y Segmentadores en los Informes<span class="ml-2">➕</span>
+                        </button>
+                    </div>
+                    <div id="panel-filtros" class="accordion-panel hidden bg-white border border-t-0 border-yellow-300 rounded-b-lg p-4 mb-6">
+                        <div class="text-slate-700 leading-relaxed space-y-6">
+                            <h4 class="font-bold text-yellow-800 mb-2">🔍 Jerarquía de 5 Niveles de Filtrado</h4>
+                            <p class="mb-4">La complejidad aporta control. 5 niveles de filtrado disponibles. Cada nivel hereda los filtros del nivel superior.</p>
+                            
+                            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 p-4 rounded-r-lg mb-6">
+                                <div class="space-y-3">
+                                    <div class="flex items-center">
+                                        <div class="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold mr-3">1</div>
+                                        <div>
+                                            <strong>Filtros de modelo:</strong> Aplican a todo el modelo de datos
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold mr-3">2</div>
+                                        <div>
+                                            <strong>Filtros de todas las páginas → nivel INFORME (global)</strong>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold mr-3">3</div>
+                                        <div>
+                                            <strong>Filtros de esta página → nivel PÁGINA (suma a los de informe)</strong>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold mr-3">4</div>
+                                        <div>
+                                            <strong>Filtros de este objeto visual → nivel VISUAL (suma a los anteriores · acepta medidas)</strong>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold mr-3">5</div>
+                                        <div>
+                                            <strong>Filtros de medida:</strong> Aplican dentro de fórmulas DAX
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-green-800 mb-2">⚙️ Panel Filtros: Tipos y Opciones Avanzadas</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <h5 class="font-semibold text-green-700 mb-2">📋 Tipos de Filtro disponibles:</h5>
+                                        <ul class="text-sm space-y-1">
+                                            <li><strong>Básico:</strong> Selección directa de valores del campo</li>
+                                            <li><strong>Avanzado:</strong> Condiciones con operadores por tipo de dato</li>
+                                            <li><strong>N Principales:</strong> Top/Bottom N por valor de medida</li>
+                                            <li><strong>Fecha / Hora Relativa:</strong> 'Últimos 7 días', 'Este mes', etc.</li>
+                                        </ul>
+                                    </div>
+                                    <div>
+                                        <h5 class="font-semibold text-green-700 mb-2">🔒 Controles de Administración:</h5>
+                                        <ul class="text-sm space-y-1">
+                                            <li><strong>Bloquear filtro:</strong> Los consumidores no pueden quitar ni modificar el filtro. Recomendado para filtros críticos del diseño</li>
+                                            <li><strong>Ocultar filtro:</strong> El filtro existe y actúa, pero el consumidor no lo ve. Útil para limpiar datos en segundo plano</li>
+                                            <li><strong>Ocultar Panel:</strong> El panel Filtros completo queda inaccesible para el consumidor final del informe</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded-r-lg">
+                                    <p class="text-sm"><strong>💡 Nota importante:</strong> Una segmentación NO es un filtro de página: es un visual que propaga filtros. Diferencia clave para entender el comportamiento del informe.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-purple-50 border-l-4 border-purple-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-purple-800 mb-2">🎛️ Segmentadores (Slicers): Tipos y Configuración</h4>
+                                <p class="mb-3">El visual de filtro más intuitivo y visible para el usuario final</p>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <h5 class="font-semibold text-purple-700 mb-2">📐 Tipos de Segmentadores:</h5>
+                                        <ul class="text-sm space-y-1">
+                                            <li>• Lista vertical</li>
+                                            <li>• Lista horizontal</li>
+                                            <li>• Mosaico</li>
+                                            <li>• Dropdown</li>
+                                            <li>• Tarjetas</li>
+                                            <li>• Rango (para fechas y números)</li>
+                                        </ul>
+                                    </div>
+                                    <div>
+                                        <h5 class="font-semibold text-purple-700 mb-2">⚙️ Configuraciones clave:</h5>
+                                        <ul class="text-sm space-y-1">
+                                            <li>• Sincronización entre páginas</li>
+                                            <li>• Selección única vs múltiple</li>
+                                            <li>• Mostrar elementos con datos</li>
+                                            <li>• Orden personalizado</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="bg-orange-50 border-l-4 border-orange-400 p-3 rounded-r-lg mt-3">
+                                    <p class="text-sm"><strong>⚠️ Importante:</strong> La orientación HORIZONTAL muestra todos los valores visibles — ideal para pocas categorías. Evítala con muchos valores pues los usuarios no ven la barra de desplazamiento.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Módulo 04: Power BI Desktop en Acción -->
+                    <div class="mb-4">
+                        <button type="button" class="w-full flex justify-between items-start p-4 bg-yellow-100 border border-yellow-300 rounded-t-lg focus:outline-none font-bold text-yellow-800 text-lg accordion-btn mb-2 text-left" data-target="#panel-desktop">
+                            MÓDULO 04: Power BI Desktop en Acción<span class="ml-2">➕</span>
+                        </button>
+                    </div>
+                    <div id="panel-desktop" class="accordion-panel hidden bg-white border border-t-0 border-yellow-300 rounded-b-lg p-4 mb-6">
+                        <div class="text-slate-700 leading-relaxed space-y-6">
+                            <h4 class="font-bold text-yellow-800 mb-2">💻 Tipos de Informes según el Público</h4>
+                            <p class="mb-4">Cada tipo requiere un enfoque diferente de UI/UX</p>
+                            
+                            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg mb-4">
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div class="bg-white p-3 rounded border-l-4 border-blue-300">
+                                        <h5 class="font-semibold text-blue-700">🏢 Panel Ejecutivo</h5>
+                                        <p class="text-sm">Alta nivel, KPIs clave, mínima interactividad</p>
+                                    </div>
+                                    <div class="bg-white p-3 rounded border-l-4 border-green-300">
+                                        <h5 class="font-semibold text-green-700">📊 Informe Analítico</h5>
+                                        <p class="text-sm">Detallado, múltiples filtros, alta interactividad</p>
+                                    </div>
+                                    <div class="bg-white p-3 rounded border-l-4 border-purple-300">
+                                        <h5 class="font-semibold text-purple-700">👥 Informe Operativo</h5>
+                                        <p class="text-sm">Datos en tiempo real, acciones específicas</p>
+                                    </div>
+                                </div>
+                                <p class="text-sm mt-3 text-blue-700"><strong>💡 Recuerda:</strong> El tipo de informe determina cuánta interactividad se expone al usuario. Un panel ejecutivo no debe tener segmentadores complejos; un informe analítico sí.</p>
+                            </div>
+                            
+                            <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-green-800 mb-2">🖥️ Power BI Desktop: Partes Clave de la Interfaz</h4>
+                                <p class="mb-3">Conoce el entorno antes de construir visualizaciones</p>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <h5 class="font-semibold text-green-700 mb-2">📌 Componentes principales:</h5>
+                                        <ul class="text-sm space-y-1">
+                                            <li>• <strong>Cinta de opciones:</strong> Herramientas y funciones</li>
+                                            <li>• <strong>Barra de navegación:</strong> Vista, Datos, Modelo</li>
+                                            <li>• <strong>Lienzo:</strong> Área de diseño del informe</li>
+                                            <li>• <strong>Panel Visualizaciones:</strong> Tipos de gráficos</li>
+                                            <li>• <strong>Panel Datos:</strong> Campos y medidas</li>
+                                            <li>• <strong>Panel Filtros:</strong> Configuración de filtros</li>
+                                        </ul>
+                                    </div>
+                                    <div>
+                                        <h5 class="font-semibold text-green-700 mb-2">🎯 Flujo de trabajo:</h5>
+                                        <ul class="text-sm space-y-1">
+                                            <li>1. Conectar a datos</li>
+                                            <li>2. Transformar y modelar</li>
+                                            <li>3. Crear visualizaciones</li>
+                                            <li>4. Configurar interactividad</li>
+                                            <li>5. Formatear y publicar</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded-r-lg mt-3">
+                                    <p class="text-sm"><strong>💡 Recuerda:</strong> Desde la Vista Informe: el lienzo central es donde creas y organizas los visuales. Panel Visualizaciones (derecha) para elegir tipos. Panel Datos (derecha) para los campos.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-purple-50 border-l-4 border-purple-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-purple-800 mb-2">🔄 Flujo de Creación de Visualizaciones</h4>
+                                <p class="mb-3">Pasos algorítmicos para agregar gráficos al informe</p>
+                                
+                                <div class="space-y-3">
+                                    <div class="bg-white p-3 rounded border-l-4 border-purple-300">
+                                        <h5 class="font-semibold text-purple-700">📊 Gráfico de Columnas</h5>
+                                        <ol class="text-sm space-y-1">
+                                            <li>① Icono columnas apiladas</li>
+                                            <li>② Eje: Fecha (solo Mes)</li>
+                                            <li>③ Valores: Coste Total</li>
+                                            <li>④ Redimensionar arriba-izquierda</li>
+                                        </ol>
+                                    </div>
+                                    <div class="bg-white p-3 rounded border-l-4 border-blue-300">
+                                        <h5 class="font-semibold text-blue-700">📈 Gráfico de Líneas</h5>
+                                        <ol class="text-sm space-y-1">
+                                            <li>① Icono líneas</li>
+                                            <li>② Eje: Fecha (Mes/Día)</li>
+                                            <li>③ Valores: Materiales, Impresión, Ensamblado, Envío</li>
+                                            <li>④ Colores por tema</li>
+                                        </ol>
+                                    </div>
+                                    <div class="bg-white p-3 rounded border-l-4 border-green-300">
+                                        <h5 class="font-semibold text-green-700">📊 Gráfico de Área Apilada</h5>
+                                        <ol class="text-sm space-y-1">
+                                            <li>① Icono área apilada</li>
+                                            <li>② Eje: Fecha</li>
+                                            <li>③ Valores: Coste Producción + Envío</li>
+                                            <li>④ Eje Y inicio = 0 para no distorsionar</li>
+                                        </ol>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-orange-50 border-l-4 border-orange-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-orange-800 mb-2">⚙️ Interactividad, Formato y Guardado</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <h5 class="font-semibold text-orange-700 mb-2">💰 Formato de Datos como Divisa</h5>
+                                        <p class="text-sm mb-2">Selecciona el campo en Panel Campos → pestaña Herramientas de columna → ícono Divisa.</p>
+                                        <p class="text-sm text-orange-600">Repite para cada campo numérico (Materiales, Impresión, Ensamblado, Envío, Coste Total).</p>
+                                    </div>
+                                    <div>
+                                        <h5 class="font-semibold text-orange-700 mb-2">🔗 Filtro Cruzado entre Visuales</h5>
+                                        <p class="text-sm mb-2">Clic en un punto de datos de un visual → los demás visuales se ajustan automáticamente.</p>
+                                        <p class="text-sm text-orange-600">Clic en el mismo punto para revertir. Puedes configurar las interacciones: filtrar, resaltar o ninguno.</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-white p-3 rounded border-l-4 border-orange-300 mt-4">
+                                    <h5 class="font-semibold text-orange-700 mb-2">💾 Guardar y Compartir</h5>
+                                    <ul class="text-sm space-y-1">
+                                        <li><strong>Guardar .pbix:</strong> Archivo → Guardar como → introduce el nombre. Power BI usa extensión .pbix para todos sus archivos guardados. Contiene modelo, relaciones, visuales y medidas en un solo archivo.</li>
+                                        <li><strong>Publicar:</strong> Publicar → selecciona área de trabajo → disponible en app.powerbi.com</li>
+                                        <li><strong>Compartir:</strong> Compartir enlace o insertar en Teams / SharePoint</li>
+                                    </ul>
+                                </div>
+                                
+                                <p class="text-sm mt-3 text-orange-700"><strong>🚀 Explorar y Compartir:</strong> A medida que agregas tablas, los informes se vuelven más complejos e interactivos.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actividades Prácticas -->
+            <div id="actividades" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-yellow-800 mb-6">Actividades prácticas</h2>
+                <div class="speech-controls mb-4 p-3 bg-yellow-100 rounded-lg flex items-center flex-wrap gap-2" data-target="actividades">
+                    <button class="play-btn bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-actividades" class="text-sm text-yellow-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-actividades" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                
+                <div class="space-y-8">
+                    <!-- Actividad 1: Arrastrar y Soltar - Tipos de Visuales -->
+                    <div class="bg-white border-l-4 border-blue-500 rounded-lg shadow-sm p-6">
+                        <h3 class="text-xl font-bold text-blue-700 mb-2">📊 Actividad 1: Asocia Datos con Visuales</h3>
+                        <p class="mb-4"><span class="font-semibold">Instrucciones:</span> Arrastra cada tipo de dato al visual más apropiado para representarlo.</p>
+                        
+                        <div class="mb-6">
+                            <div class="flex justify-between text-sm text-slate-600 mb-2">
+                                <span>Progreso</span>
+                                <span id="progress-text-1">0/6 asociaciones</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progress-fill-1" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Tipos de Datos -->
+                            <div>
+                                <h4 class="font-semibold text-slate-700 mb-3">📋 Tipos de Datos</h4>
+                                <div class="space-y-2">
+                                    <div class="visual-item bg-yellow-50 border-2 border-yellow-300 rounded-lg p-3 cursor-move" draggable="true" data-type="ventas-mensuales">
+                                        <div class="flex items-center">
+                                            <span class="text-lg mr-2">📈</span>
+                                            <span class="font-medium">Ventas mensuales (tendencia temporal)</span>
+                                        </div>
+                                    </div>
+                                    <div class="visual-item bg-yellow-50 border-2 border-yellow-300 rounded-lg p-3 cursor-move" draggable="true" data-type="categorias-producto">
+                                        <div class="flex items-center">
+                                            <span class="text-lg mr-2">🏷️</span>
+                                            <span class="font-medium">Categorías de producto (comparación)</span>
+                                        </div>
+                                    </div>
+                                    <div class="visual-item bg-yellow-50 border-2 border-yellow-300 rounded-lg p-3 cursor-move" draggable="true" data-type="participacion-mercado">
+                                        <div class="flex items-center">
+                                            <span class="text-lg mr-2">🥧</span>
+                                            <span class="font-medium">Participación de mercado (proporción)</span>
+                                        </div>
+                                    </div>
+                                    <div class="visual-item bg-yellow-50 border-2 border-yellow-300 rounded-lg p-3 cursor-move" draggable="true" data-type="kpi-ventas">
+                                        <div class="flex items-center">
+                                            <span class="text-lg mr-2">🎯</span>
+                                            <span class="font-medium">KPI de ventas totales (único valor)</span>
+                                        </div>
+                                    </div>
+                                    <div class="visual-item bg-yellow-50 border-2 border-yellow-300 rounded-lg p-3 cursor-move" draggable="true" data-type="datos-ciudad">
+                                        <div class="flex items-center">
+                                            <span class="text-lg mr-2">🗺️</span>
+                                            <span class="font-medium">Ventas por ciudad (ubicación)</span>
+                                        </div>
+                                    </div>
+                                    <div class="visual-item bg-yellow-50 border-2 border-yellow-300 rounded-lg p-3 cursor-move" draggable="true" data-type="detalles-clientes">
+                                        <div class="flex items-center">
+                                            <span class="text-lg mr-2">📋</span>
+                                            <span class="font-medium">Lista detallada de clientes</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Zonas de Destino -->
+                            <div>
+                                <h4 class="font-semibold text-slate-700 mb-3">🎨 Visuales Disponibles</h4>
+                                <div class="space-y-2">
+                                    <div class="drop-zone bg-blue-50 border-2 border-dashed border-blue-300 rounded-lg p-3 min-h-[60px]" data-accept="ventas-mensuales">
+                                        <div class="text-center text-slate-600">
+                                            <span class="text-lg">📈</span>
+                                            <p class="font-medium">Gráfico de líneas (para series temporales)</p>
+                                        </div>
+                                    </div>
+                                    <div class="drop-zone bg-blue-50 border-2 border-dashed border-blue-300 rounded-lg p-3 min-h-[60px]" data-accept="categorias-producto">
+                                        <div class="text-center text-slate-600">
+                                            <span class="text-lg">📊</span>
+                                            <p class="font-medium">Gráfico de barras (para categorías)</p>
+                                        </div>
+                                    </div>
+                                    <div class="drop-zone bg-blue-50 border-2 border-dashed border-blue-300 rounded-lg p-3 min-h-[60px]" data-accept="participacion-mercado">
+                                        <div class="text-center text-slate-600">
+                                            <span class="text-lg">🥧</span>
+                                            <p class="font-medium">Gráfico circular (para proporciones)</p>
+                                        </div>
+                                    </div>
+                                    <div class="drop-zone bg-blue-50 border-2 border-dashed border-blue-300 rounded-lg p-3 min-h-[60px]" data-accept="kpi-ventas">
+                                        <div class="text-center text-slate-600">
+                                            <span class="text-lg">🎯</span>
+                                            <p class="font-medium">Tarjeta (para KPIs)</p>
+                                        </div>
+                                    </div>
+                                    <div class="drop-zone bg-blue-50 border-2 border-dashed border-blue-300 rounded-lg p-3 min-h-[60px]" data-accept="datos-ciudad">
+                                        <div class="text-center text-slate-600">
+                                            <span class="text-lg">🗺️</span>
+                                            <p class="font-medium">Mapa de burbujas (para datos geográficos)</p>
+                                        </div>
+                                    </div>
+                                    <div class="drop-zone bg-blue-50 border-2 border-dashed border-blue-300 rounded-lg p-3 min-h-[60px]" data-accept="detalles-clientes">
+                                        <div class="text-center text-slate-600">
+                                            <span class="text-lg">📋</span>
+                                            <p class="font-medium">Tabla (para datos detallados)</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 p-3 bg-green-50 rounded-lg hidden" id="feedback-1">
+                            <p class="text-green-700 font-medium">✅ ¡Excelente! Has asociado correctamente todos los datos con sus visuales apropiados.</p>
+                        </div>
+                    </div>
+
+                    <!-- Actividad 2: Ordenar Jerarquía de Filtros -->
+                    <div class="bg-white border-l-4 border-green-500 rounded-lg shadow-sm p-6">
+                        <h3 class="text-xl font-bold text-green-700 mb-2">🔍 Actividad 2: Ordena la Jerarquía de Filtros</h3>
+                        <p class="mb-4"><span class="font-semibold">Instrucciones:</span> Ordena los 5 niveles de filtrado de Power BI desde el más general (1) al más específico (5).</p>
+                        
+                        <div class="mb-6">
+                            <div class="flex justify-between text-sm text-slate-600 mb-2">
+                                <span>Progreso</span>
+                                <span id="progress-text-2">0/5 niveles</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progress-fill-2" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <div id="filter-simulator" class="space-y-3">
+                            <div class="filter-card border-2 border-slate-200 rounded-lg p-4 cursor-move" draggable="true" data-filter="modelo" data-correct-order="1">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <div class="filter-number bg-slate-200 text-slate-600 w-8 h-8 rounded-full flex items-center justify-center font-bold">?</div>
+                                        <div>
+                                            <h4 class="font-semibold text-slate-800">Filtros de Modelo</h4>
+                                            <p class="text-sm text-slate-600">Aplican a todo el modelo de datos</p>
+                                        </div>
+                                    </div>
+                                    <span class="text-2xl">🏗️</span>
+                                </div>
+                            </div>
+
+                            <div class="filter-card border-2 border-slate-200 rounded-lg p-4 cursor-move" draggable="true" data-filter="informe" data-correct-order="2">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <div class="filter-number bg-slate-200 text-slate-600 w-8 h-8 rounded-full flex items-center justify-center font-bold">?</div>
+                                        <div>
+                                            <h4 class="font-semibold text-slate-800">Filtros de Informe</h4>
+                                            <p class="text-sm text-slate-600">Afectan a todas las páginas del informe</p>
+                                        </div>
+                                    </div>
+                                    <span class="text-2xl">📑</span>
+                                </div>
+                            </div>
+
+                            <div class="filter-card border-2 border-slate-200 rounded-lg p-4 cursor-move" draggable="true" data-filter="pagina" data-correct-order="3">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <div class="filter-number bg-slate-200 text-slate-600 w-8 h-8 rounded-full flex items-center justify-center font-bold">?</div>
+                                        <div>
+                                            <h4 class="font-semibold text-slate-800">Filtros de Página</h4>
+                                            <p class="text-sm text-slate-600">Afectan solo a la página actual</p>
+                                        </div>
+                                    </div>
+                                    <span class="text-2xl">📄</span>
+                                </div>
+                            </div>
+
+                            <div class="filter-card border-2 border-slate-200 rounded-lg p-4 cursor-move" draggable="true" data-filter="visual" data-correct-order="4">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <div class="filter-number bg-slate-200 text-slate-600 w-8 h-8 rounded-full flex items-center justify-center font-bold">?</div>
+                                        <div>
+                                            <h4 class="font-semibold text-slate-800">Filtros de Visual</h4>
+                                            <p class="text-sm text-slate-600">Afectan solo a un objeto visual específico</p>
+                                        </div>
+                                    </div>
+                                    <span class="text-2xl">📊</span>
+                                </div>
+                            </div>
+
+                            <div class="filter-card border-2 border-slate-200 rounded-lg p-4 cursor-move" draggable="true" data-filter="medida" data-correct-order="5">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <div class="filter-number bg-slate-200 text-slate-600 w-8 h-8 rounded-full flex items-center justify-center font-bold">?</div>
+                                        <div>
+                                            <h4 class="font-semibold text-slate-800">Filtros de Medida</h4>
+                                            <p class="text-sm text-slate-600">Se aplican dentro de fórmulas DAX</p>
+                                        </div>
+                                    </div>
+                                    <span class="text-2xl">🧮</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 p-3 bg-green-50 rounded-lg hidden" id="feedback-2">
+                            <p class="text-green-700 font-medium">✅ ¡Perfecto! Has ordenado correctamente la jerarquía de filtros de Power BI.</p>
+                        </div>
+                    </div>
+
+                            <!-- Actividad 3: Diseño de Informe - Principios -->
+                    <div class="bg-white border-l-4 border-purple-500 rounded-lg shadow-sm p-6">
+                        <h3 class="text-xl font-bold text-purple-700 mb-2">🎨 Actividad 3: Aplica Principios de Diseño</h3>
+                        <p class="mb-4"><span class="font-semibold">Instrucciones:</span> Identifica qué principio de diseño se aplica en cada situación de informe.</p>
+                        
+                        <div class="space-y-4">
+                            <div class="bg-purple-50 border-l-4 border-purple-400 p-4 rounded-r-lg">
+                                <div class="mb-3">
+                                    <p class="font-medium text-purple-800 mb-2">Situación 1:</p>
+                                    <p class="text-sm text-slate-700">"Colocar el KPI más importante en la esquina superior izquierda del informe"</p>
+                                </div>
+                                <select class="principle-select w-full p-2 border border-purple-300 rounded" data-question="1" data-answer="ubicacion">
+                                    <option value="">Selecciona el principio...</option>
+                                    <option value="ubicacion">Ubicación</option>
+                                    <option value="equilibrio">Equilibrio</option>
+                                    <option value="contraste">Contraste</option>
+                                    <option value="proximidad">Proximidad</option>
+                                    <option value="repeticion">Repetición</option>
+                                </select>
+                            </div>
+                            
+                            <div class="bg-purple-50 border-l-4 border-purple-400 p-4 rounded-r-lg">
+                                <div class="mb-3">
+                                    <p class="font-medium text-purple-800 mb-2">Situación 2:</p>
+                                    <p class="text-sm text-slate-700">"Usar el mismo color azul para todos los títulos y subtítulos del informe"</p>
+                                </div>
+                                <select class="principle-select w-full p-2 border border-purple-300 rounded" data-question="2" data-answer="repeticion">
+                                    <option value="">Selecciona el principio...</option>
+                                    <option value="ubicacion">Ubicación</option>
+                                    <option value="equilibrio">Equilibrio</option>
+                                    <option value="contraste">Contraste</option>
+                                    <option value="proximidad">Proximidad</option>
+                                    <option value="repeticion">Repetición</option>
+                                </select>
+                            </div>
+                            
+                            <div class="bg-purple-50 border-l-4 border-purple-400 p-4 rounded-r-lg">
+                                <div class="mb-3">
+                                    <p class="font-medium text-purple-800 mb-2">Situación 3:</p>
+                                    <p class="text-sm text-slate-700">"Agrupar el gráfico de ventas con su tabla de detalles correspondiente"</p>
+                                </div>
+                                <select class="principle-select w-full p-2 border border-purple-300 rounded" data-question="3" data-answer="proximidad">
+                                    <option value="">Selecciona el principio...</option>
+                                    <option value="ubicacion">Ubicación</option>
+                                    <option value="equilibrio">Equilibrio</option>
+                                    <option value="contraste">Contraste</option>
+                                    <option value="proximidad">Proximidad</option>
+                                    <option value="repeticion">Repetición</option>
+                                </select>
+                            </div>
+                            
+                            <div class="bg-purple-50 border-l-4 border-purple-400 p-4 rounded-r-lg">
+                                <div class="mb-3">
+                                    <p class="font-medium text-purple-800 mb-2">Situación 4:</p>
+                                    <p class="text-sm text-slate-700">"Usar texto negro sobre fondo blanco para los datos importantes"</p>
+                                </div>
+                                <select class="principle-select w-full p-2 border border-purple-300 rounded" data-question="4" data-answer="contraste">
+                                    <option value="">Selecciona el principio...</option>
+                                    <option value="ubicacion">Ubicación</option>
+                                    <option value="equilibrio">Equilibrio</option>
+                                    <option value="contraste">Contraste</option>
+                                    <option value="proximidad">Proximidad</option>
+                                    <option value="repeticion">Repetición</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 flex gap-2">
+                            <button id="check-principles-btn" class="bg-purple-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-purple-700 transition-colors">
+                                Verificar respuestas
+                            </button>
+                            <button id="reset-principles-btn" class="bg-slate-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-slate-600 transition-colors">
+                                Reiniciar
+                            </button>
+                        </div>
+                        
+                        <div id="principles-result" class="mt-4 font-medium"></div>
+                        <div id="principles-feedback" class="mt-4 p-4 bg-purple-50 border border-purple-200 rounded-lg hidden">
+                            <h4 class="font-bold text-purple-800 mb-2">📖 Principios de Diseño:</h4>
+                            <ul class="list-disc pl-5 text-slate-700 space-y-1">
+                                <li><strong>Ubicación:</strong> Posición estratégica para jerarquía visual</li>
+                                <li><strong>Equilibrio:</strong> Distribución armónica del peso visual</li>
+                                <li><strong>Contraste:</strong> Diferenciación clara entre elementos importantes</li>
+                                <li><strong>Proximidad:</strong> Agrupación de elementos relacionados</li>
+                                <li><strong>Repetición:</strong> Consistencia en estilos y patrones</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Evaluación -->
+            <div id="evaluacion" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-yellow-800 mb-6">Evaluación final</h2>
+                <div class="speech-controls mb-4 p-3 bg-yellow-100 rounded-lg flex items-center flex-wrap gap-2" data-target="evaluacion">
+                    <button class="play-btn bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-evaluacion" class="text-sm text-yellow-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-evaluacion" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                
+                <div class="bg-white border-l-4 border-red-500 rounded-lg shadow-sm p-6">
+                    <h3 class="text-xl font-bold text-red-700 mb-4">📋 Cuestionario de Evaluación</h3>
+                    <p class="mb-6 text-slate-700">Responde las siguientes preguntas para evaluar tu comprensión de los temas de la sesión.</p>
+                    
+                    <div class="space-y-6">
+                        <div class="quiz-question bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg">
+                            <p class="font-medium text-red-800 mb-3">1. ¿Cuál es el principio de diseño que establece "menos es más"?</p>
+                            <select class="quiz-select w-full p-2 border border-red-300 rounded" data-question="1" data-answer="simplicidad">
+                                <option value="">Selecciona una respuesta...</option>
+                                <option value="ubicacion">Ubicación estratégica</option>
+                                <option value="simplicidad">Simplicidad y claridad</option>
+                                <option value="contraste">Contraste visual</option>
+                                <option value="repeticion">Repetición consistente</option>
+                            </select>
+                        </div>
+                        
+                        <div class="quiz-question bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg">
+                            <p class="font-medium text-red-800 mb-3">2. ¿Qué tipo de visual es más apropiado para datos de ventas mensuales?</p>
+                            <select class="quiz-select w-full p-2 border border-red-300 rounded" data-question="2" data-answer="lineas">
+                                <option value="">Selecciona una respuesta...</option>
+                                <option value="barras">Gráfico de barras</option>
+                                <option value="lineas">Gráfico de líneas</option>
+                                <option value="circular">Gráfico circular</option>
+                                <option value="tabla">Tabla de datos</option>
+                            </select>
+                        </div>
+                        
+                        <div class="quiz-question bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg">
+                            <p class="font-medium text-red-800 mb-3">3. ¿Cuál es el nivel más específico de filtrado en Power BI?</p>
+                            <select class="quiz-select w-full p-2 border border-red-300 rounded" data-question="3" data-answer="medida">
+                                <option value="">Selecciona una respuesta...</option>
+                                <option value="modelo">Filtros de modelo</option>
+                                <option value="pagina">Filtros de página</option>
+                                <option value="visual">Filtros de visual</option>
+                                <option value="medida">Filtros de medida</option>
+                            </select>
+                        </div>
+                        
+                        <div class="quiz-question bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg">
+                            <p class="font-medium text-red-800 mb-3">4. ¿Qué elemento del informe NO es un visual de datos?</p>
+                            <select class="quiz-select w-full p-2 border border-red-300 rounded" data-question="4" data-answer="texto">
+                                <option value="">Selecciona una respuesta...</option>
+                                <option value="barras">Gráfico de barras</option>
+                                <option value="texto">Cuadro de texto</option>
+                                <option value="mapa">Mapa de burbujas</option>
+                                <option value="tarjeta">Tarjeta KPI</option>
+                            </select>
+                        </div>
+                        
+                        <div class="quiz-question bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg">
+                            <p class="font-medium text-red-800 mb-3">5. ¿Qué orientación de segmentador es ideal para pocas categorías?</p>
+                            <select class="quiz-select w-full p-2 border border-red-300 rounded" data-question="5" data-answer="horizontal">
+                                <option value="">Selecciona una respuesta...</option>
+                                <option value="vertical">Vertical</option>
+                                <option value="horizontal">Horizontal</option>
+                                <option value="dropdown">Dropdown</option>
+                                <option value="mosaico">Mosaico</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 flex gap-2">
+                        <button id="submit-quiz-btn" class="bg-red-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-red-700 transition-colors">
+                            Enviar evaluación
+                        </button>
+                        <button id="reset-quiz-btn" class="bg-slate-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-slate-600 transition-colors">
+                            Reiniciar
+                        </button>
+                    </div>
+                    
+                    <div id="quiz-result" class="mt-4 font-medium"></div>
+                    <div id="quiz-feedback" class="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg hidden">
+                        <h4 class="font-bold text-red-800 mb-2">📊 Resultados:</h4>
+                        <div id="quiz-details"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recursos -->
+            <div id="recursos" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-yellow-800 mb-6">Recursos adicionales</h2>
+                <div class="speech-controls mb-4 p-3 bg-yellow-100 rounded-lg flex items-center flex-wrap gap-2" data-target="recursos">
+                    <button class="play-btn bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-recursos" class="text-sm text-yellow-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-recursos" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white border-l-4 border-blue-500 rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-bold text-blue-700 mb-3">📚 Documentación Oficial</h3>
+                        <ul class="space-y-2">
+                            <li class="flex items-start">
+                                <span class="text-blue-500 mr-2">•</span>
+                                <a href="https://docs.microsoft.com/power-bi/" target="_blank" class="text-blue-600 hover:underline">Documentación de Power BI</a>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-blue-500 mr-2">•</span>
+                                <a href="https://docs.microsoft.com/power-bi/visuals/" target="_blank" class="text-blue-600 hover:underline">Guía de Visualizaciones</a>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-blue-500 mr-2">•</span>
+                                <a href="https://docs.microsoft.com/power-bi/consumer/end-user-report-view/" target="_blank" class="text-blue-600 hover:underline">Consumo de Informes</a>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-white border-l-4 border-green-500 rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-bold text-green-700 mb-3">🎥 Tutoriales y Videos</h3>
+                        <ul class="space-y-2">
+                            <li class="flex items-start">
+                                <span class="text-green-500 mr-2">•</span>
+                                <a href="https://www.youtube.com/c/MicrosoftPowerBI" target="_blank" class="text-green-600 hover:underline">Canal YouTube Power BI</a>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-green-500 mr-2">•</span>
+                                <a href="https://powerbi.microsoft.com/tutorials/" target="_blank" class="text-green-600 hover:underline">Tutoriales Guiados</a>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-green-500 mr-2">•</span>
+                                <a href="https://docs.microsoft.com/learn/paths/power-bi/" target="_blank" class="text-green-600 hover:underline">Rutas de Aprendizaje Microsoft Learn</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bibliografía -->
+            <div id="bibliografia" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-yellow-800 mb-6">Bibliografía</h2>
+                <div class="speech-controls mb-4 p-3 bg-yellow-100 rounded-lg flex items-center flex-wrap gap-2" data-target="bibliografia">
+                    <button class="play-btn bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-bibliografia" class="text-sm text-yellow-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-bibliografia" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                
+                <div class="bg-white border-l-4 border-yellow-500 rounded-lg shadow-sm p-6">
+                    <ul class="space-y-3">
+                        <li class="text-slate-700">
+                            <strong>Microsoft Corporation.</strong> (2024). <em>Power BI Documentation</em>. Microsoft Docs. Recuperado de https://docs.microsoft.com/power-bi/
+                        </li>
+                        <li class="text-slate-700">
+                            <strong>Power BI Team.</strong> (2024). <em>Best Practices for Report Design</em>. Power BI Blog. Recuperado de https://powerbi.microsoft.com/blog/
+                        </li>
+                        <li class="text-slate-700">
+                            <strong>CINTIA Unicórdoba.</strong> (2024). <em>Material de Curso Power BI - Sesión 2</em>. Material educativo interno.
+                        </li>
+                        <li class="text-slate-700">
+                            <strong>Few, S.</strong> (2012). <em>Show Me the Numbers: Designing Tables and Graphs to Enlighten</em>. Analytics Press.
+                        </li>
+                        <li class="text-slate-700">
+                            <strong>Ware, C.</strong> (2020). <em>Information Visualization: Perception for Design</em>. Morgan Kaufmann Publishers.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal para imágenes -->
+        <div id="imageModal" class="fixed inset-0 bg-black bg-opacity-75 z-50 hidden flex items-center justify-center p-4">
+            <div class="relative max-w-6xl max-h-full">
+                <button onclick="closeModal()" class="absolute -top-10 right-0 text-white text-4xl hover:text-gray-300">&times;</button>
+                <img id="modalImage" src="" alt="Imagen ampliada" class="max-w-full max-h-full object-contain rounded-lg">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales para síntesis de voz
+        let currentUtterance = null;
+        let currentSpeechTarget = null;
+        let speechQueue = [];
+        let isSpeaking = false;
+
+        // Función para abrir modal de imagen
+        function openModal(imageContainer) {
+            const modal = document.getElementById('imageModal');
+            const modalImage = document.getElementById('modalImage');
+            const img = imageContainer.querySelector('img');
+            
+            modalImage.src = img.src;
+            modalImage.alt = img.alt;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        // Función para cerrar modal
+        function closeModal() {
+            const modal = document.getElementById('imageModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        // Función para obtener texto de un elemento
+        function getTextContent(element) {
+            const selector = element.dataset.target;
+            const targetElement = document.getElementById(selector);
+            if (!targetElement) return '';
+            
+            // Excluir elementos que no deben ser leídos
+            const excludeSelectors = 'button, .speech-controls, .progress-bar, .drop-zone, .visual-item, .filter-card, .step-card, .quiz-question select';
+            const textElements = targetElement.querySelectorAll('h1, h2, h3, h4, h5, h6, p, li, span:not(.zoom-icon):not(.step-number):not(.filter-number)');
+            
+            let text = '';
+            textElements.forEach(el => {
+                if (!el.closest(excludeSelectors)) {
+                    text += el.textContent + ' ';
+                }
+            });
+            
+            return text.trim();
+        }
+
+        // Función para iniciar síntesis de voz
+        function startSpeech(targetId) {
+            const control = document.querySelector(`[data-target="${targetId}"]`);
+            const playBtn = control.querySelector('.play-btn');
+            const pauseBtn = control.querySelector('.pause-btn');
+            const stopBtn = control.querySelector('.stop-btn');
+            const rateInput = control.querySelector('.speech-rate');
+            
+            if (isSpeaking && currentSpeechTarget === targetId) {
+                // Reanudar si está pausado
+                if (window.speechSynthesis.paused) {
+                    window.speechSynthesis.resume();
+                    playBtn.disabled = true;
+                    pauseBtn.disabled = false;
+                    isSpeaking = true;
+                }
+                return;
+            }
+            
+            // Detener cualquier speech anterior
+            stopAllSpeech();
+            
+            const text = getTextContent(control);
+            if (!text) return;
+            
+            currentUtterance = new SpeechSynthesisUtterance(text);
+            currentUtterance.lang = 'es-ES';
+            currentUtterance.rate = parseFloat(rateInput.value);
+            
+            currentUtterance.onstart = () => {
+                playBtn.disabled = true;
+                pauseBtn.disabled = false;
+                stopBtn.disabled = false;
+                isSpeaking = true;
+                currentSpeechTarget = targetId;
+            };
+            
+            currentUtterance.onend = () => {
+                playBtn.disabled = false;
+                pauseBtn.disabled = true;
+                stopBtn.disabled = true;
+                isSpeaking = false;
+                currentSpeechTarget = null;
+            };
+            
+            currentUtterance.onerror = (event) => {
+                console.error('Error en síntesis de voz:', event);
+                playBtn.disabled = false;
+                pauseBtn.disabled = true;
+                stopBtn.disabled = true;
+                isSpeaking = false;
+                currentSpeechTarget = null;
+            };
+            
+            window.speechSynthesis.speak(currentUtterance);
+        }
+
+        // Función para pausar síntesis de voz
+        function pauseSpeech(targetId) {
+            if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+                window.speechSynthesis.pause();
+                const control = document.querySelector(`[data-target="${targetId}"]`);
+                control.querySelector('.play-btn').disabled = false;
+                control.querySelector('.pause-btn').disabled = true;
+                isSpeaking = false;
+            }
+        }
+
+        // Función para detener síntesis de voz
+        function stopSpeech(targetId) {
+            stopAllSpeech();
+        }
+
+        // Función para detener toda síntesis de voz
+        function stopAllSpeech() {
+            window.speechSynthesis.cancel();
+            document.querySelectorAll('.play-btn').forEach(btn => btn.disabled = false);
+            document.querySelectorAll('.pause-btn').forEach(btn => btn.disabled = true);
+            document.querySelectorAll('.stop-btn').forEach(btn => btn.disabled = true);
+            isSpeaking = false;
+            currentSpeechTarget = null;
+            currentUtterance = null;
+        }
+
+        // Función para actualizar velocidad de voz
+        function updateSpeechRate(targetId) {
+            const control = document.querySelector(`[data-target="${targetId}"]`);
+            const rateInput = control.querySelector('.speech-rate');
+            
+            if (currentUtterance && currentSpeechTarget === targetId && !window.speechSynthesis.paused) {
+                currentUtterance.rate = parseFloat(rateInput.value);
+            }
+        }
+
+        // Navegación por secciones
+        function navigateToSection(sectionId) {
+            // Ocultar todas las secciones
+            document.querySelectorAll('.content-pane').forEach(pane => {
+                pane.classList.remove('active');
+            });
+            
+            // Mostrar sección seleccionada
+            document.getElementById(sectionId).classList.add('active');
+            
+            // Actualizar selector
+            document.getElementById('section-selector').value = sectionId;
+        }
+
+        // Funcionalidad de acordeones
+        function initAccordions() {
+            const accordionBtns = document.querySelectorAll('.accordion-btn');
+            
+            accordionBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const targetId = btn.dataset.target;
+                    const panel = document.querySelector(targetId);
+                    const icon = btn.querySelector('span:last-child');
+                    
+                    if (panel.classList.contains('hidden')) {
+                        panel.classList.remove('hidden');
+                        icon.textContent = '➖';
+                    } else {
+                        panel.classList.add('hidden');
+                        icon.textContent = '➕';
+                    }
+                });
+            });
+        }
+
+        // Funcionalidad de arrastrar y soltar para visuales
+        function initVisualDragDrop() {
+            const visualItems = document.querySelectorAll('.visual-item');
+            const dropZones = document.querySelectorAll('.drop-zone');
+            let draggedItem = null;
+            let matchedPairs = 0;
+            const totalPairs = 6;
+            
+            visualItems.forEach(item => {
+                item.addEventListener('dragstart', (e) => {
+                    draggedItem = e.target;
+                    e.target.style.opacity = '0.5';
+                });
+                
+                item.addEventListener('dragend', (e) => {
+                    e.target.style.opacity = '';
+                });
+            });
+            
+            dropZones.forEach(zone => {
+                zone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    zone.style.backgroundColor = '#dbeafe';
+                });
+                
+                zone.addEventListener('dragleave', (e) => {
+                    zone.style.backgroundColor = '';
+                });
+                
+                zone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    zone.style.backgroundColor = '';
+                    
+                    if (draggedItem && zone.dataset.accept === draggedItem.dataset.type) {
+                        // Match correcto
+                        zone.innerHTML = draggedItem.innerHTML;
+                        zone.classList.add('bg-green-100', 'border-green-500');
+                        zone.classList.remove('bg-blue-50', 'border-dashed', 'border-blue-300');
+                        draggedItem.style.display = 'none';
+                        
+                        matchedPairs++;
+                        updateProgress('progress-text-1', 'progress-fill-1', matchedPairs, totalPairs);
+                        
+                        if (matchedPairs === totalPairs) {
+                            document.getElementById('feedback-1').classList.remove('hidden');
+                        }
+                    } else {
+                        // Match incorrecto
+                        zone.style.backgroundColor = '#fee2e2';
+                        setTimeout(() => {
+                            zone.style.backgroundColor = '';
+                        }, 1000);
+                    }
+                });
+            });
+        }
+
+        // Funcionalidad de arrastrar y soltar para filtros
+        function initFilterDragDrop() {
+            const filterCards = document.querySelectorAll('.filter-card');
+            const filterContainer = document.getElementById('filter-simulator');
+            let draggedCard = null;
+            let correctOrder = 0;
+            const totalFilters = 5;
+            
+            filterCards.forEach(card => {
+                card.addEventListener('dragstart', (e) => {
+                    draggedCard = e.target;
+                    e.target.style.opacity = '0.5';
+                });
+                
+                card.addEventListener('dragend', (e) => {
+                    e.target.style.opacity = '';
+                });
+            });
+            
+            filterContainer.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                const afterElement = getDragAfterElement(filterContainer, e.clientY);
+                if (afterElement == null) {
+                    filterContainer.appendChild(draggedCard);
+                } else {
+                    filterContainer.insertBefore(draggedCard, afterElement);
+                }
+            });
+            
+            // Verificar orden
+            filterContainer.addEventListener('drop', () => {
+                setTimeout(() => checkFilterOrder(), 100);
+            });
+            
+            function checkFilterOrder() {
+                const cards = filterContainer.querySelectorAll('.filter-card');
+                correctOrder = 0;
+                
+                cards.forEach((card, index) => {
+                    const number = card.querySelector('.filter-number');
+                    const expectedOrder = parseInt(card.dataset.correctOrder);
+                    
+                    if (index + 1 === expectedOrder) {
+                        number.textContent = index + 1;
+                        number.classList.add('bg-green-500', 'text-white');
+                        number.classList.remove('bg-slate-200', 'text-slate-600');
+                        correctOrder++;
+                    } else {
+                        number.textContent = '?';
+                        number.classList.remove('bg-green-500', 'text-white');
+                        number.classList.add('bg-slate-200', 'text-slate-600');
+                    }
+                });
+                
+                updateProgress('progress-text-2', 'progress-fill-2', correctOrder, totalFilters);
+                
+                if (correctOrder === totalFilters) {
+                    document.getElementById('feedback-2').classList.remove('hidden');
+                }
+            }
+        }
+
+        // Función auxiliar para obtener elemento después del cual soltar
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('.filter-card:not(.dragging)')];
+            
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+        // Función para actualizar progreso
+        function updateProgress(textId, fillId, current, total) {
+            document.getElementById(textId).textContent = `${current}/${total} completados`;
+            document.getElementById(fillId).style.width = `${(current / total) * 100}%`;
+        }
+
+        // Funcionalidad del quiz de principios
+        function initPrinciplesQuiz() {
+            const checkBtn = document.getElementById('check-principles-btn');
+            const resetBtn = document.getElementById('reset-principles-btn');
+            
+            checkBtn.addEventListener('click', () => {
+                const selects = document.querySelectorAll('.principle-select');
+                let correct = 0;
+                
+                selects.forEach(select => {
+                    const userAnswer = select.value;
+                    const correctAnswer = select.dataset.answer;
+                    
+                    if (userAnswer === correctAnswer) {
+                        select.classList.add('bg-green-100', 'border-green-500');
+                        select.classList.remove('border-purple-300');
+                        correct++;
+                    } else {
+                        select.classList.add('bg-red-100', 'border-red-500');
+                        select.classList.remove('border-purple-300');
+                    }
+                });
+                
+                const resultDiv = document.getElementById('principles-result');
+                const feedbackDiv = document.getElementById('principles-feedback');
+                
+                if (correct === selects.length) {
+                    resultDiv.innerHTML = '<span class="text-green-600">✅ ¡Excelente! Todas las respuestas son correctas.</span>';
+                    feedbackDiv.classList.remove('hidden');
+                } else {
+                    resultDiv.innerHTML = `<span class="text-orange-600">⚠️ Has respondido correctamente ${correct} de ${selects.length} preguntas.</span>`;
+                }
+            });
+            
+            resetBtn.addEventListener('click', () => {
+                document.querySelectorAll('.principle-select').forEach(select => {
+                    select.value = '';
+                    select.classList.remove('bg-green-100', 'bg-red-100', 'border-green-500', 'border-red-500');
+                    select.classList.add('border-purple-300');
+                });
+                document.getElementById('principles-result').innerHTML = '';
+                document.getElementById('principles-feedback').classList.add('hidden');
+            });
+        }
+
+        // Funcionalidad del quiz final
+        function initFinalQuiz() {
+            const submitBtn = document.getElementById('submit-quiz-btn');
+            const resetBtn = document.getElementById('reset-quiz-btn');
+            
+            submitBtn.addEventListener('click', () => {
+                const selects = document.querySelectorAll('.quiz-select');
+                let correct = 0;
+                const results = [];
+                
+                selects.forEach(select => {
+                    const userAnswer = select.value;
+                    const correctAnswer = select.dataset.answer;
+                    
+                    if (userAnswer === correctAnswer) {
+                        select.classList.add('bg-green-100', 'border-green-500');
+                        select.classList.remove('border-red-300');
+                        correct++;
+                        results.push({ question: select.dataset.question, correct: true });
+                    } else {
+                        select.classList.add('bg-red-100', 'border-red-500');
+                        select.classList.remove('border-red-300');
+                        results.push({ question: select.dataset.question, correct: false });
+                    }
+                });
+                
+                const percentage = Math.round((correct / selects.length) * 100);
+                const resultDiv = document.getElementById('quiz-result');
+                const feedbackDiv = document.getElementById('quiz-feedback');
+                const detailsDiv = document.getElementById('quiz-details');
+                
+                if (percentage >= 80) {
+                    resultDiv.innerHTML = `<span class="text-green-600">🎉 ¡Excelente! Has obtenido ${correct}/${selects.length} (${percentage}%)</span>`;
+                } else if (percentage >= 60) {
+                    resultDiv.innerHTML = `<span class="text-orange-600">👍 Bien hecho. Has obtenido ${correct}/${selects.length} (${percentage}%)</span>`;
+                } else {
+                    resultDiv.innerHTML = `<span class="text-red-600">📚 Necesitas repasar. Has obtenido ${correct}/${selects.length} (${percentage}%)</span>`;
+                }
+                
+                // Mostrar detalles
+                let detailsHTML = '<ul class="space-y-1">';
+                results.forEach(result => {
+                    const icon = result.correct ? '✅' : '❌';
+                    const text = result.correct ? 'Correcto' : 'Incorrecto';
+                    detailsHTML += `<li>${icon} Pregunta ${result.question}: ${text}</li>`;
+                });
+                detailsHTML += '</ul>';
+                detailsDiv.innerHTML = detailsHTML;
+                
+                feedbackDiv.classList.remove('hidden');
+            });
+            
+            resetBtn.addEventListener('click', () => {
+                document.querySelectorAll('.quiz-select').forEach(select => {
+                    select.value = '';
+                    select.classList.remove('bg-green-100', 'bg-red-100', 'border-green-500', 'border-red-500');
+                    select.classList.add('border-red-300');
+                });
+                document.getElementById('quiz-result').innerHTML = '';
+                document.getElementById('quiz-feedback').classList.add('hidden');
+            });
+        }
+
+        // Función de navegación global
+function navigateToSection(sectionId) {
+    // Ocultar todas las secciones
+    document.querySelectorAll('.content-pane').forEach(pane => {
+        pane.classList.remove('active');
+    });
+    
+    // Mostrar la sección seleccionada
+    const targetPane = document.getElementById(sectionId);
+    if (targetPane) {
+        targetPane.classList.add('active');
+    }
+    
+    // Actualizar estado activo en sidebar
+    document.querySelectorAll('.sidebar-link').forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('data-target') === sectionId) {
+            link.classList.add('active');
+        }
+    });
+    
+    // Actualizar selector móvil
+    const mobileNav = document.getElementById('mobile-nav');
+    if (mobileNav) {
+        mobileNav.value = sectionId;
+    }
+}
+
+// Atajos de teclado
+document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' && e.target.tagName !== 'SELECT' && e.target.tagName !== 'INPUT') {
+        e.preventDefault();
+        const activePane = document.querySelector('.content-pane.active');
+        if (activePane) {
+            const targetId = activePane.id;
+            if (isSpeaking && currentSpeechTarget === targetId) {
+                pauseSpeech(targetId);
+            } else {
+                startSpeech(targetId);
+            }
+        }
+    } else if (e.code === 'Tab' && isSpeaking) {
+        e.preventDefault();
+        stopAllSpeech();
+    }
+});
+
+// Prevenir navegación al arrastrar
+document.addEventListener('dragover', (e) => {
+    e.preventDefault();
+});
+
+document.addEventListener('drop', (e) => {
+    e.preventDefault();
+});
+
+// Inicialización cuando el DOM está listo
+document.addEventListener('DOMContentLoaded', () => {
+    initAccordions();
+    initVisualDragDrop();
+    initFilterDragDrop();
+    initPrinciplesQuiz();
+    initFinalQuiz();
+    
+    // Event listeners para controles de voz
+    document.querySelectorAll('.play-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const targetId = btn.closest('.speech-controls').dataset.target;
+            startSpeech(targetId);
+        });
+    });
+    
+    document.querySelectorAll('.pause-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const targetId = btn.closest('.speech-controls').dataset.target;
+            pauseSpeech(targetId);
+        });
+    });
+    
+    document.querySelectorAll('.stop-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const targetId = btn.closest('.speech-controls').dataset.target;
+            stopSpeech(targetId);
+        });
+    });
+    
+    document.querySelectorAll('.speech-rate').forEach(input => {
+        input.addEventListener('input', () => {
+            const targetId = input.closest('.speech-controls').dataset.target;
+            updateSpeechRate(targetId);
+        });
+    });
+    
+    // Navegación por secciones - Sidebar
+    document.querySelectorAll('.sidebar-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const targetId = link.getAttribute('data-target');
+            navigateToSection(targetId);
+        });
+    });
+    
+    // Navegación por secciones - Mobile
+    const mobileNav = document.getElementById('mobile-nav');
+    if (mobileNav) {
+        mobileNav.addEventListener('change', (e) => {
+            navigateToSection(e.target.value);
+        });
+    }
+    
+    // Cerrar modal con Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeModal();
+        }
+    });
+    
+    // Cerrar modal haciendo clic fuera
+    document.getElementById('imageModal').addEventListener('click', (e) => {
+        if (e.target.id === 'imageModal') {
+            closeModal();
+        }
+    });
+});
+});
+</script>
+</body>
+</html>

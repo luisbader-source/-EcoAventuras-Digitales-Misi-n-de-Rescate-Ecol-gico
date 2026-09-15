@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OVA: Curso Power BI - Sesión 2 · CINTIA Unicórdoba</title>
+    <script src="https://cdn.tailwindcss.com?_ver=3.4.1"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+        .sidebar-link {
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+        .sidebar-link.active, .sidebar-link:hover {
+            background-color: #e6f4ea;
+            color: #166534;
+            border-left-color: #f2c94c;
+        }
+        .content-pane {
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        .content-pane.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .step-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .step-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .step-card.selected {
+            border-color: #f2c94c;
+            background-color: #fefce8;
+        }
+        .step-card.correct {
+            border-color: #22c55e;
+            background-color: #dcfce7;
+        }
+        .step-card.incorrect {
+            border-color: #ef4444;
+            background-color: #fef2f2;
+        }
+        .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #e5e7eb;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #f2c94c, #f59e0b);
+            transition: width 0.3s ease;
+        }
+        .drag-item {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            border-radius: 8px;
+            padding: 12px 16px;
+            cursor: grab;
+            margin: 8px;
+            display: inline-block;
+            transition: all 0.3s;
+        }
+        .drag-item:hover {
+            background: #fde68a;
+            transform: scale(1.05);
+        }
+        .drag-item.dragging {
+            opacity: 0.5;
+        }
+        .drop-zone {
+            background: #f9fafb;
+            border: 2px dashed #d1d5db;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 100px;
+            margin: 10px 0;
+            transition: all 0.3s;
+        }
+        .drop-zone.drag-over {
+            background: #fef3c7;
+            border-color: #f59e0b;
+        }
+        .drop-zone.correct {
+            background: #dcfce7;
+            border-color: #22c55e;
+        }
+        .drop-zone.incorrect {
+            background: #fef2f2;
+            border-color: #ef4444;
+        }
+        .dax-editor {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            min-height: 100px;
+            border: 2px solid #334155;
+            width: 100%;
+        }
+        .dax-editor:focus {
+            outline: none;
+            border-color: #f59e0b;
+        }
+        .image-container {
+            position: relative;
+            cursor: pointer;
+        }
+        .zoom-icon {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .image-container:hover .zoom-icon {
+            opacity: 1;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            animation: fadeIn 0.3s ease;
+        }
+        .modal-content {
+            position: relative;
+            margin: auto;
+            padding: 20px;
+            width: 90%;
+            max-width: 1000px;
+            max-height: 90vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .modal-content img {
+            max-width: 100%;
+            max-height: 90vh;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+        .close-modal {
+            position: absolute;
+            top: -20px;
+            right: -20px;
+            background-color: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50">
+
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white shadow-lg flex-shrink-0 hidden md:flex md:flex-col">
+            <div class="p-4">
+                <div style="width: 150px; height: 150px;" class="p-2 mx-auto flex items-center justify-center bg-white rounded-full shadow-lg border-2 border-yellow-500 transition-shadow duration-300 hover:shadow-yellow-400">
+                    <img src="img/logo.png" alt="Logo OVA" class="w-5/6 h-5/6 object-contain" loading="lazy">
+                </div>
+            </div>
+            <nav class="mt-6 flex-1">
+                <a href="#" class="sidebar-link active flex items-center py-3 px-6 font-medium text-slate-700" data-target="introduccion"><span class="mr-3 text-xl">🚀</span> Introducción</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="objetivos"><span class="mr-3 text-xl">🎯</span> Objetivos</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="contenido"><span class="mr-3 text-xl">📚</span> Contenido</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="actividades"><span class="mr-3 text-xl">✍️</span> Actividades</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="evaluacion"><span class="mr-3 text-xl">✔️</span> Evaluación</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="recursos"><span class="mr-3 text-xl">📖</span> Recursos</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="bibliografia"><span class="mr-3 text-xl">📚</span> Bibliografía</a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-4 sm:p-6 md:p-10 bg-gray-50">
+            <!-- Mobile Header -->
+            <div class="md:hidden mb-6 flex flex-col items-center">
+                <div style="width: 100px; height: 100px;" class="p-2 flex items-center justify-center bg-white rounded-full shadow-lg transition-shadow duration-300 hover:shadow-yellow-400 mb-2">
+                    <img src="img/logo.png" alt="Logo OVA" class="w-5/6 h-5/6 object-contain" loading="lazy">
+                </div>
+                 <select id="mobile-nav" class="w-full mt-2 p-2 border rounded-md bg-white shadow-sm">
+                    <option value="introduccion">🚀 Introducción</option>
+                    <option value="objetivos">🎯 Objetivos</option>
+                    <option value="contenido">📚 Contenido</option>
+                    <option value="actividades">✍️ Actividades Prácticas</option>
+                    <option value="evaluacion">✔️ Evaluación</option>
+                    <option value="recursos">📖 Recursos</option>
+                    <option value="bibliografia">📚 Bibliografía</option>
+                </select>
+            </div>
+
+          <!-- Introducción -->
+            <div id="introduccion" class="content-pane active">
+                <h2 class="text-2xl sm:text-3xl font-bold text-yellow-800 mb-4">Curso Power BI - Sesión 2 · CINTIA Unicórdoba 📊</h2>
+                <div class="mt-4 mb-6 p-4 bg-white border border-yellow-300 rounded-lg shadow-sm flex flex-col items-center">
+                    <div class="image-container w-full h-32 sm:h-48 md:h-64 xl:h-80 bg-gradient-to-br from-blue-100 to-indigo-200 rounded flex items-center justify-center overflow-hidden" onclick="openModal(this)">
+                        <img src="img/WhatsApp Image 2026-04-09 at 12.38.27 PM (1).jpeg" alt="Power BI Sesión 2" class="w-full h-full object-cover">
+                        <div class="zoom-icon">🔍</div>
+                    </div>
+                </div>
+                <p class="text-lg text-slate-700 leading-relaxed mb-4">
+                    Bienvenido a la <span class="font-bold text-yellow-700">Sesión 2</span> del curso de Power BI impartido por CINTIA Unicórdoba. En esta sesión profundizaremos en el modelado de datos y las técnicas avanzadas de análisis. 📈✨
+                </p>
+                <p class="text-lg text-slate-700 leading-relaxed mb-4">
+                    Continuaremos construyendo sobre los fundamentos de la Sesión 1, explorando el lenguaje DAX y creación de medidas calculadas para potenciar tus capacidades de análisis de datos.
+                </p>
+            <div class="speech-controls mb-4 p-3 bg-yellow-100 rounded-lg flex items-center flex-wrap gap-2" data-target="introduccion">
+    <button class="play-btn bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+        <span class="mr-1">▶️</span> Leer
+    </button>
+    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+        <span class="mr-1">⏸️</span> Pausar
+    </button>
+    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+        <span class="mr-1">⏹️</span> Detener
+    </button>
+    <div class="flex items-center ml-2">
+        <label for="speech-rate-introduccion" class="text-sm text-yellow-800 mr-2">Velocidad:</label>
+        <input type="range" class="speech-rate" id="speech-rate-introduccion" min="0.5" max="2" step="0.1" value="1" class="w-24">
+    </div>
+</div>
+                <div class="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800">
+                    <strong>💡 Atajos de teclado:</strong> Presiona <kbd class="bg-white px-2 py-1 rounded border">Espacio</kbd> para reproducir/pausar, <kbd class="bg-white px-2 py-1 rounded border">Tab</kbd> para detener
+                </div>
+            </div>
+
+            <!-- Objetivos -->
+            <div id="objetivos" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-yellow-800 mb-6">Objetivos de aprendizaje</h2>
+                <div class="speech-controls mb-4 p-3 bg-yellow-100 rounded-lg flex items-center flex-wrap gap-2" data-target="objetivos">
+                    <button class="play-btn bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-objetivos" class="text-sm text-yellow-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-objetivos" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                <ul class="space-y-4">
+                    <li class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                        <span class="text-yellow-700 mr-3 text-2xl">🧮</span>
+                        <span>Introducir el lenguaje DAX para crear medidas calculadas y columnas personalizadas.</span>
+                    </li>
+                    <li class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                        <span class="text-yellow-700 mr-3 text-2xl">📊</span>
+                        <span>Aplicar funciones DAX esenciales como CALCULATE, SUMX, y funciones de inteligencia de tiempo.</span>
+                    </li>
+                    <li class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                        <span class="text-yellow-700 mr-3 text-2xl">🎯</span>
+                        <span>Diseñar visualizaciones avanzadas y KPIs dinámicos para dashboards interactivos.</span>
+                    </li>
+                    <li class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                        <span class="text-yellow-700 mr-3 text-2xl">🔄</span>
+                        <span>Optimizar el rendimiento del modelo de datos y aplicar mejores prácticas.</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Contenido -->
+            <div id="contenido" class="content-pane">
+                <div class="speech-controls mb-4 p-3 bg-yellow-100 rounded-lg flex items-center flex-wrap gap-2" data-target="contenido">
+                    <button class="play-btn bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-contenido" class="text-sm text-yellow-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-contenido" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                
+                <div class="w-full max-w-8xl mx-auto">
+                    <!-- Introducción a DAX -->
+                    <div class="mb-4">
+                        <button type="button" class="w-full flex justify-between items-start p-4 bg-yellow-100 border border-yellow-300 rounded-t-lg focus:outline-none font-bold text-yellow-800 text-lg accordion-btn mb-2 text-left" data-target="#panel-dax">
+                            Introducción a DAX<span class="ml-2">➕</span>
+                        </button>
+                    </div>
+                    <div id="panel-dax" class="accordion-panel hidden bg-white border border-t-0 border-yellow-300 rounded-b-lg p-4 mb-6">
+                        <div class="text-slate-700 leading-relaxed space-y-6">
+                            <h4 class="font-bold text-yellow-800 mb-2">🧮 ¿Qué es DAX?</h4>
+                            <p class="mb-4">DAX (Data Analysis Expressions) es el lenguaje de fórmulas de Power BI que permite crear cálculos personalizados, medidas calculadas y columnas calculadas. Es similar a las fórmulas de Excel pero mucho más potente.</p>
+                            
+                            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-yellow-800 mb-2">📝 Componentes de DAX</h4>
+                                <ul class="list-disc pl-5 space-y-2">
+                                    <li><strong>Medidas:</strong> Cálculos dinámicos que se evalúan en tiempo de ejecución</li>
+                                    <li><strong>Columnas calculadas:</strong> Columnas nuevas que se calculan durante la carga de datos</li>
+                                    <li><strong>Tablas calculadas:</strong> Tablas completas derivadas de datos existentes</li>
+                                    <li><strong>Funciones:</strong> Más de 250 funciones para diferentes propósitos analíticos</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="bg-slate-900 text-white p-4 rounded-lg font-mono">
+                                <div class="text-green-400">-- Sintaxis básica de DAX</div>
+                                <div class="text-blue-300">NombreMedida =</div>
+                                <div class="text-yellow-300">    FUNCION(</div>
+                                <div class="text-orange-300">        Tabla[Columna],</div>
+                                <div class="text-orange-300">        Filtro</div>
+                                <div class="text-yellow-300">    )</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Funciones DAX Esenciales -->
+                    <div class="mb-4">
+                        <button type="button" class="w-full flex justify-between items-start p-4 bg-yellow-100 border border-yellow-300 rounded-t-lg focus:outline-none font-bold text-yellow-800 text-lg accordion-btn mb-2 text-left" data-target="#panel-funciones">
+                            Funciones DAX Esenciales<span class="ml-2">➕</span>
+                        </button>
+                    </div>
+                    <div id="panel-funciones" class="accordion-panel hidden bg-white border border-t-0 border-yellow-300 rounded-b-lg p-4 mb-6">
+                        <div class="text-slate-700 leading-relaxed space-y-6">
+                            <h4 class="font-bold text-yellow-800 mb-2">🔧 Funciones Fundamentales</h4>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="bg-white border-2 border-blue-200 rounded-lg p-4">
+                                    <h5 class="font-bold text-blue-700 mb-2">CALCULATE</h5>
+                                    <p class="text-sm text-slate-600 mb-2">La función más poderosa de DAX</p>
+                                    <div class="bg-slate-100 p-2 rounded font-mono text-xs">
+                                        CALCULATE(Expresión, Filtro1, Filtro2...)
+                                    </div>
+                                    <p class="text-xs text-slate-500 mt-2">Modifica el contexto de filtro de una expresión</p>
+                                </div>
+                                
+                                <div class="bg-white border-2 border-green-200 rounded-lg p-4">
+                                    <h5 class="font-bold text-green-700 mb-2">FILTER</h5>
+                                    <p class="text-sm text-slate-600 mb-2">Filtra tablas según condiciones</p>
+                                    <div class="bg-slate-100 p-2 rounded font-mono text-xs">
+                                        FILTER(Tabla, Condición)
+                                    </div>
+                                    <p class="text-xs text-slate-500 mt-2">Devuelve una tabla con filas que cumplen criterios</p>
+                                </div>
+                                
+                                <div class="bg-white border-2 border-purple-200 rounded-lg p-4">
+                                    <h5 class="font-bold text-purple-700 mb-2">SUMX / AVERAGEX</h5>
+                                    <p class="text-sm text-slate-600 mb-2">Funciones de iteración (X)</p>
+                                    <div class="bg-slate-100 p-2 rounded font-mono text-xs">
+                                        SUMX(Tabla, Expresión)
+                                    </div>
+                                    <p class="text-xs text-slate-500 mt-2">Evalúa expresión fila por fila</p>
+                                </div>
+                                
+                                <div class="bg-white border-2 border-orange-200 rounded-lg p-4">
+                                    <h5 class="font-bold text-orange-700 mb-2">RELATED</h5>
+                                    <p class="text-sm text-slate-600 mb-2">Accede a datos de tablas relacionadas</p>
+                                    <div class="bg-slate-100 p-2 rounded font-mono text-xs">
+                                        RELATED(Tabla[Columna])
+                                    </div>
+                                    <p class="text-xs text-slate-500 mt-2">Obtiene valores de tablas relacionadas</p>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-6 bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-blue-800 mb-2">📅 Inteligencia de Tiempo</h4>
+                                <ul class="list-disc pl-5 space-y-1 text-sm">
+                                    <li><strong>DATEADD:</strong> Suma/resta períodos de tiempo</li>
+                                    <li><strong>SAMEPERIODLASTYEAR:</strong> Mismo período del año anterior</li>
+                                    <li><strong>TOTALYTD:</strong> Acumulado año hasta la fecha</li>
+                                    <li><strong>DATESBETWEEN:</strong> Rango de fechas específico</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Medidas Calculadas -->
+                    <div class="mb-4">
+                        <button type="button" class="w-full flex justify-between items-start p-4 bg-yellow-100 border border-yellow-300 rounded-t-lg focus:outline-none font-bold text-yellow-800 text-lg accordion-btn mb-2 text-left" data-target="#panel-medidas">
+                            Medidas Calculadas y KPIs<span class="ml-2">➕</span>
+                        </button>
+                    </div>
+                    <div id="panel-medidas" class="accordion-panel hidden bg-white border border-t-0 border-yellow-300 rounded-b-lg p-4 mb-6">
+                        <div class="text-slate-700 leading-relaxed space-y-6">
+                            <h4 class="font-bold text-yellow-800 mb-2">📊 Creación de Medidas</h4>
+                            <p class="mb-4">Las <strong>medidas calculadas</strong> son fórmulas DAX que se evalúan dinámicamente según el contexto de filtros seleccionados por el usuario. Son fundamentales para crear KPIs y métricas de negocio.</p>
+                            
+                            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-yellow-800 mb-2">🎯 Ejemplos de Medidas Comunes</h4>
+                                <div class="space-y-3">
+                                    <div class="bg-slate-100 p-3 rounded font-mono text-sm">
+                                        <div class="text-green-400">-- Total de Ventas</div>
+                                        Total Ventas = SUM(Ventas[Importe])
+                                    </div>
+                                    <div class="bg-slate-100 p-3 rounded font-mono text-sm">
+                                        <div class="text-green-400">-- Ventas del Año Actual</div>
+                                        Ventas Año Actual = CALCULATE(
+                                            [Total Ventas], 
+                                            Calendario[Año] = YEAR(TODAY())
+                                        )
+                                    </div>
+                                    <div class="bg-slate-100 p-3 rounded font-mono text-sm">
+                                        <div class="text-green-400">-- Crecimiento YoY</div>
+                                        Crecimiento YoY = DIVIDE(
+                                            [Ventas Año Actual] - [Ventas Año Anterior],
+                                            [Ventas Año Anterior]
+                                        )
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-blue-800 mb-2">💡 KPIs y Formato Condicional</h4>
+                                <ul class="list-disc pl-5 space-y-1 text-sm">
+                                    <li>Usar medidas para crear indicadores clave de rendimiento</li>
+                                    <li>Aplicar formato condicional basado en umbrales</li>
+                                    <li>Combinar múltiples medidas en KPIs compuestos</li>
+                                    <li>Utilizar iconos y colores para visualización rápida</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actividades Prácticas -->
+            <div id="actividades" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-yellow-800 mb-6">Actividades prácticas</h2>
+                <div class="speech-controls mb-4 p-3 bg-yellow-100 rounded-lg flex items-center flex-wrap gap-2" data-target="actividades">
+                    <button class="play-btn bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-actividades" class="text-sm text-yellow-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-actividades" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                
+                <div class="space-y-8">
+                    <!-- Simulación 1: Crear Medidas DAX -->
+                    <div class="bg-white border-l-4 border-green-500 rounded-lg shadow-sm p-6">
+                        <h3 class="text-xl font-bold text-green-700 mb-2">🧮 Simulación 2: Crear Medidas DAX</h3>
+                        <p class="mb-4"><span class="font-semibold">Instrucciones:</span> Completa las fórmulas DAX seleccionando la función correcta.</p>
+                        
+                        <div class="space-y-4">
+                            <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                <p class="font-bold text-green-800 mb-2">Medida 1: Total de ventas con filtro de año</p>
+                                <div class="bg-slate-900 text-white p-3 rounded font-mono text-sm mb-2">
+                                    Ventas 2023 = <select class="dax-select bg-slate-700 text-white border border-slate-500 rounded px-2 py-1" id="dax-select-1" data-answer="CALCULATE">
+                                        <option value="">Selecciona función...</option>
+                                        <option value="SUM">SUM</option>
+                                        <option value="CALCULATE">CALCULATE</option>
+                                        <option value="FILTER">FILTER</option>
+                                        <option value="AVERAGE">AVERAGE</option>
+                                    </select>(SUM(Ventas[Importe]), Calendario[Año] = 2023)
+                                </div>
+                            </div>
+
+                            <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                <p class="font-bold text-green-800 mb-2">Medida 2: Promedio por categoría</p>
+                                <div class="bg-slate-900 text-white p-3 rounded font-mono text-sm mb-2">
+                                    Promedio Categoría = <select class="dax-select bg-slate-700 text-white border border-slate-500 rounded px-2 py-1" id="dax-select-2" data-answer="AVERAGEX">
+                                        <option value="">Selecciona función...</option>
+                                        <option value="SUM">SUM</option>
+                                        <option value="CALCULATE">CALCULATE</option>
+                                        <option value="AVERAGEX">AVERAGEX</option>
+                                        <option value="COUNT">COUNT</option>
+                                    </select>(VALUES(Productos[Categoría]), CALCULATE(SUM(Ventas[Importe])))
+                                </div>
+                            </div>
+
+                            <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                <p class="font-bold text-green-800 mb-2">Medida 3: Ventas de productos top</p>
+                                <div class="bg-slate-900 text-white p-3 rounded font-mono text-sm mb-2">
+                                    Ventas Top = <select class="dax-select bg-slate-700 text-white border border-slate-500 rounded px-2 py-1" id="dax-select-3" data-answer="CALCULATE">
+                                        <option value="">Selecciona función...</option>
+                                        <option value="SUM">SUM</option>
+                                        <option value="CALCULATE">CALCULATE</option>
+                                        <option value="FILTER">FILTER</option>
+                                        <option value="MAX">MAX</option>
+                                    </select>(SUM(Ventas[Importe]), FILTER(Productos, Productos[Categoria] = "Top"))
+                                </div>
+                            </div>
+
+                            <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                <p class="font-bold text-green-800 mb-2">Medida 4: Crecimiento interanual</p>
+                                <div class="bg-slate-900 text-white p-3 rounded font-mono text-sm mb-2">
+                                    Crecimiento YoY = <select class="dax-select bg-slate-700 text-white border border-slate-500 rounded px-2 py-1" id="dax-select-4" data-answer="DIVIDE">
+                                        <option value="">Selecciona función...</option>
+                                        <option value="DIVIDE">DIVIDE</option>
+                                        <option value="SUM">SUM</option>
+                                        <option value="CALCULATE">CALCULATE</option>
+                                        <option value="SUBTRACT">SUBTRACT</option>
+                                    </select>([Ventas 2023] - [Ventas 2022], [Ventas 2022])
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 flex gap-2">
+                            <button id="check-dax-btn" class="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 transition-colors">
+                                Verificar fórmulas
+                            </button>
+                            <button id="reset-dax-btn" class="bg-slate-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-slate-600 transition-colors">
+                                Reiniciar
+                            </button>
+                        </div>
+                        <div id="dax-result" class="mt-4 font-medium"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Evaluación -->
+            <div id="evaluacion" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-yellow-800 mb-6">Evaluación</h2>
+                <div class="speech-controls mb-4 p-3 bg-yellow-100 rounded-lg flex items-center flex-wrap gap-2" data-target="evaluacion">
+                    <button class="play-btn bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-evaluacion" class="text-sm text-yellow-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-evaluacion" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <p class="text-slate-600 mb-6">Comprueba lo que has aprendido sobre DAX y medidas calculadas. Selecciona la respuesta correcta para cada pregunta.</p>
+                    <div id="quiz-container"></div>
+                    <button id="submit-quiz-btn" class="mt-6 bg-yellow-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-yellow-700 transition-colors">Finalizar evaluación</button>
+                    <div id="quiz-result" class="mt-4 text-lg font-bold"></div>
+                </div>
+            </div>
+
+            <!-- Recursos -->
+            <div id="recursos" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-yellow-800 mb-6">Recursos para profundizar</h2>
+                <div class="speech-controls mb-4 p-3 bg-yellow-100 rounded-lg flex items-center flex-wrap gap-2" data-target="recursos">
+                    <button class="play-btn bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-recursos" class="text-sm text-yellow-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-recursos" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                <p class="text-slate-700 leading-relaxed mb-6">Para ampliar tu conocimiento sobre Power BI Sesión 2, te recomendamos explorar los siguientes recursos:</p>
+                <ul class="space-y-4">
+                    <li class="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow border-l-4 border-yellow-500 flex flex-col sm:flex-row sm:items-center justify-between">
+                        <div>
+                            <h3 class="font-bold text-yellow-700">1. DAX Guide - Referencia completa de DAX:</h3>
+                            <a href="https://dax.guide/" target="_blank" class="underline text-slate-700 hover:text-yellow-700">Ir al recurso</a>
+                        </div>
+                    </li>
+                    <li class="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow border-l-4 border-yellow-500 flex flex-col sm:flex-row sm:items-center justify-between">
+                        <div>
+                            <h3 class="font-bold text-yellow-700">2. CINTIA Unicórdoba - Recursos del curso:</h3>
+                            <a href="https://www.unicordoba.edu.co/cintia" target="_blank" class="underline text-slate-700 hover:text-yellow-700">Ir al recurso</a>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Bibliografía -->
+            <div id="bibliografia" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-yellow-800 mb-6">Bibliografía</h2>
+                <div class="speech-controls mb-4 p-3 bg-yellow-100 rounded-lg flex items-center flex-wrap gap-2" data-target="bibliografia">
+                    <button class="play-btn bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-orange-500 hover:bg-orange-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-bibliografia" class="text-sm text-yellow-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-bibliografia" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                <div class="space-y-6">
+                <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow border-l-4 border-yellow-500">
+                    <span class="block text-slate-700">
+                        Ferrari, A., & Russo, M. (2020). <i>The Definitive Guide to DAX</i>. Microsoft Press.
+                    </span>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow border-l-4 border-yellow-500">
+                    <span class="block text-slate-700">
+                        CINTIA Unicórdoba. (2026). <i>Material de Curso Power BI - Sesión 2</i>. Universidad de Córdoba.
+                    </span>
+                </div>
+            </div>
+            
+            <!-- Footer/Credits -->
+            <footer class="mt-12 pt-6 border-t-2 border-slate-200 text-center">
+                <p class="text-slate-600 font-medium">Creado por:</p>
+                <p class="text-yellow-800 font-bold text-lg">Centro de Innovación en TIC para el apoyo de la Docencia CINTIA</p>
+                <p class="text-slate-500 text-sm">Universidad de Córdoba - Curso Power BI - Sesión 2</p>
+            </footer>
+        </main>
+    </div>
+
+<!-- Modal para imágenes -->
+<div id="imageModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeModal()">&times;</span>
+        <img id="modalImage" src="" alt="Imagen ampliada">
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const sidebarLinks = document.querySelectorAll('.sidebar-link');
+    const contentPanes = document.querySelectorAll('.content-pane');
+    const mobileNav = document.getElementById('mobile-nav');
+
+    function switchPane(targetId) {
+        contentPanes.forEach(pane => {
+            pane.classList.remove('active');
+        });
+        const targetPane = document.getElementById(targetId);
+        if (targetPane) {
+            targetPane.classList.add('active');
+        }
+
+        sidebarLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.dataset.target === targetId) {
+                link.classList.add('active');
+            }
+        });
+        
+        if (mobileNav.value !== targetId) {
+            mobileNav.value = targetId;
+        }
+    }
+
+    sidebarLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const targetId = e.currentTarget.dataset.target;
+            switchPane(targetId);
+        });
+    });
+
+    mobileNav.addEventListener('change', (e) => {
+        switchPane(e.target.value);
+    });
+
+    // --- Acordeón ---
+    document.querySelectorAll('.accordion-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const panel = document.querySelector(this.getAttribute('data-target'));
+            const isOpen = panel.classList.contains('block');
+            document.querySelectorAll('.accordion-panel').forEach(p => p.classList.add('hidden'));
+            document.querySelectorAll('.accordion-panel').forEach(p => p.classList.remove('block'));
+            
+            if (!isOpen) {
+                panel.classList.remove('hidden');
+                panel.classList.add('block');
+                this.querySelector('span').textContent = '➖';
+                
+                setTimeout(() => {
+                    this.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+            } else {
+                this.querySelector('span').textContent = '➕';
+            }
+            
+            document.querySelectorAll('.accordion-btn').forEach(otherBtn => {
+                if (otherBtn !== this) {
+                    otherBtn.querySelector('span').textContent = '➕';
+                }
+            });
+        });
+    });
+
+    // --- Evaluación Quiz Sesión 2 ---
+    const evaluationData = [
+        { 
+            question: "¿Cuál es la función DAX más poderosa para modificar contextos de filtro?", 
+            options: ["SUM", "CALCULATE", "FILTER", "AVERAGE"], 
+            answer: "CALCULATE" 
+        },
+        { 
+            question: "¿Qué tipo de relación es más común entre una tabla de hechos y una tabla de dimensiones?", 
+            options: ["Uno a uno", "Uno a varios", "Varios a varios", "Sin relación"], 
+            answer: "Uno a varios" 
+        },
+        { 
+            question: "¿Cuál es el propósito principal de las funciones de iteración como SUMX?", 
+            options: ["Contar filas", "Evaluar expresiones fila por fila", "Filtrar datos", "Ordenar resultados"], 
+            answer: "Evaluar expresiones fila por fila" 
+        },
+        { 
+            question: "¿Qué función DAX se utiliza para acceder a datos de tablas relacionadas?", 
+            options: ["RELATED", "CALCULATE", "FILTER", "SUM"], 
+            answer: "RELATED" 
+        },
+        { 
+            question: "¿Cuál es la diferencia principal entre una medida y una columna calculada?", 
+            options: ["Las medidas usan menos memoria", "Las medidas se evalúan en tiempo de ejecución", "Las columnas son más rápidas", "No hay diferencia"], 
+            answer: "Las medidas se evalúan en tiempo de ejecución" 
+        }
+    ];
+
+    const evaluationContainer = document.getElementById('quiz-container');
+    if (evaluationContainer) {
+        evaluationData.forEach((item, index) => {
+            const questionDiv = document.createElement('div');
+            questionDiv.className = 'p-4 border rounded-lg mb-4';
+            
+            let optionsHtml = item.options.map(opt => `<option value="${opt}">${opt}</option>`).join('');
+
+            questionDiv.innerHTML = `
+                <p class="font-medium text-slate-700 mb-3">${index + 1}. ${item.question}</p>
+                <select class="evaluation-select w-full p-3 border rounded-md bg-white text-slate-700" data-answer="${item.answer}">
+                    <option value="">Selecciona la respuesta correcta...</option>
+                    ${optionsHtml}
+                </select>
+            `;
+            evaluationContainer.appendChild(questionDiv);
+        });
+    }
+
+    const submitQuizBtn = document.getElementById('submit-quiz-btn');
+    if (submitQuizBtn) {
+        submitQuizBtn.addEventListener('click', () => {
+            const selects = document.querySelectorAll('.evaluation-select');
+            let correctAnswers = 0;
+            
+            selects.forEach((select) => {
+                let feedbackDiv = select.parentNode.querySelector('.evaluation-feedback');
+                if (!feedbackDiv) {
+                    feedbackDiv = document.createElement('div');
+                    feedbackDiv.className = 'evaluation-feedback mt-2 text-sm';
+                    select.parentNode.appendChild(feedbackDiv);
+                }
+                
+                if (select.value === select.dataset.answer) {
+                    correctAnswers++;
+                    select.classList.add('border-green-500', 'bg-green-50');
+                    select.classList.remove('border-red-500', 'bg-red-50');
+                    feedbackDiv.innerHTML = `<span class="text-green-600 font-medium">✓ Correcto</span>`;
+                } else {
+                    select.classList.add('border-red-500', 'bg-red-50');
+                    select.classList.remove('border-green-500', 'bg-green-50');
+                    feedbackDiv.innerHTML = `<span class="text-red-600 font-medium">✗ Incorrecto. La respuesta correcta es: ${select.dataset.answer}</span>`;
+                }
+            });
+            
+            const resultDiv = document.getElementById('quiz-result');
+            resultDiv.textContent = `Puntuación: ${correctAnswers}/${evaluationData.length}`;
+            resultDiv.className = correctAnswers === evaluationData.length ? 'mt-4 text-lg font-bold text-green-700' : 'mt-4 text-lg font-bold text-red-700';
+        });
+    }
+
+    // --- Simulación DAX ---
+    const checkDaxBtn = document.getElementById('check-dax-btn');
+    const resetDaxBtn = document.getElementById('reset-dax-btn');
+    const daxResultDiv = document.getElementById('dax-result');
+    
+    if (checkDaxBtn) {
+        checkDaxBtn.addEventListener('click', function() {
+            const daxSelects = document.querySelectorAll('.dax-select');
+            let correctCount = 0;
+            
+            daxSelects.forEach(select => {
+                if (select.value === select.dataset.answer) {
+                    select.classList.add('border-green-500', 'bg-green-700');
+                    select.classList.remove('border-red-500', 'bg-red-700');
+                    correctCount++;
+                } else {
+                    select.classList.add('border-red-500', 'bg-red-700');
+                    select.classList.remove('border-green-500', 'bg-green-700');
+                }
+            });
+            
+            if (correctCount === 4) {
+                daxResultDiv.innerHTML = '<span class="text-green-700 text-xl">🎉 ¡Excelente! Has completado correctamente todas las fórmulas DAX.</span>';
+                daxResultDiv.className = 'mt-4 font-medium text-green-700';
+            } else {
+                daxResultDiv.innerHTML = `<span class="text-yellow-700 text-lg">⚠️ Tienes ${correctCount} de 4 fórmulas correctas. Revisa las funciones e intenta de nuevo.</span>`;
+                daxResultDiv.className = 'mt-4 font-medium text-yellow-700';
+            }
+        });
+    }
+    
+    if (resetDaxBtn) {
+        resetDaxBtn.addEventListener('click', function() {
+            const daxSelects = document.querySelectorAll('.dax-select');
+            daxSelects.forEach(select => {
+                select.value = '';
+                select.classList.remove('border-green-500', 'bg-green-700', 'border-red-500', 'bg-red-700');
+            });
+            daxResultDiv.innerHTML = '';
+        });
+    }
+
+    // --- Síntesis de voz ---
+    const synth = window.speechSynthesis;
+    let voices = [];
+    let activeReaders = {};
+    let paulinaVoice = null;
+    let currentActiveSection = null;
+    
+    function loadVoices() {
+        voices = synth.getVoices();
+        paulinaVoice = voices.find(voice => voice.name.includes('Paulina'));
+        
+        if (!paulinaVoice) {
+            paulinaVoice = voices.find(voice => voice.lang.startsWith('es'));
+            if (!paulinaVoice && voices.length > 0) {
+                paulinaVoice = voices[0];
+            }
+        }
+    }
+    
+    if (synth.onvoiceschanged !== undefined) {
+        synth.onvoiceschanged = loadVoices;
+    }
+    loadVoices();
+    
+    function getSectionText(sectionId) {
+        if (sectionId.startsWith('#')) {
+            sectionId = sectionId.substring(1);
+        }
+        
+        const section = document.getElementById(sectionId);
+        if (!section) return '';
+        
+        const textElements = section.querySelectorAll('p, li, .text-slate-700, h1, h2, h3, h4, h5, h6');
+        let text = '';
+        
+        if (textElements.length === 0) {
+            text = section.textContent.trim();
+        } else {
+            const allElements = [];
+            textElements.forEach(el => allElements.push({element: el, isHeading: /^H[1-6]$/.test(el.tagName)}));
+            
+            allElements.sort((a, b) => {
+                const position = a.element.compareDocumentPosition(b.element);
+                return position & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
+            });
+            
+            allElements.forEach(item => {
+                const content = item.element.textContent.trim();
+                if (item.isHeading) {
+                    text += content + '. . . ';
+                } else {
+                    text += content + ' ';
+                }
+            });
+        }
+        
+        return text.trim();
+    }
+    
+    function updateButtonStates(controlsElement, isPlaying) {
+        const playBtn = controlsElement.querySelector('.play-btn');
+        const pauseBtn = controlsElement.querySelector('.pause-btn');
+        const stopBtn = controlsElement.querySelector('.stop-btn');
+        
+        if (playBtn) playBtn.disabled = isPlaying;
+        if (pauseBtn) pauseBtn.disabled = !isPlaying;
+        if (stopBtn) stopBtn.disabled = !isPlaying;
+    }
+    
+    function playSection(sectionId, controlsElement) {
+        const reader = activeReaders[sectionId];
+        
+        if (reader && reader.isPaused) {
+            synth.resume();
+            reader.isPaused = false;
+            updateButtonStates(controlsElement, true);
+            return;
+        }
+        
+        stopAllSections();
+        
+        const textToRead = getSectionText(sectionId);
+        if (!textToRead) return;
+        
+        const rateControl = controlsElement.querySelector('.speech-rate');
+        const utterance = new SpeechSynthesisUtterance(textToRead);
+        utterance.lang = 'es-ES';
+        utterance.rate = parseFloat(rateControl.value);
+        
+        if (paulinaVoice) {
+            utterance.voice = paulinaVoice;
+        }
+        
+        utterance.onend = function() {
+            updateButtonStates(controlsElement, false);
+            delete activeReaders[sectionId];
+            currentActiveSection = null;
+        };
+        
+        utterance.onerror = function(event) {
+            updateButtonStates(controlsElement, false);
+            delete activeReaders[sectionId];
+            currentActiveSection = null;
+        };
+        
+        activeReaders[sectionId] = {
+            utterance: utterance,
+            isPaused: false,
+            textToRead: textToRead,
+            controls: controlsElement
+        };
+        
+        currentActiveSection = sectionId;
+        
+        synth.speak(utterance);
+        updateButtonStates(controlsElement, true);
+    }
+    
+    function pauseSection(sectionId) {
+        const reader = activeReaders[sectionId];
+        if (reader && !reader.isPaused && synth.speaking) {
+            synth.pause();
+            reader.isPaused = true;
+            updateButtonStates(reader.controls, true);
+            reader.controls.querySelector('.play-btn').disabled = false;
+        }
+    }
+    
+    function stopSection(sectionId) {
+        const reader = activeReaders[sectionId];
+        if (reader) {
+            synth.cancel();
+            updateButtonStates(reader.controls, false);
+            delete activeReaders[sectionId];
+            if (currentActiveSection === sectionId) {
+                currentActiveSection = null;
+            }
+        }
+    }
+    
+    function stopAllSections() {
+        synth.cancel();
+        Object.keys(activeReaders).forEach(sectionId => {
+            const reader = activeReaders[sectionId];
+            if (reader && reader.controls) {
+                updateButtonStates(reader.controls, false);
+            }
+        });
+        activeReaders = {};
+        currentActiveSection = null;
+    }
+    
+    document.addEventListener('keydown', function(event) {
+        if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA' || event.target.tagName === 'SELECT') {
+            return;
+        }
+        
+        if (event.code === 'Space') {
+            event.preventDefault();
+            
+            const visibleSection = document.querySelector('.content-pane.active');
+            if (!visibleSection) return;
+            
+            const sectionId = visibleSection.id;
+            const controls = visibleSection.querySelector('.speech-controls');
+            
+            if (!controls) return;
+            
+            const reader = activeReaders[sectionId];
+            
+            if (reader && reader.isPaused) {
+                playSection(sectionId, controls);
+            } else if (reader && synth.speaking) {
+                pauseSection(sectionId);
+            } else {
+                playSection(sectionId, controls);
+            }
+        }
+        
+        if (event.code === 'Tab' && !event.shiftKey) {
+            if (currentActiveSection) {
+                event.preventDefault();
+                stopSection(currentActiveSection);
+            }
+        }
+    });
+    
+    document.querySelectorAll('.speech-controls').forEach(controls => {
+        const sectionId = controls.getAttribute('data-target');
+        const playBtn = controls.querySelector('.play-btn');
+        const pauseBtn = controls.querySelector('.pause-btn');
+        const stopBtn = controls.querySelector('.stop-btn');
+        const rateControl = controls.querySelector('.speech-rate');
+        
+        if (!sectionId || !playBtn || !pauseBtn || !stopBtn || !rateControl) return;
+        
+        playBtn.addEventListener('click', () => playSection(sectionId, controls));
+        pauseBtn.addEventListener('click', () => pauseSection(sectionId));
+        stopBtn.addEventListener('click', () => stopSection(sectionId));
+        
+        rateControl.addEventListener('change', function() {
+            const reader = activeReaders[sectionId];
+            if (reader && synth.speaking) {
+                const wasPlaying = !reader.isPaused;
+                stopSection(sectionId);
+                if (wasPlaying) {
+                    setTimeout(() => playSection(sectionId, controls), 100);
+                }
+            }
+        });
+    });
+});
+
+// --- Funciones para el modal de imágenes ---
+function openModal(imageContainer) {
+    const modal = document.getElementById('imageModal');
+    const modalImg = document.getElementById('modalImage');
+    const img = imageContainer.querySelector('img');
+    
+    modal.style.display = 'block';
+    modalImg.src = img.src;
+    modalImg.alt = img.alt;
+}
+
+function closeModal() {
+    const modal = document.getElementById('imageModal');
+    modal.style.display = 'none';
+}
+
+// Cerrar modal al hacer clic fuera de la imagen
+window.onclick = function(event) {
+    const modal = document.getElementById('imageModal');
+    if (event.target == modal) {
+        closeModal();
+    }
+}
+</script>
+
+</body>
+</html>

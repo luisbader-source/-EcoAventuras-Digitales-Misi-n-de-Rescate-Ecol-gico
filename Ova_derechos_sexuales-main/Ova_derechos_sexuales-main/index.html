@@ -1,0 +1,2394 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OVA: Derechos Sexuales y Reproductivos</title>
+    <script src="https://cdn.tailwindcss.com?_ver=3.4.1"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Verdes y Blancos Institucionales -->
+    <!-- Application Structure Plan: Se diseña un Objeto Virtual de Aprendizaje (OVA) con una disposición de dos columnas. Un menú lateral fijo a la izquierda permite la navegación entre las secciones pedagógicas (Introducción, Objetivos, etc.). El área de contenido principal a la derecha se actualiza dinámicamente con JavaScript para mostrar la sección seleccionada. Esta estructura es ideal para un aprendizaje guiado y organizado, permitiendo al usuario explorar el contenido de forma secuencial o no lineal. -->
+    <!-- Visualization & Content Choices: 1. Navegación -> Menú lateral con estado activo (HTML/JS) y ahora con iconos para mejorar la usabilidad. Justificación: Estructura clásica y efectiva para un OVA. 2. Fundamentos Teóricos -> Contenido textual con tarjetas destacadas con iconos. Justificación: Facilita la lectura y resalta conceptos clave. 3. Actividades Prácticas -> Cuestionario interactivo. Justificación: Fomenta la participación activa. 4. Evaluación -> Quiz de opción múltiple con retroalimentación. Justificación: Permite la autoevaluación del aprendizaje. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+        .sidebar-link {
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+        .sidebar-link.active, .sidebar-link:hover {
+            background-color: #e6f4ea;
+            color: #166534; /* green-800 */
+            border-left-color: #22c55e; /* green-500 */
+        }
+        .content-pane {
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        .content-pane.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .quiz-option:hover {
+            background-color: #f0fdf4; /* green-50 */
+        }
+        .quiz-option.selected {
+            background-color: #dcfce7; /* green-100 */
+            border-color: #22c55e; /* green-500 */
+        }
+        .type-card {
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .type-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        
+        /* Estilos para el popup de imágenes */
+        .image-container {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .expand-btn {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background-color: rgba(34, 197, 94, 0.8); /* green-500 con transparencia */
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+            z-index: 10;
+        }
+        
+        /* En dispositivos móviles, mostrar siempre el botón */
+        @media (max-width: 768px) {
+            .expand-btn {
+                opacity: 0.9;
+                width: 44px;
+                height: 44px;
+                font-size: 22px;
+                background-color: rgba(34, 197, 94, 0.9);
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+                animation: pulse 2s infinite;
+            }
+        }
+        
+        .image-container:hover .expand-btn {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+        
+        .image-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .image-modal.active {
+            display: flex;
+            opacity: 1;
+        }
+        
+        .modal-content {
+            max-width: 90%;
+            max-height: 90%;
+            animation: zoomIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+        }
+        
+        .modal-content img {
+            max-width: 100%;
+            max-height: 90vh;
+            border: 4px solid white;
+            border-radius: 4px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+        }
+        
+        /* Optimizaciones para dispositivos móviles */
+        @media (max-width: 768px) {
+            .modal-content {
+                max-width: 90%;
+                animation: slideUpFade 0.3s ease-out;
+                margin-right: 15px; /* Dar más espacio para el botón de cierre */
+            }
+            
+            .modal-content img {
+                border-width: 2px;
+            }
+            
+            .close-modal {
+                top: 10px;
+                right: 10px;
+                width: 36px;
+                height: 36px;
+                position: absolute;
+                z-index: 1010; /* Asegurar que esté por encima de todo */
+            }
+        }
+        
+        /* Animación especial para móviles */
+        @keyframes slideUpFade {
+            from { opacity: 0; transform: translateY(50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .close-modal {
+            position: absolute;
+            top: -20px;
+            right: -20px;
+            background-color: #ef4444; /* red-500 */
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        
+        @keyframes zoomIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+    </style>
+</head>
+<body class="bg-slate-50">
+
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white shadow-lg flex-shrink-0 hidden md:flex md:flex-col">
+            <div class="p-4">
+                <div style="width: 150px; height: 150px;" class="p-2 mx-auto flex items-center justify-center bg-white rounded-full shadow-lg border-2 border-green-500 transition-shadow duration-300 hover:shadow-green-400">
+                    <img src="img/Imagen1.png" alt="Logo OVA" class="w-5/6 h-5/6 object-contain" loading="lazy">
+                </div>
+            </div>
+            <nav class="mt-6 flex-1">
+                <a href="#" class="sidebar-link active flex items-center py-3 px-6 font-medium text-slate-700" data-target="introduccion"><span class="mr-3 text-xl">🚀</span> Introducción</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="objetivos"><span class="mr-3 text-xl">🎯</span> Objetivos</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="contenido"><span class="mr-3 text-xl">📚</span> Contenido</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="actividades"><span class="mr-3 text-xl">✍️</span> Actividades</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="evaluacion"><span class="mr-3 text-xl">✔️</span> Evaluación</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="recursos"><span class="mr-3 text-xl">📖</span> Recursos</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="bibliografia"><span class="mr-3 text-xl">📚</span> Bibliografía</a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-4 sm:p-6 md:p-10 bg-gray-50">
+            <!-- Mobile Header -->
+            <div class="md:hidden mb-6 flex flex-col items-center">
+                <div style="width: 100px; height: 100px;" class="p-2 flex items-center justify-center bg-white rounded-full shadow-lg transition-shadow duration-300 hover:shadow-green-400 mb-2">
+                    <img src="img/logo.png" alt="Logo OVA" class="w-5/6 h-5/6 object-contain" loading="lazy">
+                </div>
+                 <select id="mobile-nav" class="w-full mt-2 p-2 border rounded-md bg-white shadow-sm">
+                    <option value="introduccion">🚀 Introducción</option>
+                    <option value="objetivos">🎯 Objetivos</option>
+                    <option value="contenido">📚 Contenido</option>
+                    <option value="actividades">✍️ Actividades Prácticas</option>
+                    <option value="evaluacion">✔️ Evaluación</option>
+                    <option value="recursos">📖 Recursos</option>
+                        <option value="bibliografia">📚 Bibliografía</option>
+                </select>
+            </div>
+            
+
+          <!-- Introducción -->
+            <div id="introduccion" class="content-pane active">
+                <h2 class="text-2xl sm:text-3xl font-bold text-green-800 mb-4">DERECHOS SEXUALES Y REPRODUCTIVOS</h2>
+                <div class="mt-4 mb-6 p-4 bg-white border border-green-300 rounded-lg shadow-sm flex flex-col items-center">
+                    <div class="w-full h-32 sm:h-48 md:h-64 xl:h-80 bg-white rounded flex items-center justify-center overflow-hidden image-container">
+                        <img src="img/Imagen1.png" alt="Gráfica función polinómica creciente" class="max-w-full max-h-full object-contain" loading="lazy"/>
+                        <button class="expand-btn" data-img="img/Imagen1.png">🔍</button>
+                    </div>
+                 
+                </div>
+
+                <p class="text-lg text-slate-700 leading-relaxed mb-4">
+                    La salud sexual es un <span class="font-bold text-green-700"> componente esencial del bienestar general </span> y del desarrollo social. Para alcanzarla, se requiere un enfoque positivo y respetuoso que garantice experiencias placenteras y seguras, libres de violencia o discriminación.
+                    Su logro depende de cuatro pilares: el acceso a información de calidad, el conocimiento de los riesgos, el acceso a servicios de salud especializados y un entorno promotor de estos derechos. Además de abarcar la identidad, la orientación y el placer, la salud sexual busca prevenir y atender consecuencias negativas como las ITS (incluyendo el VIH), embarazos no deseados, disfunciones, violencia sexual y prácticas nocivas.
+
+                    <li><span class="font-bold text-green-700">Derechos Reproductivos:</span> Permiten tomar decisiones libres sobre la procreación y acceder a servicios de salud que garanticen una maternidad segura y la prevención de enfermedades del aparato reproductor.</li> 
+                </p>
+            <div class="speech-controls mb-4 p-3 bg-green-100 rounded-lg flex items-center flex-wrap gap-2" data-target="introduccion">
+    <button class="play-btn bg-green-600 hover:bg-green-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+        <span class="mr-1">▶️</span> Leer
+    </button>
+    <button class="pause-btn bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+        <span class="mr-1">⏸️</span> Pausar
+    </button>
+    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+        <span class="mr-1">⏹️</span> Detener
+    </button>
+    <div class="flex items-center ml-2">
+        <label for="speech-rate-introduccion" class="text-sm text-green-800 mr-2">Velocidad:</label>
+        <input type="range" class="speech-rate" id="speech-rate-introduccion" min="0.5" max="2" step="0.1" value="1" class="w-24">
+    </div>
+</div>
+
+                <div class="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800">
+                    <strong>💡 Atajos de teclado:</strong> Presiona <kbd class="bg-white px-2 py-1 rounded border">Espacio</kbd> para reproducir/pausar, <kbd class="bg-white px-2 py-1 rounded border">Tab</kbd> para detener
+                </div>
+
+            </div>
+
+            <!-- Objetivos -->
+            <div id="objetivos" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-green-800 mb-6">Objetivos de aprendizaje</h2>
+                <div class="speech-controls mb-4 p-3 bg-green-100 rounded-lg flex items-center flex-wrap gap-2" data-target="objetivos">
+                    <button class="play-btn bg-green-600 hover:bg-green-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-objetivos" class="text-sm text-green-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-objetivos" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                <ul class="space-y-4">
+                    <li class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                        <span class="text-green-700 mr-3 text-2xl">🧠</span>
+                        <span>Comprender los Conceptos Fundamentales de SSR - Que los estudiantes adquieran claridad sobre sexo, género, identidad de género y orientación sexual, reconociendo su naturaleza multidimensional.</span>
+                    </li>
+                    <li class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                        <span class="text-green-700 mr-3 text-2xl">🔍</span>
+                        <span>Prevenir Infecciones de Transmisión Sexual (ITS) - Que los estudiantes adquieran conocimientos sobre prevención de ITS, embarazos no deseados y acceso a servicios de salud especializados.</span>
+                    </li>
+                    <li class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                        <span class="text-green-700 mr-3 text-2xl">📉</span>
+                        <span>Adoptar un Enfoque Diferencial e Inclusivo - Que los estudiantes desarrollen competencias para respetar la diversidad, considerando contextos culturales, étnicos y de género sin discriminación.</span>
+                    </li>
+                     <li class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                        <span class="text-green-700 mr-3 text-2xl">📝</span>
+                        <span>Conocer y Ejercer los Derechos Sexuales y Reproductivos - Que los estudiantes se apropien de sus derechos fundamentales en materia de sexualidad y reproducción, comprendiendo su carácter inalienable.</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Fundamentos Teóricos -->
+            <div id="contenido" class="content-pane">
+                <div class="speech-controls mb-4 p-3 bg-green-100 rounded-lg flex items-center flex-wrap gap-2" data-target="contenido">
+                    <button class="play-btn bg-green-600 hover:bg-green-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-contenido" class="text-sm text-green-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-contenido" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                <!-- Acordeón de temas -->
+                
+                <div class="w-full max-w-8xl mx-auto">
+                    <div class="mb-4">
+                        <button type="button" class="w-full flex justify-between items-center p-4 bg-green-100 border border-green-300 rounded-t-lg focus:outline-none font-bold text-green-800 text-lg accordion-btn mb-2" data-target="#panel-ecuaciones">
+                            Derechos Sexuales y Reproductivos<span class="ml-2">➕</span>
+                        </button>
+                    </div>
+                    <div id="panel-ecuaciones" class="accordion-panel hidden bg-white   border border-t-0 border-green-300 rounded-b-lg p-4 mb-6">
+                        <!-- Contenido tipos de planos-->
+                        <div class="space-y-8 text-slate-700 leading-relaxed">
+                            <div>
+                                <p class="mb-4"> 
+                                    <strong>Derecho a fortalecer la autonomía y la autoestima:</strong> Capacidad de decidir sobre el propio cuerpo y ejercicio de la sexualidad.                                                      
+                                </p>
+                            </div>
+                            <div>
+                                <div class="mt-4 mb-6 p-4 bg-white border border-green-300 rounded-lg shadow-sm flex flex-col items-center">
+                                    <div class="w-full h-32 sm:h-48 md:h-64 xl:h-80 bg-white rounded flex items-center justify-center overflow-hidden image-container">
+                                        <img src="img/autoestima.avif" alt="Solución gráfica ejemplo" class="max-w-full max-h-full object-contain expandable-image" style="object-fit:contain;" loading="lazy" />
+                                        <button class="expand-btn" data-img="img/autoestima.avif">🔍</button>
+                                    </div>
+                                </div>
+                                <h3 class="text-xl font-bold text-green-700 mb-2"></h3>
+                                <p class="mb-4">
+                                    
+                                </div>
+                                    <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-green-800 mb-2">•	Derecho a explorar y disfrutar de una vida sexual placentera:</h4>
+                                <div class="mt-4 mb-6 p-4 bg-white border border-green-300 rounded-lg shadow-sm flex flex-col items-center">
+                                    <div class="w-full h-32 sm:h-48 md:h-64 xl:h-80 bg-white rounded flex items-center justify-center overflow-hidden image-container">
+                                        <img src="img/sexual placentera.avif" alt="Solución gráfica ejemplo" class="max-w-full max-h-full object-contain expandable-image" style="object-fit:contain;" loading="lazy" />
+                                        <button class="expand-btn" data-img="img/sexual placentera.avif">🔍</button>
+                                    </div>
+                                </div>
+                               
+
+                                <p class="mb-2">La sexualidad no debe estar ligada exclusivamente a la reproducción.</p>
+                                
+                            </div>
+                            <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-green-800 mb-2">Derecho a elegir parejas sexuales:</h4>
+                                <p class="mb-2"> Libertad de elegir con quién compartir la vida íntima.</p>
+
+                                <div class="mt-4 mb-6 p-4 bg-white border border-green-300 rounded-lg shadow-sm flex flex-col items-center">
+                                    <div class="w-full h-32 sm:h-48 md:h-64 xl:h-80 bg-white rounded flex items-center justify-center overflow-hidden image-container">
+                                        <img src="img/elegirparejasexual.jpg" alt="Solución gráfica ejemplo" class="max-w-full max-h-full object-contain expandable-image" style="object-fit:contain;" loading="lazy" />
+                                        <button class="expand-btn" data-img="img/elegirparejasexual.jpg">🔍</button>
+                                    </div>
+                                </div>
+                            </div>
+                                 <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-green-800 mb-2">Derecho a vivir la sexualidad sin violencia:</h4>
+                                <p class="mb-2"> Garantía de relaciones consensuadas y libres de cualquier tipo de abuso.</p>
+                                <div class="mt-4 mb-6 p-4 bg-white border border-green-300      rounded-lg shadow-sm flex flex-col items-center">
+                                    <div class="w-full h-32 sm:h-48 md:h-64 xl:h-80 bg-white rounded flex items-center justify-center overflow-hidden image-container">
+                                        <img src="img/sin  violencia.jpg" alt="Solución gráfica ejemplo" class="max-w-full max-h-full object-contain expandable-image" style="object-fit:contain;" loading="lazy" />
+                                        <button class="expand-btn" data-img="img/sin  violencia.jpg">🔍</button>
+                                    
+                                    </div>
+                                </div>
+                            </div>
+
+                           
+                            <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-green-800 mb-2">Derecho a expresar la orientación sexual e identidad de género:</h4>
+                                <p class="mb-2">Reconocimiento de la diversidad (heterosexual, homosexual, bisexual, trans, etc.) sin discriminación.</p>
+
+                                <div class="mt-4 mb-6 p-4 bg-white border border-green-300 rounded-lg shadow-sm flex flex-col items-center">
+                                    <div class="w-full h-32 sm:h-48 md:h-64 xl:h-80 bg-white rounded flex items-center justify-center overflow-hidden image-container">
+                                        <img src="img/amigos-sonrientes-posando-juntos_926199-3457649.avif" alt="Solución gráfica ejemplo" class="max-w-full max-h-full object-contain expandable-image" style="object-fit:contain;" loading="lazy" />
+                                        <button class="expand-btn" data-img="img/amigos-sonrientes-posando-juntos_926199-3457649.avif">🔍</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                             <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-green-800 mb-2">Derecho a la protección y prevención: </h4>
+                                <p class="mb-2">Acceso a servicios para prevenir infecciones de transmisión sexual (ITS) como el VIH.</p>
+
+                                <div class="mt-4 mb-6 p-4 bg-white border border-green-300 rounded-lg shadow-sm flex flex-col items-center">
+                                    <div class="w-full h-32 sm:h-48 md:h-64 xl:h-80 bg-white rounded flex items-center justify-center overflow-hidden image-container">
+                                        <img src="img/derechoalaproteccionjpg.jpg" alt="Solución gráfica ejemplo" class="max-w-full max-h-full object-contain expandable-image" style="object-fit:contain;" loading="lazy" />
+                                        <button class="expand-btn" data-img="img/derechoalaproteccionjpg.jpg">🔍</button>
+                                    </div>
+                                </div>
+                            </div>
+
+
+
+
+                        </div>
+                        
+                    </div>
+
+                    
+                    <div class="mb-4">
+                        <button type="button" class="w-full flex justify-between items-start p-4 bg-green-100 border border-green-300 rounded-t-lg focus:outline-none font-bold text-green-800 text-lg accordion-btn mb-2 text-left" data-target="#panel-desigualdades">
+                            Derechos Reproductivos<span class="ml-2">➕</span>
+                        </button>
+                    </div>
+                    <div id="panel-desigualdades" class="accordion-panel hidden bg-white border border-t-0 border-green-300 rounded-b-lg p-4 mb-6">
+                        <div class="text-slate-700 leading-relaxed space-y-6">
+                            <div>
+                                <p class="mb-2">Los <strong>Derecho a decidir libremente si se desea tener hijos:</strong> Autonomía absoluta sobre la voluntad de procrear.</p>
+                               
+                                <div class="mt-4 mb-6 p-4 bg-white border border-green-300 rounded-lg shadow-sm flex flex-col items-center">
+                                    <div class="w-full h-32 sm:h-48 md:h-64 xl:h-80 bg-white rounded flex items-center justify-center overflow-hidden image-container">
+                                        <img src="img/derecho_tener_hijos.jpg" alt="Solución ejercicio 1" class="max-w-full max-h-full object-contain expandable-image" loading="lazy">
+                                        <button class="expand-btn" data-img="img/derecho_tener_hijos.jpg">🔍</button>
+                                    </div>
+                                </div>
+                            </div>
+                              <h4 class="font-bold text-green-800 mb-2">Derecho a decidir el número de hijos y el espaciamiento:</h4>
+                            <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                <p>Contar con la información y métodos para planificar el tamaño de la familia.</p>
+                                <div class="mt-4 mb-6 p-4 bg-white border border-green-300 rounded-lg shadow-sm flex flex-col items-center">
+                                    <div class="w-full h-32 sm:h-48 md:h-64 xl:h-80 bg-white rounded flex items-center justify-center overflow-hidden image-container">
+                                        <img src="img/cuantos hijos.jpg" alt="Solución ejercicio 1" class="max-w-full max-h-full object-contain expandable-image" loading="lazy">
+                                        <button class="expand-btn" data-img="img/cuantos hijos.jpg">🔍</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-green-700 mb-2">Derecho a una maternidad segura: </h3>
+                                <p>Acceso a servicios de salud de calidad durante la gestación, parto y postparto para prevenir complicaciones.</p> 
+                                <div class="mt-4 mb-6 p-4 bg-white border border-green-300 rounded-lg shadow-sm flex flex-col items-center">
+                                    <div class="w-full h-32 sm:h-48 md:h-64 xl:h-80 bg-white rounded flex items-center justify-center overflow-hidden image-container">
+                                        <img src="img/maternidad_segura.avif" alt="Solución ejercicio 1" class="max-w-full max-h-full object-contain expandable-image" loading="lazy">
+                                        <button class="expand-btn" data-img="img/maternidad_segura.avif">🔍</button>
+                                    </div>
+                                </div>
+                            </div>
+                             <h4 class="font-bold text-green-800 mb-2">Derecho al aborto seguro:</h4>
+                            <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                <p>En los marcos legales vigentes, como una acción que <strong>salva vidas</strong> y garantiza la salud de las mujeres</strong> </p>
+                                <div class="mt-4 mb-6 p-4 bg-white border border-green-300 rounded-lg shadow-sm flex flex-col items-center">
+                                    <div class="w-full h-32 sm:h-48 md:h-64 xl:h-80 bg-white rounded flex items-center justify-center overflow-hidden image-container">
+                                        <img src="img/aborto_seguro.avif" alt="Solución ejercicio 1" class="max-w-full max-h-full object-contain expandable-image" loading="lazy">
+                                        <button class="expand-btn" data-img="img/aborto_seguro.avif">🔍</button>
+                                    </div>
+                                </div>
+                            </div>
+
+
+                        </div>
+                    </div>
+
+                    <!-- Video de YouTube -->
+                    <div class="mt-8 mb-6 p-6 bg-white border border-green-300 rounded-lg shadow-sm">
+                        <h3 class="text-xl font-bold text-green-800 mb-4 text-center">Video Explicativo</h3>
+                        <div class="relative w-full max-w-4xl mx-auto" style="padding-bottom: 56.25%;">
+                            <iframe 
+                                class="absolute top-0 left-0 w-full h-full rounded-lg shadow-md"
+                                src="https://www.youtube.com/embed/FDcSZBI_fTQ" 
+                                title="Video explicativo"
+                                frameborder="0" 
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                allowfullscreen>
+                            </iframe>
+                        </div>
+                        <p class="text-sm text-slate-600 mt-4 text-center">
+                            📹 Haz clic en el video para reproducirlo en pantalla completa
+                        </p>
+                    </div>
+
+                    <!-- Termómetro de las Relaciones -->
+                    <div class="mt-8 mb-6 p-6 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg shadow-sm">
+                        <h3 class="text-2xl font-bold text-purple-800 mb-6 text-center">🌡️ Termómetro de las Relaciones</h3>
+                        
+                        <div class="bg-white p-6 rounded-lg border border-purple-100">
+                            <div class="mb-4">
+                                <h4 class="text-lg font-semibold text-purple-700 mb-3">¿Qué es el Termómetro de las Relaciones?</h4>
+                                <p class="text-gray-700 leading-relaxed">
+                                    El Termómetro de las Relaciones es una herramienta visual que nos ayuda a medir y comprender la calidad 
+                                    de nuestras relaciones interpersonales. A través de diferentes niveles y categorías, podemos identificar 
+                                    áreas de mejora y fortalecer nuestros vínculos con los demás.
+                                </p>
+                            </div>
+
+                            <div class="mb-4">
+                                <h4 class="text-lg font-semibold text-purple-700 mb-3">Niveles del Termómetro</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div class="bg-red-50 p-4 rounded-lg border border-red-200">
+                                        <h5 class="font-medium text-red-700 mb-2">🔴 Zona Crítica (0-30°)</h5>
+                                        <p class="text-sm text-gray-600 mb-2">Relaciones que necesitan atención inmediata</p>
+                                        <p class="text-sm font-medium text-red-600">ABUSIVA</p>
+                                        <p class="text-xs text-gray-500">basada en el poder, el dominio y el control</p>
+                                    </div>
+                                    <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                                        <h5 class="font-medium text-yellow-700 mb-2">🟡 Zona Precaución (31-60°)</h5>
+                                        <p class="text-sm text-gray-600 mb-2">Relaciones que requieren cuidado y mejora</p>
+                                        <p class="text-sm font-medium text-yellow-600">NO SALUDABLE</p>
+                                        <p class="text-xs text-gray-500">basada en intentos de controlar a la otra persona</p>
+                                    </div>
+                                    <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+                                        <h5 class="font-medium text-green-700 mb-2">🟢 Zona Saludable (61-80°)</h5>
+                                        <p class="text-sm text-gray-600 mb-2">Relaciones positivas y equilibradas</p>
+                                        <p class="text-sm font-medium text-green-600">SALUDABLE</p>
+                                        <p class="text-xs text-gray-500">basada en la igualdad y el respeto</p>
+                                    </div>
+                                    <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                                        <h5 class="font-medium text-blue-700 mb-2">🔵 Zona Óptima (81-100°)</h5>
+                                        <p class="text-sm text-gray-600">Relaciones excelentes y enriquecedoras</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="text-center mt-6">
+                                <button id="btnEvaluar" class="bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-6 rounded-lg transition-colors" onclick="document.getElementById('modalEvaluacion').style.display='flex'; document.body.style.overflow='hidden'">
+                                    📊 Evaluar mi Relación
+                                </button>
+                            </div>
+
+                            <!-- Modal de Evaluación -->
+                            <div id="modalEvaluacion" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" style="display: none;">
+                                <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                                    <div class="p-6">
+                                        <div class="flex justify-between items-center mb-6">
+                                            <h3 class="text-2xl font-bold text-purple-800">🌡️ Evaluación de Relación</h3>
+                                            <button onclick="document.getElementById('modalEvaluacion').style.display='none'; document.body.style.overflow='auto';" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+                                        </div>
+
+                                        <!-- Preguntas de Evaluación -->
+                                        <div id="preguntasEvaluacion" class="space-y-6">
+                                            <div class="pregunta-item">
+                                                <p class="font-medium text-gray-800 mb-3">1. ¿Cómo se comunican cuando hay desacuerdos?</p>
+                                                <div class="space-y-2">
+                                                    <label class="flex items-center">
+                                                        <input type="radio" name="pregunta1" value="4" class="mr-2">
+                                                        <span>Nos escuchamos mutuamente y encontramos soluciones juntos</span>
+                                                    </label>
+                                                    <label class="flex items-center">
+                                                        <input type="radio" name="pregunta1" value="3" class="mr-2">
+                                                        <span>Hablamos calmadamente aunque a veces cuesta llegar a acuerdo</span>
+                                                    </label>
+                                                    <label class="flex items-center">
+                                                        <input type="radio" name="pregunta1" value="2" class="mr-2">
+                                                        <span>Uno suele imponer su opinión sobre el otro</span>
+                                                    </label>
+                                                    <label class="flex items-center">
+                                                        <input type="radio" name="pregunta1" value="1" class="mr-2">
+                                                        <span>Hay gritos, insultos o se evita el conflicto</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+
+                                            <div class="pregunta-item">
+                                                <p class="font-medium text-gray-800 mb-3">2. ¿Cómo se toman las decisiones importantes?</p>
+                                                <div class="space-y-2">
+                                                    <label class="flex items-center">
+                                                        <input type="radio" name="pregunta2" value="4" class="mr-2">
+                                                        <span>Decidimos juntos en igualdad de condiciones</span>
+                                                    </label>
+                                                    <label class="flex items-center">
+                                                        <input type="radio" name="pregunta2" value="3" class="mr-2">
+                                                        <span>Consultamos pero uno tiene más peso en la decisión</span>
+                                                    </label>
+                                                    <label class="flex items-center">
+                                                        <input type="radio" name="pregunta2" value="2" class="mr-2">
+                                                        <span>Uno decide y consulta al otro por cortesía</span>
+                                                    </label>
+                                                    <label class="flex items-center">
+                                                        <input type="radio" name="pregunta2" value="1" class="mr-2">
+                                                        <span>Uno impone sus decisiones sin consultar</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+
+                                            <div class="pregunta-item">
+                                                <p class="font-medium text-gray-800 mb-3">3. ¿Cómo se expresan el afecto y el apoyo?</p>
+                                                <div class="space-y-2">
+                                                    <label class="flex items-center">
+                                                        <input type="radio" name="pregunta3" value="4" class="mr-2">
+                                                        <span>Nos expresamos afecto libremente y nos apoyamos incondicionalmente</span>
+                                                    </label>
+                                                    <label class="flex items-center">
+                                                        <input type="radio" name="pregunta3" value="3" class="mr-2">
+                                                        <span>Nos queremos pero a veces cuesta expresarlo</span>
+                                                    </label>
+                                                    <label class="flex items-center">
+                                                        <input type="radio" name="pregunta3" value="2" class="mr-2">
+                                                        <span>El afecto es condicional o se usa como control</span>
+                                                    </label>
+                                                    <label class="flex items-center">
+                                                        <input type="radio" name="pregunta3" value="1" class="mr-2">
+                                                        <span>Raramente hay expresión de afecto o apoyo</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+
+                                            <div class="pregunta-item">
+                                                <p class="font-medium text-gray-800 mb-3">4. ¿Cómo manejan los espacios personales?</p>
+                                                <div class="space-y-2">
+                                                    <label class="flex items-center">
+                                                        <input type="radio" name="pregunta4" value="4" class="mr-2">
+                                                        <span>Respetamos mutuamente nuestro tiempo y espacios individuales</span>
+                                                    </label>
+                                                    <label class="flex items-center">
+                                                        <input type="radio" name="pregunta4" value="3" class="mr-2">
+                                                        <span>A veces hay celos o control pero lo conversamos</span>
+                                                    </label>
+                                                    <label class="flex items-center">
+                                                        <input type="radio" name="pregunta4" value="2" class="mr-2">
+                                                        <span>Uno revisa constantemente al otro o controla sus actividades</span>
+                                                    </label>
+                                                    <label class="flex items-center">
+                                                        <input type="radio" name="pregunta4" value="1" class="mr-2">
+                                                        <span>No hay privacidad ni respeto por espacios personales</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+
+                                            <div class="pregunta-item">
+                                                <p class="font-medium text-gray-800 mb-3">5. ¿Cómo se sienten en la relación?</p>
+                                                <div class="space-y-2">
+                                                    <label class="flex items-center">
+                                                        <input type="radio" name="pregunta5" value="4" class="mr-2">
+                                                        <span>Ambos nos sentimos seguros, felices y en paz</span>
+                                                    </label>
+                                                    <label class="flex items-center">
+                                                        <input type="radio" name="pregunta5" value="3" class="mr-2">
+                                                        <span>Generalmente bien aunque a veces hay tensión</span>
+                                                    </label>
+                                                    <label class="flex items-center">
+                                                        <input type="radio" name="pregunta5" value="2" class="mr-2">
+                                                        <span>A menudo hay ansiedad, miedo o incomodidad</span>
+                                                    </label>
+                                                    <label class="flex items-center">
+                                                        <input type="radio" name="pregunta5" value="1" class="mr-2">
+                                                        <span>Nos sentimos atrapados, infelices o asustados</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Botones de acción -->
+                                        <div class="flex justify-between mt-8">
+                                            <button onclick="cerrarEvaluacion()" class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                                                Cancelar
+                                            </button>
+                                            <button onclick="
+var respuestas = 0;
+var total = 0;
+for(var i = 1; i <= 5; i++) {
+    var seleccionado = document.querySelector('input[name=&quot;pregunta' + i + '&quot;]:checked');
+    if(seleccionado) {
+        total += parseInt(seleccionado.value);
+        respuestas++;
+    }
+}
+if(respuestas < 5) {
+    alert('Por favor responde todas las preguntas');
+    return;
+}
+var puntaje = (total / 20) * 100;
+var resultado = '';
+if(puntaje <= 30) {
+    resultado = '&lt;div style=&quot;background:#fca5a5;padding:20px;border-radius:10px&quot;&gt;&lt;h3 style=&quot;color:#dc2626&quot;&gt;🔴 ZONA CRÍTICA (0-30°)&lt;/h3&gt;&lt;p&gt;&lt;strong&gt;ABUSIVA&lt;/strong&gt; - basada en el poder, el dominio y el control&lt;/p&gt;&lt;p style=&quot;margin-top:10px&quot;&gt;&lt;strong&gt;Acciones recomendadas:&lt;/strong&gt;&lt;/p&gt;&lt;ul style=&quot;text-align:left&quot;&gt;&lt;li&gt;Busca ayuda profesional inmediatamente&lt;/li&gt;&lt;li&gt;Contacta líneas de ayuda contra la violencia doméstica&lt;/li&gt;&lt;li&gt;Habla con alguien de confianza&lt;/li&gt;&lt;/ul&gt;&lt;/div&gt;';
+} else if(puntaje <= 60) {
+    resultado = '&lt;div style=&quot;background:#fef3c7;padding:20px;border-radius:10px&quot;&gt;&lt;h3 style=&quot;color:#d97706&quot;&gt;🟡 ZONA DE PRECAUCIÓN (31-60°)&lt;/h3&gt;&lt;p&gt;&lt;strong&gt;NO SALUDABLE&lt;/strong&gt; - basada en intentos de controlar&lt;/p&gt;&lt;p style=&quot;margin-top:10px&quot;&gt;&lt;strong&gt;Acciones recomendadas:&lt;/strong&gt;&lt;/p&gt;&lt;ul style=&quot;text-align:left&quot;&gt;&lt;li&gt;Considera terapia de pareja&lt;/li&gt;&lt;li&gt;Trabaja en comunicación&lt;/li&gt;&lt;li&gt;Establece límites claros&lt;/li&gt;&lt;/ul&gt;&lt;/div&gt;';
+} else if(puntaje <= 80) {
+    resultado = '&lt;div style=&quot;background:#d1fae5;padding:20px;border-radius:10px&quot;&gt;&lt;h3 style=&quot;color:#059669&quot;&gt;🟢 ZONA SALUDABLE (61-80°)&lt;/h3&gt;&lt;p&gt;&lt;strong&gt;SALUDABLE&lt;/strong&gt; - basada en la igualdad y el respeto&lt;/p&gt;&lt;p style=&quot;margin-top:10px&quot;&gt;&lt;strong&gt;Acciones recomendadas:&lt;/strong&gt;&lt;/p&gt;&lt;ul style=&quot;text-align:left&quot;&gt;&lt;li&gt;Continúa trabajando en comunicación&lt;/li&gt;&lt;li&gt;Mantén el respeto mutuo&lt;/li&gt;&lt;li&gt;Sigue fortaleciendo la confianza&lt;/li&gt;&lt;/ul&gt;&lt;/div&gt;';
+} else {
+    resultado = '&lt;div style=&quot;background:#dbeafe;padding:20px;border-radius:10px&quot;&gt;&lt;h3 style=&quot;color:#2563eb&quot;&gt;🔵 ZONA ÓPTIMA (81-100°)&lt;/h3&gt;&lt;p&gt;&lt;strong&gt;EXCELENTE&lt;/strong&gt; - basada en amor, confianza y apoyo&lt;/p&gt;&lt;p style=&quot;margin-top:10px&quot;&gt;&lt;strong&gt;Acciones recomendadas:&lt;/strong&gt;&lt;/p&gt;&lt;ul style=&quot;text-align:left&quot;&gt;&lt;li&gt;Sigan siendo modelo para otros&lt;/li&gt;&lt;li&gt;Compartan experiencias positivas&lt;/li&gt;&lt;li&gt;Disfruten plenamente su relación&lt;/li&gt;&lt;/ul&gt;&lt;/div&gt;';
+}
+document.getElementById('preguntasEvaluacion').style.display = 'none';
+document.getElementById('resultadoEvaluacion').innerHTML = '&lt;div class=&quot;text-center&quot;&gt;&lt;h2 style=&quot;font-size:48px;margin:20px 0;color:#333&quot;&gt;' + Math.round(puntaje) + '°&lt;/h2&gt;' + resultado + '&lt;/div&gt;';
+document.getElementById('resultadoEvaluacion').style.display = 'block';
+" class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+                                                Ver Resultado
+                                            </button>
+                                        </div>
+
+                                        <!-- Resultado -->
+                                        <div id="resultadoEvaluacion" class="hidden mt-6 p-6 rounded-lg">
+                                            <div class="text-center">
+                                                <div id="termometroResultado" class="mb-4"></div>
+                                                <h4 id="tituloResultado" class="text-2xl font-bold mb-3"></h4>
+                                                <p id="descripcionResultado" class="text-gray-700 mb-4"></p>
+                                                <div id="recomendacionResultado" class="bg-blue-50 p-4 rounded-lg text-left"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    
+                </div>
+                
+            </div>
+
+            <!-- Actividades Prácticas -->
+            <div id="actividades" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-green-800 mb-6">Actividades prácticas</h2>
+                <div class="speech-controls mb-4 p-3 bg-green-100 rounded-lg flex items-center flex-wrap gap-2" data-target="actividades">
+                    <button class="play-btn bg-green-600 hover:bg-green-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+
+
+                        <label for="speech-rate-actividades" class="text-sm text-green-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-actividades" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                <div class="space-y-8">
+                    <!-- Sopa de Letras -->
+                    <div class="bg-white border-l-4 border-green-500 rounded-lg shadow-sm p-6">
+                        <h3 class="text-xl font-bold text-green-700 mb-4">🔍 Sopa de Letras: Derechos Sexuales y Reproductivos</h3>
+                        <p class="mb-4"><span class="font-semibold">Instrucciones:</span> Encuentra las siguientes palabras relacionadas con derechos sexuales y reproductivos:</p>
+                        
+                        <div class="mb-4 p-3 bg-green-50 border border-green-200 rounded">
+                            <p class="font-semibold text-green-800 mb-2">Palabras a buscar:</p>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="bg-white px-3 py-1 rounded border border-green-300 text-sm">MATERNIDAD</span>
+                                <span class="bg-white px-3 py-1 rounded border border-green-300 text-sm">AUTONOMÍA</span>
+                                <span class="bg-white px-3 py-1 rounded border border-green-300 text-sm">SALUD</span>
+                                <span class="bg-white px-3 py-1 rounded border border-green-300 text-sm">DIGNIDAD</span>
+                                <span class="bg-white px-3 py-1 rounded border border-green-300 text-sm">IGUALDAD</span>
+                                <span class="bg-white px-3 py-1 rounded border border-green-300 text-sm">PREVENCIÓN</span>
+                                <span class="bg-white px-3 py-1 rounded border border-green-300 text-sm">DERECHOS</span>
+                                <span class="bg-white px-3 py-1 rounded border border-green-300 text-sm">AMOR</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <div class="grid grid-cols-15 gap-1 text-center font-mono text-sm max-w-4xl mx-auto" style="display: grid; grid-template-columns: repeat(15, minmax(0, 1fr));">
+                                <!-- Fila 0 -->
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="0" data-col="0">M</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="0" data-col="1">A</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="0" data-col="2">T</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="0" data-col="3">E</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="0" data-col="4">R</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="0" data-col="5">N</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="0" data-col="6">I</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="0" data-col="7">D</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="0" data-col="8">A</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="0" data-col="9">D</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="0" data-col="10">X</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="0" data-col="11">Q</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="0" data-col="12">L</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="0" data-col="13">P</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="0" data-col="14">Z</div>
+                                
+                                <!-- Fila 1 -->
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="1" data-col="0">S</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="1" data-col="1">A</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="1" data-col="2">L</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="1" data-col="3">U</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="1" data-col="4">D</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="1" data-col="5">G</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="1" data-col="6">O</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="1" data-col="7">N</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="1" data-col="8">A</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="1" data-col="9">L</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="1" data-col="10">I</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="1" data-col="11">D</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="1" data-col="12">R</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="1" data-col="13">E</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="1" data-col="14">S</div>
+                                
+                                <!-- Fila 2 -->
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="2" data-col="0">A</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="2" data-col="1">U</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="2" data-col="2">T</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="2" data-col="3">O</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="2" data-col="4">N</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="2" data-col="5">O</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="2" data-col="6">M</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="2" data-col="7">Í</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="2" data-col="8">A</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="2" data-col="9">S</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="2" data-col="10">T</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="2" data-col="11">E</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="2" data-col="12">V</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="2" data-col="13">N</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="2" data-col="14">C</div>
+                                
+                                <!-- Fila 3 -->
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="3" data-col="0">A</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="3" data-col="1">M</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="3" data-col="2">O</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="3" data-col="3">R</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="3" data-col="4">X</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="3" data-col="5">L</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="3" data-col="6">C</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="3" data-col="7">O</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="3" data-col="8">N</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="3" data-col="9">S</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="3" data-col="10">E</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="3" data-col="11">N</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="3" data-col="12">T</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="3" data-col="13">I</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="3" data-col="14">M</div>
+                                
+                                <!-- Fila 4 -->
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="4" data-col="0">D</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="4" data-col="1">I</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="4" data-col="2">G</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="4" data-col="3">N</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="4" data-col="4">I</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="4" data-col="5">D</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="4" data-col="6">A</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="4" data-col="7">D</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="4" data-col="8">G</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="4" data-col="9">I</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="4" data-col="10">O</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="4" data-col="11">N</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="4" data-col="12">C</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="4" data-col="13">A</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="4" data-col="14">S</div>
+                                
+                                <!-- Fila 5 -->
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="5" data-col="0">I</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="5" data-col="1">G</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="5" data-col="2">U</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="5" data-col="3">A</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="5" data-col="4">L</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="5" data-col="5">D</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="5" data-col="6">A</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="5" data-col="7">D</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="5" data-col="8">X</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="5" data-col="9">C</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="5" data-col="10">V</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="5" data-col="11">B</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="5" data-col="12">S</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="5" data-col="13">A</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="5" data-col="14">M</div>
+                                
+                                <!-- Fila 6 -->
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="6" data-col="0">D</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="6" data-col="1">E</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="6" data-col="2">R</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="6" data-col="3">E</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="6" data-col="4">C</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="6" data-col="5">H</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="6" data-col="6">O</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="6" data-col="7">S</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="6" data-col="8">L</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="6" data-col="9">P</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="6" data-col="10">R</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="6" data-col="11">E</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="6" data-col="12">L</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="6" data-col="13">U</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="6" data-col="14">N</div>
+                                
+                                <!-- Fila 7 -->
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="7" data-col="0">A</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="7" data-col="1">D</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="7" data-col="2">V</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="7" data-col="3">E</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="7" data-col="4">N</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="7" data-col="5">C</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="7" data-col="6">I</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="7" data-col="7">Ó</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="7" data-col="8">N</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="7" data-col="9">M</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="7" data-col="10">I</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="7" data-col="11">E</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="7" data-col="12">D</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="7" data-col="13">A</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="7" data-col="14">G</div>
+                                
+                                <!-- Fila 8 -->
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="8" data-col="0">D</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="8" data-col="1">R</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="8" data-col="2">E</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="8" data-col="3">C</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="8" data-col="4">H</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="8" data-col="5">O</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="8" data-col="6">S</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="8" data-col="7">L</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="8" data-col="8">P</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="8" data-col="9">A</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="8" data-col="10">Z</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="8" data-col="11">O</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="8" data-col="12">S</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="8" data-col="13">L</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="8" data-col="14">U</div>
+                                
+                                <!-- Fila 9 -->
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="9" data-col="0">P</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="9" data-col="1">R</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="9" data-col="2">E</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="9" data-col="3">V</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="9" data-col="4">E</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="9" data-col="5">N</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="9" data-col="6">C</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="9" data-col="7">I</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="9" data-col="8">Ó</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="9" data-col="9">N</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="9" data-col="10">D</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="9" data-col="11">I</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="9" data-col="12">G</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="9" data-col="13">A</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="9" data-col="14">S</div>
+                                
+                                <!-- Fila 10 -->
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="10" data-col="0">I</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="10" data-col="1">G</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="10" data-col="2">U</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="10" data-col="3">A</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="10" data-col="4">L</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="10" data-col="5">D</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="10" data-col="6">A</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="10" data-col="7">D</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="10" data-col="8">Q</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="10" data-col="9">U</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="10" data-col="10">I</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="10" data-col="11">E</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="10" data-col="12">S</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="10" data-col="13">T</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="10" data-col="14">O</div>
+                                
+                                <!-- Fila 11 -->
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="11" data-col="0">S</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="11" data-col="1">A</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="11" data-col="2">L</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="11" data-col="3">U</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="11" data-col="4">D</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="11" data-col="5">D</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="11" data-col="6">E</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="11" data-col="7">R</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="11" data-col="8">E</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="11" data-col="9">S</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="11" data-col="10">P</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="11" data-col="11">R</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="11" data-col="12">E</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="11" data-col="13">V</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="11" data-col="14">I</div>
+                                
+                                <!-- Fila 12 -->
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="12" data-col="0">A</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="12" data-col="1">N</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="12" data-col="2">T</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="12" data-col="3">E</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="12" data-col="4">S</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="12" data-col="5">D</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="12" data-col="6">E</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="12" data-col="7">C</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="12" data-col="8">O</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="12" data-col="9">N</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="12" data-col="10">S</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="12" data-col="11">E</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="12" data-col="12">G</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="12" data-col="13">U</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="12" data-col="14">R</div>
+                                
+                                <!-- Fila 13 -->
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="13" data-col="0">I</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="13" data-col="1">O</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="13" data-col="2">N</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="13" data-col="3">T</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="13" data-col="4">E</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="13" data-col="5">G</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="13" data-col="6">R</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="13" data-col="7">A</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="13" data-col="8">D</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="13" data-col="9">A</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="13" data-col="10">C</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="13" data-col="11">I</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="13" data-col="12">Ó</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="13" data-col="13">N</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="13" data-col="14">M</div>
+                                
+                                <!-- Fila 14 -->
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="14" data-col="0">E</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="14" data-col="1">S</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="14" data-col="2">P</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="14" data-col="3">E</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="14" data-col="4">R</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="14" data-col="5">A</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="14" data-col="6">N</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="14" data-col="7">Z</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="14" data-col="8">A</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="14" data-col="9">Y</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="14" data-col="10">U</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="14" data-col="11">D</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="14" data-col="12">O</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="14" data-col="13">C</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="14" data-col="14">A</div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
+                            <p class="text-sm text-blue-800">💡 <strong>Instrucciones:</strong> Haz clic y arrastra el mouse para seleccionar las letras. Puedes seleccionar las palabras en cualquier orden (no necesariamente de izquierda a derecha). Las palabras encontradas se marcarán en verde.</p>
+                        </div>
+                        
+                        <div class="mt-4 p-3 bg-green-50 border border-green-200 rounded">
+                            <p class="font-semibold text-green-800 mb-2">Palabras encontradas:</p>
+                            <div id="found-words" class="flex flex-wrap gap-2 mb-3">
+                                <!-- Las palabras encontradas aparecerán aquí -->
+                            </div>
+                            <button id="reset-word-search" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors">
+                                🔄 Reiniciar Sopa de Letras
+                            </button>
+                        </div>
+                    </div>
+
+                    <script>
+                        // Funcionalidad para la Sopa de Letras
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const wordCells = document.querySelectorAll('.word-cell');
+                            const foundWordsContainer = document.getElementById('found-words');
+                            let isSelecting = false;
+                            let selectedCells = [];
+                            let foundWords = new Set();
+                            
+                            // Palabras a buscar
+                            const wordsToFind = ['MATERNIDAD', 'AUTONOMÍA', 'SALUD', 'DIGNIDAD', 'IGUALDAD', 'PREVENCIÓN', 'DERECHOS', 'AMOR'];
+                            
+                            // Coordenadas de las palabras en la cuadrícula
+                            const wordPositions = {
+                                'MATERNIDAD': [[0,0], [0,1], [0,2], [0,3], [0,4], [0,5], [0,6], [0,7], [0,8], [0,9]],
+                                'SALUD': [[1,0], [1,1], [1,2], [1,3], [1,4]],
+                                'AUTONOMÍA': [[2,0], [2,1], [2,2], [2,3], [2,4], [2,5], [2,6], [2,7], [2,8]],
+                                'AMOR': [[3,0], [3,1], [3,2], [3,3]],
+                                'DIGNIDAD': [[7,0], [7,1], [7,2], [7,3], [7,4], [7,5], [7,6], [7,7]],
+                                'IGUALDAD': [[10,0], [10,1], [10,2], [10,3], [10,4], [10,5], [10,6], [10,7]],
+                                'PREVENCIÓN': [[9,0], [9,1], [9,2], [9,3], [9,4], [9,5], [9,6], [9,7], [9,8], [9,9]],
+                                'DERECHOS': [[11,0], [11,1], [11,2], [11,3], [11,4], [11,5], [11,6], [11,7]]
+                            };
+                            
+                            wordCells.forEach(cell => {
+                                cell.addEventListener('mousedown', startSelection);
+                                cell.addEventListener('mouseenter', continueSelection);
+                                cell.addEventListener('mouseup', endSelection);
+                            });
+                            
+                            document.addEventListener('mouseup', endSelection);
+                            
+                            // Funcionalidad del botón de reinicio
+                            const resetButton = document.getElementById('reset-word-search');
+                            resetButton.addEventListener('click', resetWordSearch);
+                            
+                            function resetWordSearch() {
+                                // Limpiar todas las casillas
+                                wordCells.forEach(cell => {
+                                    cell.classList.remove('bg-green-500', 'text-white', 'found', 'bg-green-200');
+                                });
+                                
+                                // Limpiar lista de palabras encontradas
+                                foundWordsContainer.innerHTML = '';
+                                
+                                // Reiniciar variables
+                                foundWords.clear();
+                                selectedCells = [];
+                                isSelecting = false;
+                            }
+                            
+                            function startSelection(e) {
+                                e.preventDefault();
+                                isSelecting = true;
+                                selectedCells = [e.target];
+                                e.target.classList.add('bg-green-200');
+                            }
+                            
+                            function continueSelection(e) {
+                                if (isSelecting && !selectedCells.includes(e.target)) {
+                                    selectedCells.push(e.target);
+                                    e.target.classList.add('bg-green-200');
+                                }
+                            }
+                            
+                            function endSelection() {
+                                if (!isSelecting) return;
+                                isSelecting = false;
+                                
+                                // Verificar si la selección coincide con alguna palabra válida (en cualquier orden)
+                                const selectedPositions = selectedCells.map(cell => {
+                                    return [parseInt(cell.dataset.row), parseInt(cell.dataset.col)];
+                                });
+                                
+                                let foundWord = null;
+                                for (const [word, positions] of Object.entries(wordPositions)) {
+                                    if (arraysEqual(selectedPositions, positions) && !foundWords.has(word)) {
+                                        foundWord = word;
+                                        break;
+                                    }
+                                }
+                                
+                                // Si no coincide en orden exacto, verificar si contiene las mismas coordenadas en cualquier orden
+                                if (!foundWord && selectedPositions.length >= 4) {
+                                    for (const [word, positions] of Object.entries(wordPositions)) {
+                                        if (positions.length === selectedPositions.length && !foundWords.has(word)) {
+                                            const matchesAllPositions = selectedPositions.every(selPos => 
+                                                positions.some(pos => pos[0] === selPos[0] && pos[1] === selPos[1])
+                                            );
+                                            const hasAllPositions = positions.every(pos => 
+                                                selectedPositions.some(selPos => pos[0] === selPos[0] && pos[1] === selPos[1])
+                                            );
+                                            
+                                            if (matchesAllPositions && hasAllPositions) {
+                                                foundWord = word;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                if (foundWord) {
+                                    foundWords.add(foundWord);
+                                    markWordAsFound(foundWord);
+                                    addFoundWordToList(foundWord);
+                                } else {
+                                    // Limpiar selección si no es una palabra válida
+                                    selectedCells.forEach(cell => {
+                                        if (!cell.classList.contains('found')) {
+                                            cell.classList.remove('bg-green-200');
+                                        }
+                                    });
+                                }
+                                selectedCells = [];
+                            }
+                            
+                            function arraysEqual(a, b) {
+                                if (a.length !== b.length) return false;
+                                for (let i = 0; i < a.length; i++) {
+                                    if (a[i][0] !== b[i][0] || a[i][1] !== b[i][1]) {
+                                        return false;
+                                    }
+                                }
+                                return true;
+                            }
+                            
+                            function markWordAsFound(word) {
+                                const positions = wordPositions[word];
+                                if (positions) {
+                                    positions.forEach(([row, col], index) => {
+                                        const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+                                        if (cell) {
+                                            cell.classList.add('bg-green-500', 'text-white', 'found');
+                                            cell.classList.remove('bg-green-200');
+                                            
+                                            // Añadir subrayado a la última letra de MATERNIDAD
+                                            if (word === 'MATERNIDAD' && index === positions.length - 1) {
+                                                cell.style.textDecoration = 'underline';
+                                                cell.style.textDecorationColor = 'white';
+                                                cell.style.textDecorationThickness = '2px';
+                                            }
+                                        }
+                                    });
+                                }
+                            }
+                            
+                            function addFoundWordToList(word) {
+                                const wordBadge = document.createElement('span');
+                                wordBadge.className = 'bg-green-500 text-white px-3 py-1 rounded text-sm';
+                                wordBadge.textContent = word;
+                                foundWordsContainer.appendChild(wordBadge);
+                            }
+                        });
+                    </script>
+
+                    <script>
+                        // Funcionalidad para el Juego del Ahorcado
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const words = [
+                                'CONSENTIMIENTO', 'MATERNIDAD', 'AUTONOMIA', 'SALUD', 
+                                'DIGNIDAD', 'IGUALDAD', 'PREVENCION', 'DERECHOS', 
+                                'AMOR', 'RESPETO', 'CUERPO', 'DECISION'
+                            ];
+                            
+                            let currentWord = '';
+                            let guessedLetters = [];
+                            let errors = 0;
+                            const maxErrors = 6;
+                            
+                            const wordDisplay = document.getElementById('word-display');
+                            const errorCount = document.getElementById('error-count');
+                            const usedLetters = document.getElementById('used-letters');
+                            const message = document.getElementById('hangman-message');
+                            const newWordBtn = document.getElementById('new-word-btn');
+                            const resetHangmanBtn = document.getElementById('reset-hangman-btn');
+                            const letterButtons = document.querySelectorAll('.hangman-letter');
+                            const hangmanParts = document.querySelectorAll('.hangman-part');
+                            
+                            // Inicializar juego
+                            initGame();
+                            
+                            function initGame() {
+                                currentWord = words[Math.floor(Math.random() * words.length)];
+                                guessedLetters = [];
+                                errors = 0;
+                                
+                                updateDisplay();
+                                updateErrors();
+                                clearUsedLetters();
+                                resetHangman();
+                                enableAllLetters();
+                                message.textContent = '';
+                                message.className = 'mt-4 text-center font-bold';
+                            }
+                            
+                            function updateDisplay() {
+                                let display = '';
+                                for (let letter of currentWord) {
+                                    if (guessedLetters.includes(letter)) {
+                                        display += letter + ' ';
+                                    } else {
+                                        display += '_ ';
+                                    }
+                                }
+                                wordDisplay.textContent = display.trim();
+                            }
+                            
+                            function updateErrors() {
+                                errorCount.textContent = errors;
+                                
+                                // Mostrar partes del ahorcado según errores
+                                hangmanParts.forEach((part, index) => {
+                                    if (index < errors) {
+                                        part.style.display = 'block';
+                                    } else {
+                                        part.style.display = 'none';
+                                    }
+                                });
+                                
+                                // Verificar si perdió
+                                if (errors >= maxErrors) {
+                                    message.textContent = `¡Perdiste! La palabra era: ${currentWord}`;
+                                    message.className = 'mt-4 text-center font-bold text-red-600';
+                                    disableAllLetters();
+                                }
+                            }
+                            
+                            function clearUsedLetters() {
+                                usedLetters.innerHTML = '';
+                            }
+                            
+                            function resetHangman() {
+                                hangmanParts.forEach(part => {
+                                    part.style.display = 'none';
+                                });
+                            }
+                            
+                            function enableAllLetters() {
+                                letterButtons.forEach(btn => {
+                                    btn.disabled = false;
+                                    btn.classList.remove('bg-gray-300', 'text-gray-500');
+                                    btn.classList.add('bg-green-100', 'hover:bg-green-200', 'text-green-800');
+                                });
+                            }
+                            
+                            function disableAllLetters() {
+                                letterButtons.forEach(btn => {
+                                    btn.disabled = true;
+                                    btn.classList.remove('bg-green-100', 'hover:bg-green-200', 'text-green-800');
+                                    btn.classList.add('bg-gray-300', 'text-gray-500');
+                                });
+                            }
+                            
+                            function guessLetter(letter) {
+                                if (guessedLetters.includes(letter)) return;
+                                
+                                guessedLetters.push(letter);
+                                
+                                // Deshabilitar botón de la letra
+                                const btn = document.querySelector(`[data-letter="${letter}"]`);
+                                if (btn) {
+                                    btn.disabled = true;
+                                    btn.classList.remove('bg-green-100', 'hover:bg-green-200', 'text-green-800');
+                                    if (currentWord.includes(letter)) {
+                                        btn.classList.add('bg-green-500', 'text-white');
+                                    } else {
+                                        btn.classList.add('bg-red-500', 'text-white');
+                                    }
+                                }
+                                
+                                // Agregar letra usada
+                                const letterSpan = document.createElement('span');
+                                letterSpan.className = 'bg-gray-200 text-gray-700 px-2 py-1 rounded text-sm font-bold';
+                                letterSpan.textContent = letter;
+                                usedLetters.appendChild(letterSpan);
+                                
+                                // Verificar si la letra está en la palabra
+                                if (currentWord.includes(letter)) {
+                                    updateDisplay();
+                                    
+                                    // Verificar si ganó
+                                    if (currentWord.split('').every(l => guessedLetters.includes(l))) {
+                                        message.textContent = '¡Felicidades! ¡Adivinaste la palabra!';
+                                        message.className = 'mt-4 text-center font-bold text-green-600';
+                                        disableAllLetters();
+                                    }
+                                } else {
+                                    errors++;
+                                    updateErrors();
+                                }
+                            }
+                            
+                            // Event listeners
+                            letterButtons.forEach(btn => {
+                                btn.addEventListener('click', () => {
+                                    const letter = btn.dataset.letter;
+                                    guessLetter(letter);
+                                });
+                            });
+                            
+                            newWordBtn.addEventListener('click', initGame);
+                            resetHangmanBtn.addEventListener('click', initGame);
+                        });
+                    </script>
+
+                    <!-- Juego del Ahorcado -->
+                    <div class="bg-white border-l-4 border-blue-500 rounded-lg shadow-sm p-6">
+                        <h3 class="text-xl font-bold text-green-700 mb-4">🎯 Juego del Ahorcado: Derechos Sexuales</h3>
+                        <p class="mb-4"><span class="font-semibold">Instrucciones:</span> Adivina la palabra relacionada con derechos sexuales letra por letra.</p>
+                        
+                        <div class="mb-6">
+                            <div class="text-center mb-4">
+                                <div class="inline-block p-4 bg-gray-50 rounded-lg">
+                                    <svg width="200" height="250" viewBox="0 0 200 250" class="mx-auto">
+                                        <!-- Base del ahorcado -->
+                                        <line x1="20" y1="230" x2="100" y2="230" stroke="#374151" stroke-width="4"/>
+                                        <line x1="60" y1="230" x2="60" y2="20" stroke="#374151" stroke-width="4"/>
+                                        <line x1="60" y1="20" x2="150" y2="20" stroke="#374151" stroke-width="4"/>
+                                        <line x1="150" y1="20" x2="150" y2="50" stroke="#374151" stroke-width="4"/>
+                                        
+                                        <!-- Cabeza (aparece con 1 error) -->
+                                        <circle cx="150" cy="70" r="20" stroke="#EF4444" stroke-width="3" fill="none" class="hangman-part" style="display:none;"/>
+                                        
+                                        <!-- Cuerpo (aparece con 2 errores) -->
+                                        <line x1="150" y1="90" x2="150" y2="140" stroke="#EF4444" stroke-width="3" class="hangman-part" style="display:none;"/>
+                                        
+                                        <!-- Brazo izquierdo (aparece con 3 errores) -->
+                                        <line x1="150" y1="100" x2="120" y2="120" stroke="#EF4444" stroke-width="3" class="hangman-part" style="display:none;"/>
+                                        
+                                        <!-- Brazo derecho (aparece con 4 errores) -->
+                                        <line x1="150" y1="100" x2="180" y2="120" stroke="#EF4444" stroke-width="3" class="hangman-part" style="display:none;"/>
+                                        
+                                        <!-- Pierna izquierda (aparece con 5 errores) -->
+                                        <line x1="150" y1="140" x2="120" y2="180" stroke="#EF4444" stroke-width="3" class="hangman-part" style="display:none;"/>
+                                        
+                                        <!-- Pierna derecha (aparece con 6 errores) -->
+                                        <line x1="150" y1="140" x2="180" y2="180" stroke="#EF4444" stroke-width="3" class="hangman-part" style="display:none;"/>
+                                    </svg>
+                                </div>
+                            </div>
+
+                            <div class="text-center mb-4">
+                                <div class="text-3xl font-mono font-bold text-green-800 mb-2" id="word-display">
+                                    _ _ _ _ _ _ _ _ _
+                                </div>
+                                <div class="text-sm text-gray-600">
+                                    Errores: <span id="error-count" class="font-bold text-red-600">0</span> / 6
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <p class="text-sm text-gray-600 mb-2">Letras usadas:</p>
+                                <div id="used-letters" class="flex flex-wrap gap-2">
+                                    <!-- Las letras usadas aparecerán aquí -->
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <div class="grid grid-cols-7 gap-2 max-w-md mx-auto">
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="A">A</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="B">B</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="C">C</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="D">D</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="E">E</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="F">F</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="G">G</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="H">H</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="I">I</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="J">J</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="K">K</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="L">L</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="M">M</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="N">N</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="Ñ">Ñ</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="O">O</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="P">P</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="Q">Q</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="R">R</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="S">S</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="T">T</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="U">U</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="V">V</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="W">W</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="X">X</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="Y">Y</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="Z">Z</button>
+                                </div>
+                            </div>
+
+                            <div class="text-center">
+                                <button id="new-word-btn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition-colors mr-2">
+                                    Nueva Palabra
+                                </button>
+                                <button id="reset-hangman-btn" class="bg-red-600 text-white font-bold py-2 px-4 rounded hover:bg-red-700 transition-colors">
+                                    🔄 Reiniciar Ahorcado
+                                </button>
+                            </div>
+
+                            <div id="hangman-message" class="mt-4 text-center font-bold"></div>
+                        </div>
+
+                        <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
+                            <p class="text-sm text-blue-800">💡 <strong>Pista:</strong> Las palabras están relacionadas con derechos sexuales, salud reproductiva, consentimiento, autonomía, igualdad, etc.</p>
+                        </div>
+                    </div>
+                </div>
+                <button id="check-activity-btn" class="mt-6 bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 transition-colors">Verificar respuestas</button>
+                <div id="activity-result" class="mt-4 font-medium"></div>
+            </div>
+
+            <!-- Evaluación -->
+            <div id="evaluacion" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-green-800 mb-6">Evaluación</h2>
+                <div class="speech-controls mb-4 p-3 bg-green-100 rounded-lg flex items-center flex-wrap gap-2" data-target="evaluacion">
+                    <button class="play-btn bg-green-600 hover:bg-green-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-evaluacion" class="text-sm text-green-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-evaluacion" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <p class="text-slate-600 mb-6">Verificación de Conocimientos (Evaluación)</p>
+                    
+                    <!-- Pregunta 1 -->
+                    <div class="mb-8 p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <h3 class="text-lg font-bold text-green-800 mb-4">Pregunta 1: ¿Cuál es la definición correcta de Derechos Reproductivos?</h3>
+                        <div class="space-y-3">
+                            <label class="flex items-start p-3 bg-white rounded-lg border hover:border-green-400 cursor-pointer transition-colors">
+                                <input type="radio" name="q1" value="A" class="mt-1 mr-3">
+                                <span>A) El derecho a tener relaciones sexuales sin protección.</span>
+                            </label>
+                            <label class="flex items-start p-3 bg-white rounded-lg border hover:border-green-400 cursor-pointer transition-colors">
+                                <input type="radio" name="q1" value="B" class="mt-1 mr-3">
+                                <span>B) La obligación de procrear para mantener la especie.</span>
+                            </label>
+                            <label class="flex items-start p-3 bg-white rounded-lg border hover:border-green-400 cursor-pointer transition-colors">
+                                <input type="radio" name="q1" value="C" class="mt-1 mr-3">
+                                <span>C) El derecho a tomar decisiones libres sobre procrear o no, y el acceso a servicios que garanticen maternidad segura.</span>
+                            </label>
+                            <label class="flex items-start p-3 bg-white rounded-lg border hover:border-green-400 cursor-pointer transition-colors">
+                                <input type="radio" name="q1" value="D" class="mt-1 mr-3">
+                                <span>D) El derecho a recibir tratamiento únicamente para infecciones de transmisión sexual.</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Pregunta 2 -->
+                    <div class="mb-8 p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <h3 class="text-lg font-bold text-green-800 mb-4">Pregunta 2: De acuerdo con el enfoque diferencial, ¿qué debe hacer el profesional de enfermería en contextos rurales y étnicos si una gestante prefiere una partera?</h3>
+                        <div class="space-y-3">
+                            <label class="flex items-start p-3 bg-white rounded-lg border hover:border-green-400 cursor-pointer transition-colors">
+                                <input type="radio" name="q2" value="A" class="mt-1 mr-3">
+                                <span>A) Prohibir el uso de parteras por riesgo médico.</span>
+                            </label>
+                            <label class="flex items-start p-3 bg-white rounded-lg border hover:border-green-400 cursor-pointer transition-colors">
+                                <input type="radio" name="q2" value="B" class="mt-1 mr-3">
+                                <span>B) Ignorar la preferencia de la paciente.</span>
+                            </label>
+                            <label class="flex items-start p-3 bg-white rounded-lg border hover:border-green-400 cursor-pointer transition-colors">
+                                <input type="radio" name="q2" value="C" class="mt-1 mr-3">
+                                <span>C) Respetar su cultura y brindar información para activar el sistema de referencia y transporte en caso de alarma.</span>
+                            </label>
+                            <label class="flex items-start p-3 bg-white rounded-lg border hover:border-green-400 cursor-pointer transition-colors">
+                                <input type="radio" name="q2" value="D" class="mt-1 mr-3">
+                                <span>D) Remitir obligatoriamente a psiquiatría.</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <button id="submit-quiz-btn" class="mt-6 bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 transition-colors">Verificar respuestas</button>
+                    <div id="quiz-result" class="mt-4 text-lg font-bold"></div>
+                </div>
+            </div>
+
+            <!-- Recursos -->
+            <div id="recursos" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-green-800 mb-6">Recursos para profundizar</h2>
+                <div class="speech-controls mb-4 p-3 bg-green-100 rounded-lg flex items-center flex-wrap gap-2" data-target="recursos">
+                    <button class="play-btn bg-green-600 hover:bg-green-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-recursos" class="text-sm text-green-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-recursos" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                <p class="text-slate-700 leading-relaxed mb-6">Para ampliar tu conocimiento sobre los sistemas de ecuaciones lineales, te recomendamos explorar los siguientes enlaces y documentos:</p>
+                <ul class="space-y-4">
+                    <!-- Recurso 1 -->
+                    <li class="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow border-l-4 border-green-500 flex flex-col sm:flex-row sm:items-center justify-between">
+                        <div>
+                            <h3 class="font-bold text-green-700">Organización Panamericana de la Salud. Salud sexual y reproductiva [Internet]. Washington, D.C:</h3>
+                            <a href="https://www.paho.org/es/temas/salud-sexual-reproductiva target="_blank" class="underline text-slate-700 hover:text-green-700">Ir al recurso</a>
+                        </div>
+                        <div class="mt-4 sm:mt-0 sm:ml-6 flex-shrink-0">
+                            <div class="bg-green-50 border border-green-300 rounded flex items-center justify-center" style="width:2cm;height:2cm;">
+                                <img src="img/qrcode_www.paho.org (1).png" alt="Solución ejercicio 1" class="max-w-full max-h-full object-contain" loading="lazy">
+                            </div>
+                        </div>
+                    </li>
+                    <!-- Recurso 2 -->
+                    <li class="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow border-l-4 border-green-500 flex flex-col sm:flex-row sm:items-center justify-between">
+                        <div>
+                            <h3 class="font-bold text-green-700">Ministerio de Salud y Protección Social. Política Nacional de Sexualidad, Derechos Sexuales y Derechos Reproductivos. Bogotá: Minsalud; 2017. Disponible en:</h3>
+                            <a href="https://www.minsalud.gov.co/sites/rid/Lists/BibliotecaDigital/RIDE/DE/PS/derechos-sexuales-derechos-reproductivos-r1904-2017.pdf" target="_blank" class="underline text-slate-700 hover:text-green-700">Ir al recurso</a>
+                        </div>
+                        <div class="mt-4 sm:mt-0 sm:ml-6 flex-shrink-0">
+                            <div class="bg-green-50 border border-green-300 rounded flex items-center justify-center" style="width:2cm;height:2cm;">
+                                <img src="img/qrcode_www.minsalud.gov.co.png" alt="Solución ejercicio 1" class="max-w-full max-h-full object-contain" loading="lazy">
+                            </div>
+                        </div>
+                    </li>
+                    <!-- Recurso 3 -->
+                    <li class="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow border-l-4 border-green-500 flex flex-col sm:flex-row sm:items-center justify-between">
+                        <div>
+                            <h3 class="font-bold text-green-700">Ministerio de Salud y Protección Social. Acercamiento a la comprensión de la interculturalidad en salud sexual y reproductiva. Bogotá: Minsalud; 201.</h3>
+                            <a href="https://www.minsalud.gov.co/Paginas/MinSalud-present%C3%B3-pol%C3%ADtica-de-sexualidad,-derechos-sexuales-y-derechos-reproductivos.aspx" target="_blank" class="underline text-slate-700 hover:text-green-700">Ir al recurso</a>
+                        </div>
+                        <div class="mt-4 sm:mt-0 sm:ml-6 flex-shrink-0">
+                            <div class="bg-green-50 border border-green-300 rounded flex items-center justify-center" style="width:2cm;height:2cm;">
+                                <img src="img/qrcode_www.mins.png" alt="Solución ejercicio 1" class="max-w-full max-h-full object-contain" loading="lazy">
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>brew
+
+            <!-- Bibliografía -->
+            <div id="bibliografia" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-green-800 mb-6">Bibliografía</h2>
+                <div class="speech-controls mb-4 p-3 bg-green-100 rounded-lg flex items-center flex-wrap gap-2" data-target="bibliografia">
+                    <button class="play-btn bg-green-600 hover:bg-green-700 text-white font-medium py-1 px-4 rounded-full flex items-center">
+                        <span class="mr-1">▶️</span> Leer
+                    </button>
+                    <button class="pause-btn bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏸️</span> Pausar
+                    </button>
+                    <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-4 rounded-full flex items-center" disabled>
+                        <span class="mr-1">⏹️</span> Detener
+                    </button>
+                    <div class="flex items-center ml-2">
+                        <label for="speech-rate-bibliografia" class="text-sm text-green-800 mr-2">Velocidad:</label>
+                        <input type="range" class="speech-rate" id="speech-rate-bibliografia" min="0.5" max="2" step="0.1" value="1" class="w-24">
+                    </div>
+                </div>
+                <div class="space-y-6">
+                <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow border-l-4 border-green-500">
+                    <span class="block text-slate-700">
+                       
+                        UNFPA RD - Salud Sexual y Reproductiva <i>🌐 Video Online</i>.<br>
+                        <a href="https://www.youtube.com/watch?v=pWeYc5r0SjM" class="text-green-700 underline break-all" target="_blank">*Módulos 2-5: Composición y angulaciones.*</a>
+                    </span>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow border-l-4 border-green-500">
+                    <span class="block text-slate-700">
+                        Godino, J. D., & Batanero, C. (1994). <i>Didáctica de las Matemáticas</i>. Editorial Universidad de Granada.
+                    </span>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow border-l-4 border-green-500">
+                    <span class="block text-slate-700">
+                        UNESCO – OREALC. (2005). <i>Educación Matemática en Contextos Rurales Latinoamericanos: Proyecto Regional</i>.<br>
+                        <a href="https://unesdoc.unesco.org/ark:/48223/pf0000143685" class="text-green-700 underline break-all" target="_blank">https://unesdoc.unesco.org/ark:/48223/pf0000143685</a>
+                    </span>
+                </div>
+            </div>
+            
+            <!-- Footer/Credits -->
+            <footer class="mt-12 pt-6 border-t-2 border-slate-200 text-center">
+                <p class="text-slate-600 font-medium">Creado por:</p>
+                <p class="text-green-800 font-bold text-lg">Centro de Innovación en TIC para el apoyo de la Docencia CINTIA</p>
+                <p class="text-slate-500 text-sm">Universidad de Córdoba</p>
+            </footer>
+        </main>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const sidebarLinks = document.querySelectorAll('.sidebar-link');
+    const contentPanes = document.querySelectorAll('.content-pane');
+    const mobileNav = document.getElementById('mobile-nav');
+
+    function switchPane(targetId) {
+        contentPanes.forEach(pane => {
+            pane.classList.remove('active');
+        });
+        const targetPane = document.getElementById(targetId);
+        if (targetPane) {
+            targetPane.classList.add('active');
+        }
+
+        sidebarLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.dataset.target === targetId) {
+                link.classList.add('active');
+            }
+        });
+        
+        if (mobileNav.value !== targetId) {
+            mobileNav.value = targetId;
+        }
+    }
+
+    sidebarLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const targetId = e.currentTarget.dataset.target;
+            switchPane(targetId);
+        });
+    });
+
+    mobileNav.addEventListener('change', (e) => {
+        switchPane(e.target.value);
+    });
+
+    // --- Actividad Práctica ---
+    const activityData = [
+        { 
+            question: "Un video tutorial que muestra cómo resolver una ecuación.", 
+            options: ["Interactividad", "Finalidad Educativa", "Reusabilidad"], 
+            answer: "Finalidad Educativa" 
+        },
+        { 
+            question: "Un quiz en línea que da retroalimentación inmediata.", 
+            options: ["Interactividad", "Adaptabilidad", "Formato Digital"], 
+            answer: "Interactividad" 
+        },
+        { 
+            question: "Una simulación de un laboratorio de química que se puede usar en bachillerato y universidad.", 
+            options: ["Reusabilidad", "Accesibilidad", "Intencionalidad Educativa"], 
+            answer: "Reusabilidad" 
+        }
+    ];
+
+    const activityContainer = document.getElementById('activity-container');
+    if (activityContainer) {
+        activityData.forEach((item, index) => {
+            const questionDiv = document.createElement('div');
+            questionDiv.className = 'p-4 border rounded-lg';
+            
+            let optionsHtml = item.options.map(opt => `<option value="${opt}">${opt}</option>`).join('');
+
+            questionDiv.innerHTML = `
+                <p class="font-medium text-slate-700 mb-2">${index + 1}. ${item.question}</p>
+                <select class="activity-select w-full p-2 border rounded-md bg-white" data-answer="${item.answer}">
+                    <option value="">Selecciona una característica...</option>
+                    ${optionsHtml}
+                </select>
+            `;
+            activityContainer.appendChild(questionDiv);
+        });
+    }
+
+    const checkActivityBtn = document.getElementById('check-activity-btn');
+    if (checkActivityBtn) {
+        checkActivityBtn.addEventListener('click', () => {
+            const selects = document.querySelectorAll('.activity-select');
+            let correctAnswers = 0;
+            selects.forEach(select => {
+                if (select.value === select.dataset.answer) {
+                    correctAnswers++;
+                    select.classList.add('border-green-500');
+                    select.classList.remove('border-red-500');
+                } else {
+                    select.classList.add('border-red-500');
+                    select.classList.remove('border-green-500');
+                }
+            });
+            const resultDiv = document.getElementById('activity-result');
+            resultDiv.textContent = `Obtuviste ${correctAnswers} de ${activityData.length} respuestas correctas.`;
+            resultDiv.className = correctAnswers === activityData.length ? 'mt-4 font-medium text-green-700' : 'mt-4 font-medium text-red-700';
+        });
+    }
+
+    // --- Evaluación Quiz ---
+    const evaluationData = [
+        { 
+            question: "Una toma que muestra solo los ojos y parte de la frente del actor.", 
+            options: ["Plano General", "Primer Plano", "Plano Medio", "Plano Detalle"], 
+            answer: "Plano Detalle" 
+        },
+        { 
+            question: "Ángulo de cámara que hace ver al personaje vulnerable y pequeño.", 
+            options: ["Ángulo Picado", "Ángulo Contrapicado", "Ángulo Neutro", "Ángulo Holandés"], 
+            answer: "Ángulo Picado" 
+        },
+        { 
+            question: "Movimiento donde la cámara gira horizontalmente sobre su eje.", 
+            options: ["Tilt", "Paneo", "Travelling", "Zoom"], 
+            answer: "Paneo" 
+        },
+        { 
+            question: "Plano que muestra al personaje desde las rodillas hacia arriba.", 
+            options: ["Plano Americano", "Plano Medio", "Plano General", "Primer Plano"], 
+            answer: "Plano Americano" 
+        },
+        { 
+            question: "Técnica para crear sensación de movimiento siguiendo al sujeto físicamente.", 
+            options: ["Zoom In", "Paneo", "Travelling", "Tilt"], 
+            answer: "Travelling" 
+        }
+    ];
+
+    const evaluationContainer = document.getElementById('quiz-container');
+    if (evaluationContainer) {
+        evaluationData.forEach((item, index) => {
+            const questionDiv = document.createElement('div');
+            questionDiv.className = 'p-4 border rounded-lg mb-4';
+            
+            let optionsHtml = item.options.map(opt => `<option value="${opt}">${opt}</option>`).join('');
+
+            questionDiv.innerHTML = `
+                <p class="font-medium text-slate-700 mb-3">${index + 1}. ${item.question}</p>
+                <select class="evaluation-select w-full p-3 border rounded-md bg-white text-slate-700" data-answer="${item.answer}">
+                    <option value="">Selecciona la respuesta correcta...</option>
+                    ${optionsHtml}
+                </select>
+            `;
+            evaluationContainer.appendChild(questionDiv);
+        });
+    }
+
+    const submitQuizBtn = document.getElementById('submit-quiz-btn');
+    if (submitQuizBtn) {
+        submitQuizBtn.addEventListener('click', () => {
+            const selects = document.querySelectorAll('.evaluation-select');
+            let correctAnswers = 0;
+            const feedbacks = [
+                'Correcto: El plano detalle muestra solo una pequeña parte del rostro como los ojos.',
+                'Correcto: El ángulo picado (desde arriba) hace ver al personaje vulnerable.',
+                'Correcto: El paneo es el movimiento horizontal de la cámara sobre su eje.',
+                'Correcto: El plano americano muestra desde las rodillas hacia arriba.',
+                'Correcto: El travelling desplaza físicamente la cámara siguiendo al sujeto.'
+            ];
+            const wrongFeedbacks = [
+                'Incorrecto. El plano detalle muestra solo una pequeña parte como los ojos.',
+                'Incorrecto. El ángulo picado (desde arriba) hace ver vulnerable al personaje.',
+                'Incorrecto. El paneo es el movimiento horizontal de la cámara.',
+                'Incorrecto. El plano americano muestra desde las rodillas hacia arriba.',
+                'Incorrecto. El travelling desplaza físicamente la cámara siguiendo al sujeto.'
+            ];
+            
+            selects.forEach((select, index) => {
+                let feedbackDiv = select.parentNode.querySelector('.evaluation-feedback');
+                if (!feedbackDiv) {
+                    feedbackDiv = document.createElement('div');
+                    feedbackDiv.className = 'evaluation-feedback mt-2 text-sm';
+                    select.parentNode.appendChild(feedbackDiv);
+                }
+                
+                if (select.value === select.dataset.answer) {
+                    correctAnswers++;
+                    select.classList.add('border-green-500', 'bg-green-50');
+                    select.classList.remove('border-red-500', 'bg-red-50');
+                    feedbackDiv.innerHTML = `<span class="text-green-600 font-medium">✓ ${feedbacks[index]}</span>`;
+                } else {
+                    select.classList.add('border-red-500', 'bg-red-50');
+                    select.classList.remove('border-green-500', 'bg-green-50');
+                    feedbackDiv.innerHTML = `<span class="text-red-600 font-medium">✗ ${wrongFeedbacks[index]}</span>`;
+                }
+            });
+            
+            const resultDiv = document.getElementById('quiz-result');
+            resultDiv.textContent = `Puntuación: ${correctAnswers}/${evaluationData.length}`;
+            resultDiv.className = correctAnswers === evaluationData.length ? 'mt-4 text-lg font-bold text-green-700' : 'mt-4 text-lg font-bold text-red-700';
+        });
+    }
+});
+</script>
+
+
+<script>
+    // JS para verificación de actividades
+    document.addEventListener('DOMContentLoaded', function() {
+        const checkBtn = document.getElementById('check-activity-btn');
+        if (checkBtn) {
+            checkBtn.addEventListener('click', function() {
+                const inputs = document.querySelectorAll('.activity-input');
+                let correctas = 0;
+                let feedback = [];
+                
+                inputs.forEach((input, idx) => {
+                    const userAnswer = input.value.trim().toLowerCase();
+                    const correctAnswer = input.getAttribute('data-answer');
+                    
+                    if (!correctAnswer) {
+                        feedback.push(`Ejercicio ${idx+1}: ⚠️ Sin respuesta definida`);
+                        return;
+                    }
+                    
+                    // Normalizar respuestas para comparación flexible
+                    const normalizedCorrect = correctAnswer.toLowerCase().trim();
+                    const normalizedUser = userAnswer.toLowerCase().trim();
+                    
+                    // Verificar respuestas con flexibilidad para términos cinematográficos
+                    let isCorrect = false;
+                    
+                    if (idx === 0) { // Ejercicio 1: Planos
+                        const correctPlanes = normalizedCorrect.split(',').map(p => p.trim());
+                        const userPlanes = normalizedUser.split(',').map(p => p.trim());
+                        isCorrect = correctPlanes.length === userPlanes.length && 
+                                   correctPlanes.every((plane, i) => {
+                                       const userPlane = userPlanes[i] || '';
+                                       return userPlane.includes('detalle') && plane.includes('detalle') ||
+                                              userPlane.includes('general') && plane.includes('general') ||
+                                              userPlane.includes('medio') && plane.includes('medio');
+                                   });
+                    } else if (idx === 1) { // Ejercicio 2: Ángulos
+                        isCorrect = normalizedUser === 'b' || normalizedUser.includes('contrapicado');
+                    } else if (idx === 2) { // Ejercicio 3: Movimientos
+                        isCorrect = normalizedUser.includes('travelling') || normalizedUser.includes('traveling');
+                    }
+                    
+                    if (isCorrect) {
+                        input.classList.remove('border-red-500');
+                        input.classList.add('border-green-500');
+                        correctas++;
+                        feedback.push(`Ejercicio ${idx+1}: ✔️ Correcto`);
+                    } else {
+                        input.classList.remove('border-green-500');
+                        input.classList.add('border-red-500');
+                        feedback.push(`Ejercicio ${idx+1}: ❌ Incorrecto`);
+                    }
+                });
+                
+                const resultDiv = document.getElementById('activity-result');
+                resultDiv.innerHTML = `<strong>Respuestas correctas: ${correctas} de 3</strong><br>` + feedback.join('<br>');
+                resultDiv.className = correctas === 3 ? 'mt-4 font-medium text-green-700' : 'mt-4 font-medium text-red-700';
+            });
+        }
+    });
+</script>
+
+<script>
+    // JS para acordeón con desplazamiento automático
+    document.querySelectorAll('.accordion-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const panel = document.querySelector(this.getAttribute('data-target'));
+            const isOpen = panel.classList.contains('block');
+            document.querySelectorAll('.accordion-panel').forEach(p => p.classList.add('hidden'));
+            document.querySelectorAll('.accordion-panel').forEach(p => p.classList.remove('block'));
+            
+            if (!isOpen) {
+                panel.classList.remove('hidden');
+                panel.classList.add('block');
+                // Cambiar el símbolo del botón
+                this.querySelector('span').textContent = '➖';
+                
+                // Desplazamiento suave hacia el botón del acordeón desplegado
+                setTimeout(() => {
+                    this.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100); // Pequeño retraso para asegurar que el panel esté visible
+            } else {
+                // Cambiar el símbolo del botón
+                this.querySelector('span').textContent = '➕';
+            }
+            
+            // Actualizar todos los demás botones
+            document.querySelectorAll('.accordion-btn').forEach(otherBtn => {
+                if (otherBtn !== this) {
+                    otherBtn.querySelector('span').textContent = '➕';
+                }
+            });
+        });
+    });
+</script>
+
+<script>
+    // JS para modal de imagen
+    document.addEventListener('DOMContentLoaded', function() {
+        const modal = document.getElementById('imageModal');
+        const modalImg = document.getElementById('modalImage');
+        const closeBtn = document.getElementById('closeModal');
+        const expandBtns = document.querySelectorAll('.expand-btn');
+        
+        // Abrir modal al hacer clic en el botón de expandir
+        expandBtns.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault(); // Prevenir comportamiento por defecto
+                e.stopPropagation(); // Evitar propagación del evento
+                
+                const imgSrc = this.getAttribute('data-img');
+                modalImg.src = imgSrc;
+                modal.classList.add('active');
+                document.body.style.overflow = 'hidden'; // Evitar scroll en el fondo
+                
+                // Agregar feedback táctil en dispositivos móviles si está disponible
+                if (window.navigator && window.navigator.vibrate) {
+                    window.navigator.vibrate(50); // Vibración sutil de 50ms
+                }
+            });
+        });
+        
+        // Cerrar modal al hacer clic en el botón de cerrar
+        closeBtn.addEventListener('click', function() {
+            modal.classList.remove('active');
+            document.body.style.overflow = ''; // Restaurar scroll
+        });
+        
+        // Cerrar modal al hacer clic fuera de la imagen
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.classList.remove('active');
+                document.body.style.overflow = ''; // Restaurar scroll
+            }
+        });
+        
+        // Cerrar modal con la tecla ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modal.classList.contains('active')) {
+                modal.classList.remove('active');
+                document.body.style.overflow = ''; // Restaurar scroll
+            }
+        });
+    });
+</script>
+
+<script>
+    // SCRIPT DE SÍNTESIS DE VOZ MEJORADO
+    document.addEventListener('DOMContentLoaded', function() {
+        
+        // VARIABLES GLOBALES
+        const synth = window.speechSynthesis;
+        
+        let voices = [];
+        let activeReaders = {}; // Almacena los lectores activos por sección
+        let paulinaVoice = null; // Variable para almacenar la voz de Paulina
+        let currentActiveSection = null; // Sección actualmente activa
+        
+        // GESTIÓN DE VOCES
+        function loadVoices() {
+            voices = synth.getVoices();
+            console.log('Voces disponibles:', voices.length);
+            
+            // Buscar la voz de Paulina (es-MX)
+            paulinaVoice = voices.find(voice => voice.name.includes('Paulina'));
+            
+            // Si no se encuentra Paulina, buscar cualquier voz en español
+            if (!paulinaVoice) {
+                paulinaVoice = voices.find(voice => voice.lang.startsWith('es'));
+                if (paulinaVoice) {
+                    console.log('Usando voz en español alternativa:', paulinaVoice.name);
+                } else {
+                    console.warn('No se encontró ninguna voz en español, usando voz predeterminada');
+                    if (voices.length > 0) {
+                        paulinaVoice = voices[0];
+                        console.log('Usando voz predeterminada:', paulinaVoice.name);
+                    }
+                }
+            } else {
+                console.log('Voz Paulina encontrada:', paulinaVoice.name);
+            }
+        }
+        
+        // Cargar voces cuando estén disponibles
+        if (synth.onvoiceschanged !== undefined) {
+            synth.onvoiceschanged = loadVoices;
+        }
+        loadVoices();
+        
+        // EXTRACCIÓN DE TEXTO
+        function getSectionText(sectionId) {
+            // Limpiar el ID de la sección
+            if (sectionId.startsWith('#')) {
+                sectionId = sectionId.substring(1);
+            }
+            
+            const section = document.getElementById(sectionId);
+            if (!section) {
+                console.error('No se encontró la sección:', sectionId);
+                return '';
+            }
+            
+            console.log('Obteniendo texto de la sección:', sectionId);
+            
+            // Obtener elementos de texto
+            const textElements = section.querySelectorAll('p, li, .text-slate-700, h1, h2, h3, h4, h5, h6');
+            let text = '';
+            
+            if (textElements.length === 0) {
+                // Si no se encuentran elementos específicos, usar todo el texto
+                text = section.textContent.trim();
+                console.log('Usando texto completo de la sección');
+            } else {
+                // Procesar elementos manteniendo el orden del DOM
+                // Esto permite mantener una estructura lógica en la lectura
+                
+                // Crear un array con todos los elementos para ordenarlos por posición en el DOM
+                const allElements = [];
+                textElements.forEach(el => allElements.push({element: el, isHeading: /^H[1-6]$/.test(el.tagName)}));
+                
+                // Ordenar elementos por su posición en el documento
+                allElements.sort((a, b) => {
+                    const position = a.element.compareDocumentPosition(b.element);
+                    return position & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
+                });
+                
+                // Procesar cada elemento añadiendo pausas después de los títulos
+                allElements.forEach(item => {
+                    const content = item.element.textContent.trim();
+                    if (item.isHeading) {
+                        // Añadir el título seguido de una pausa (usando puntos)
+                        text += content + '. . . ';
+                    } else {
+                        // Añadir el contenido normal
+                        text += content + ' ';
+                    }
+                });
+                
+                console.log('Elementos de texto procesados:', textElements.length);
+            }
+            
+            return text.trim();
+        }
+        
+        // GESTIÓN DE ESTADOS DE BOTONES
+        function updateButtonStates(controlsElement, isPlaying) {
+            const playBtn = controlsElement.querySelector('.play-btn');
+            const pauseBtn = controlsElement.querySelector('.pause-btn');
+            const stopBtn = controlsElement.querySelector('.stop-btn');
+            
+            if (playBtn) playBtn.disabled = isPlaying;
+            if (pauseBtn) pauseBtn.disabled = !isPlaying;
+            if (stopBtn) stopBtn.disabled = !isPlaying;
+        }
+        
+        // FUNCIONES DE CONTROL DE REPRODUCCIÓN
+        function playSection(sectionId, controlsElement) {
+            const reader = activeReaders[sectionId];
+            
+            // Si hay un lector pausado, reanudarlo
+            if (reader && reader.isPaused) {
+                console.log('Reanudando lectura pausada');
+                synth.resume();
+                reader.isPaused = false;
+                updateButtonStates(controlsElement, true);
+                return;
+            }
+            
+            // Detener cualquier lectura anterior
+            stopAllSections();
+            
+            // Obtener el texto a leer
+            const textToRead = getSectionText(sectionId);
+            if (!textToRead) {
+                console.error('No se encontró texto para leer');
+                return;
+            }
+            
+            console.log('Iniciando lectura, longitud del texto:', textToRead.length);
+            
+            // Configurar el utterance
+            const rateControl = controlsElement.querySelector('.speech-rate');
+            const utterance = new SpeechSynthesisUtterance(textToRead);
+            utterance.lang = 'es-ES';
+            utterance.rate = parseFloat(rateControl.value);
+            
+            if (paulinaVoice) {
+                utterance.voice = paulinaVoice;
+            }
+            
+            // Eventos del utterance
+            utterance.onend = function() {
+                console.log('Lectura finalizada');
+                updateButtonStates(controlsElement, false);
+                delete activeReaders[sectionId];
+                currentActiveSection = null;
+            };
+            
+            utterance.onerror = function(event) {
+                console.error('Error en síntesis de voz:', event.error);
+                updateButtonStates(controlsElement, false);
+                delete activeReaders[sectionId];
+                currentActiveSection = null;
+            };
+            
+            // Guardar referencia
+            activeReaders[sectionId] = {
+                utterance: utterance,
+                isPaused: false,
+                textToRead: textToRead,
+                controls: controlsElement
+            };
+            
+            currentActiveSection = sectionId;
+            
+            // Iniciar lectura
+            synth.speak(utterance);
+            updateButtonStates(controlsElement, true);
+        }
+        
+        function pauseSection(sectionId) {
+            const reader = activeReaders[sectionId];
+            if (reader && !reader.isPaused && synth.speaking) {
+                console.log('Pausando lectura');
+                synth.pause();
+                reader.isPaused = true;
+                updateButtonStates(reader.controls, true);
+                reader.controls.querySelector('.play-btn').disabled = false;
+            }
+        }
+        
+        function stopSection(sectionId) {
+            const reader = activeReaders[sectionId];
+            if (reader) {
+                console.log('Deteniendo lectura');
+                synth.cancel();
+                updateButtonStates(reader.controls, false);
+                delete activeReaders[sectionId];
+                if (currentActiveSection === sectionId) {
+                    currentActiveSection = null;
+                }
+            }
+        }
+        
+        function stopAllSections() {
+            synth.cancel();
+            Object.keys(activeReaders).forEach(sectionId => {
+                const reader = activeReaders[sectionId];
+                if (reader && reader.controls) {
+                    updateButtonStates(reader.controls, false);
+                }
+            });
+            activeReaders = {};
+            currentActiveSection = null;
+        }
+        
+        // ATAJOS DE TECLADO
+        document.addEventListener('keydown', function(event) {
+            // Evitar activar atajos si el usuario está escribiendo en un input
+            if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+                return;
+            }
+            
+            // ESPACIO: Play/Pause
+            if (event.code === 'Space') {
+                event.preventDefault();
+                
+                // Buscar la sección visible actualmente
+                const visibleSection = document.querySelector('.content-pane.active');
+                if (!visibleSection) return;
+                
+                const sectionId = visibleSection.id;
+                const controls = visibleSection.querySelector('.speech-controls');
+                
+                if (!controls) return;
+                
+                const reader = activeReaders[sectionId];
+                
+                if (reader && reader.isPaused) {
+                    // Reanudar
+                    playSection(sectionId, controls);
+                } else if (reader && synth.speaking) {
+                    // Pausar
+                    pauseSection(sectionId);
+                } else {
+                    // Iniciar
+                    playSection(sectionId, controls);
+                }
+                
+                console.log('Atajo de teclado: Espacio - Play/Pause');
+            }
+            
+            // TAB: Stop
+            if (event.code === 'Tab' && !event.shiftKey) {
+                if (currentActiveSection) {
+                    event.preventDefault();
+                    stopSection(currentActiveSection);
+                    console.log('Atajo de teclado: Tab - Stop');
+                }
+            }
+        });
+        
+        // CONFIGURACIÓN DE CONTROLES
+        document.querySelectorAll('.speech-controls').forEach(controls => {
+            const sectionId = controls.getAttribute('data-target');
+            const playBtn = controls.querySelector('.play-btn');
+            const pauseBtn = controls.querySelector('.pause-btn');
+            const stopBtn = controls.querySelector('.stop-btn');
+            const rateControl = controls.querySelector('.speech-rate');
+            
+            if (!sectionId || !playBtn || !pauseBtn || !stopBtn || !rateControl) {
+                console.error('Faltan elementos necesarios para el control de voz');
+                return;
+            }
+            
+            console.log('Configurando controles para sección:', sectionId);
+            
+            // Botón Play
+            playBtn.addEventListener('click', () => playSection(sectionId, controls));
+            
+            // Botón Pause
+            pauseBtn.addEventListener('click', () => pauseSection(sectionId));
+            
+            // Botón Stop
+            stopBtn.addEventListener('click', () => stopSection(sectionId));
+            
+            // Control de velocidad
+            rateControl.addEventListener('change', function() {
+                const reader = activeReaders[sectionId];
+                if (reader && synth.speaking) {
+                    // Reiniciar con nueva velocidad
+                    const wasPlaying = !reader.isPaused;
+                    stopSection(sectionId);
+                    if (wasPlaying) {
+                        setTimeout(() => playSection(sectionId, controls), 100);
+                    }
+                }
+            });
+    });
+    activeReaders = {};
+    currentActiveSection = null;
+}
+
+// ATAJOS DE TECLADO
+document.addEventListener('keydown', function(event) {
+    // Evitar activar atajos si el usuario está escribiendo en un input
+    if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+        return;
+    }
+    
+    // ESPACIO: Play/Pause
+    if (event.code === 'Space') {
+        event.preventDefault();
+        
+        // Buscar la sección visible actualmente
+        const visibleSection = document.querySelector('.content-pane.active');
+        if (!visibleSection) return;
+        
+        const sectionId = visibleSection.id;
+        const controls = visibleSection.querySelector('.speech-controls');
+        
+        if (!controls) return;
+        
+        const reader = activeReaders[sectionId];
+        
+        if (reader && reader.isPaused) {
+            // Reanudar
+            playSection(sectionId, controls);
+        } else if (reader && synth.speaking) {
+            // Pausar
+            pauseSection(sectionId);
+        } else {
+            // Iniciar
+            playSection(sectionId, controls);
+        }
+        
+        console.log('Atajo de teclado: Espacio - Play/Pause');
+    }
+    
+    // TAB: Stop
+    if (event.code === 'Tab' && !event.shiftKey) {
+        if (currentActiveSection) {
+            event.preventDefault();
+            stopSection(currentActiveSection);
+            console.log('Atajo de teclado: Tab - Stop');
+        }
+    }
+});
+
+// CONFIGURACIÓN DE CONTROLES
+document.querySelectorAll('.speech-controls').forEach(controls => {
+    const sectionId = controls.getAttribute('data-target');
+    const playBtn = controls.querySelector('.play-btn');
+    const pauseBtn = controls.querySelector('.pause-btn');
+    const stopBtn = controls.querySelector('.stop-btn');
+    const rateControl = controls.querySelector('.speech-rate');
+    
+    if (!sectionId || !playBtn || !pauseBtn || !stopBtn || !rateControl) {
+        console.error('Faltan elementos necesarios para el control de voz');
+        return;
+    }
+    
+    console.log('Configurando controles para sección:', sectionId);
+    
+    // Botón Play
+    playBtn.addEventListener('click', () => playSection(sectionId, controls));
+    
+    // Botón Pause
+    pauseBtn.addEventListener('click', () => pauseSection(sectionId));
+    
+    // Botón Stop
+    stopBtn.addEventListener('click', () => stopSection(sectionId));
+    
+    // Control de velocidad
+    rateControl.addEventListener('change', function() {
+        const reader = activeReaders[sectionId];
+        if (reader && synth.speaking) {
+            // Reiniciar con nueva velocidad
+            const wasPlaying = !reader.isPaused;
+            stopSection(sectionId);
+            if (wasPlaying) {
+                setTimeout(() => playSection(sectionId, controls), 100);
+            }
+        }
+    });
+});
+
+<script>
+function calcularSimple() {
+    var respuestas = 0;
+    var total = 0;
+    
+    // Revisar cada pregunta
+    for(var i = 1; i <= 5; i++) {
+        var seleccionado = document.querySelector('input[name="pregunta' + i + '"]:checked');
+        if(seleccionado) {
+            total += parseInt(seleccionado.value);
+            respuestas++;
+        }
+    }
+    
+    if(respuestas < 5) {
+        alert('Por favor responde todas las preguntas');
+        return;
+    }
+    
+    // Calcular puntaje
+    var puntaje = (total / 20) * 100;
+    var resultado = '';
+    
+    if(puntaje <= 30) {
+        resultado = '<div style="background:#fca5a5;padding:20px;border-radius:10px"><h3 style="color:#dc2626">🔴 ZONA CRÍTICA (0-30°)</h3><p><strong>ABUSIVA</strong> - basada en el poder, el dominio y el control</p><p style="margin-top:10px"><strong>Acciones recomendadas:</strong></p><ul style="text-align:left"><li>Busca ayuda profesional inmediatamente</li><li>Contacta líneas de ayuda contra la violencia doméstica</li><li>Habla con alguien de confianza</li></ul></div>';
+    } else if(puntaje <= 60) {
+        resultado = '<div style="background:#fef3c7;padding:20px;border-radius:10px"><h3 style="color:#d97706">🟡 ZONA DE PRECAUCIÓN (31-60°)</h3><p><strong>NO SALUDABLE</strong> - basada en intentos de controlar</p><p style="margin-top:10px"><strong>Acciones recomendadas:</strong></p><ul style="text-align:left"><li>Considera terapia de pareja</li><li>Trabaja en comunicación</li><li>Establece límites claros</li></ul></div>';
+    } else if(puntaje <= 80) {
+        resultado = '<div style="background:#d1fae5;padding:20px;border-radius:10px"><h3 style="color:#059669">🟢 ZONA SALUDABLE (61-80°)</h3><p><strong>SALUDABLE</strong> - basada en la igualdad y el respeto</p><p style="margin-top:10px"><strong>Acciones recomendadas:</strong></p><ul style="text-align:left"><li>Continúa trabajando en comunicación</li><li>Mantén el respeto mutuo</li><li>Sigue fortaleciendo la confianza</li></ul></div>';
+    } else {
+        resultado = '<div style="background:#dbeafe;padding:20px;border-radius:10px"><h3 style="color:#2563eb">🔵 ZONA ÓPTIMA (81-100°)</h3><p><strong>EXCELENTE</strong> - basada en amor, confianza y apoyo</p><p style="margin-top:10px"><strong>Acciones recomendadas:</strong></p><ul style="text-align:left"><li>Sigan siendo modelo para otros</li><li>Compartan experiencias positivas</li><li>Disfruten plenamente su relación</li></ul></div>';
+    }
+    
+    // Ocultar preguntas
+    var preguntasDiv = document.getElementById('preguntasEvaluacion');
+    if(preguntasDiv) {
+        preguntasDiv.style.display = 'none';
+    }
+    
+    // Mostrar resultado
+    var resultadoDiv = document.getElementById('resultadoEvaluacion');
+    if(resultadoDiv) {
+        resultadoDiv.innerHTML = '<div class="text-center"><h2 style="font-size:48px;margin:20px 0;color:#333">' + Math.round(puntaje) + '°</h2>' + resultado + '</div>';
+        resultadoDiv.style.display = 'block';
+    }
+}
+</script>
+
+</body>
+</html>
